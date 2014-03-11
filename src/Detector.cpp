@@ -1,12 +1,11 @@
 #include "Detector.h"
 
-//Procedimento para leitura do arquivo xml que contém o modelo de detector
+//reads the detector model from the xml model
 void Detector::readDetectorModel(String fileName)
 {
     FileStorage xml;
     FileNode currentRootNode;
 
-    //instrução para abertura do arquivo
     xml.open(fileName, FileStorage::READ);
 
 	if (!xml.isOpened())

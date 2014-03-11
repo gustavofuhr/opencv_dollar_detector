@@ -1,6 +1,5 @@
-//esse código fonte serve como o main do projeto
-
 #include "CppAcfDetect.h"
+#define DETECTOR_FILE "/home/gfuhr/Dropbox/Fuhr_Charles/QtAcfDetect/QtAcfDetect/detector.xml"
 
 int main(int argc, char** argv) 
 {
@@ -16,19 +15,18 @@ int main(int argc, char** argv)
     /*MainWindow w;
     w.show();*/
 
-    //Chamada para a leitura do detector a ser usado
-    d.readDetectorModel("/home/gfuhr/Dropbox/Fuhr_Charles/QtAcfDetect/QtAcfDetect/detector.xml");
+    //call to read the detector file
+    d.readDetectorModel(DETECTOR_FILE);
 
-    //Loop para analisar os frames
-	for (int i = firstFrame; i <= lastFrame; i = i + step)
+   for (int i = firstFrame; i <= lastFrame; i = i + step)
 	{
-        /*fileName << PREFIX << i << EXTENSION;
+      /*fileName << PREFIX << i << EXTENSION;
 		windowName << "Frame #" << i;
 		//image = imread(filename.str(), CV_LOAD_IMAGE_UNCHANGED);
 		image = imread("D:\\Workspace\\CppAcfDetect\\CppAcfDetect\\img.jpg", CV_LOAD_IMAGE_UNCHANGED);
 		if (image.empty()) //check if the image was loaded
 			return -1;
-        imshow(windowName.str(), image);*/
+      imshow(windowName.str(), image);*/
 	}
 
     //waitKey(0);
@@ -68,7 +66,7 @@ BoundingBox* acfDetectImg(Mat image, Detector detector)
             //cascThr  lido como prhs[6]
             const float cascThr = 1.0;
 
-            //extrair informaes dos campos de trees
+            //extrair informações dos campos de trees
             float *thrs = NULL;
             float *hs = NULL;
             uint32_t *fids = NULL;
