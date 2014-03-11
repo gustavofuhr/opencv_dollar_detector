@@ -14,7 +14,6 @@ void Detector::readDetectorModel(String fileName)
 	}
 	else
 	{
-        //Série de atribuições dos valores ao objeto a ser criado
         currentRootNode = xml["detector"]["opts"]["pPyramid"]["pChns"];
         opts.pPyramid.pChns.shrink = currentRootNode["shrink"];
         opts.pPyramid.pChns.pColor.enabled = currentRootNode["pColor"]["enabled"];
@@ -70,19 +69,17 @@ void Detector::readDetectorModel(String fileName)
         opts.nAccNeg = currentRootNode["nAccNeg"];
         opts.winsSave = currentRootNode["winsSave"];
 
-        //problema para ler essas matrizes gigantes porque os números não estão em notação científica
-        //tentei fazer a inicialização abaixo para testar se o problema é o tipo esperado, não funcionou
-        //clf.fids = Mat(7,2048, CV_32S, 0.0);
+		  //there's a problem to read these big matrices because the numbers are not in scientific notation
         currentRootNode = xml["detector"]["clf"];
         currentRootNode["fids"] >> clf.fids;
 
-        //todos os elementos lidos ficam zerados
+        //all of the elements in fids are zero
         qDebug() << clf.fids.data[0];
         qDebug() << clf.fids.data[1];
         qDebug() << clf.fids.data[2];
         currentRootNode["thrs"] >> clf.thrs;
 
-        //mais algumas matrizes precisam ser lidas aqui...
+        //some more matrices would need to be read here...
 
         clf.treeDepth = currentRootNode["treeDepth"];
 
@@ -111,7 +108,7 @@ void Detector::readDetectorModel(String fileName)
     }
 }
 
-//Procedimento copiado apenas
+//this procedure was just copied verbatim
 inline void getChild(float *chns1, uint32_t *cids, uint32_t *fids,
 	float *thrs, uint32_t offset, uint32_t &k0, uint32_t &k)
 {

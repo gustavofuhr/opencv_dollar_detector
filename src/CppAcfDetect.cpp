@@ -34,8 +34,6 @@ int main(int argc, char** argv)
     return a.exec();
 }
 
-//Esboço para a função de detecção aplicada a uma imagem
-//Está colocada aqui, mas pode ser na classe Detector também
 BoundingBox* acfDetectImg(Mat image, Detector detector)
 {
     BoundingBox bb;
@@ -47,41 +45,34 @@ BoundingBox* acfDetectImg(Mat image, Detector detector)
 
     //criar uma matriz de bounding boxes bbs[nmero de escalas da pirmida][nmero de elementos do detector]
 
-    //loop copiado do código original
+    //this loop was just copied from the original file (except some comments)
     for (int i = 0; i < detector.opts.pPyramid.nScales; i++)
     {
         for (int j = 0; j < detectorLength; j++)
         {
-            //chns  o primeiro elemento de prhr
             float* chns = NULL;
-            //trees  um vetor lido do segundo elemento de prhs
             Mat *trees = NULL;
             const int shrink = detector.opts.pPyramid.pChns.shrink;
-            //modelHt  o quarto elemento de prhs
             const int modelHt = 50;
-            //modelWd  o quinto elemento de prhs
             const int modelWd = 50;
-            //stride  o sexto elemento de prhs
             const int stride = 2;
-            //cascThr  lido como prhs[6]
             const float cascThr = 1.0;
 
-            //extrair informações dos campos de trees
             float *thrs = NULL;
             float *hs = NULL;
             uint32_t *fids = NULL;
             uint32_t *child = NULL;
             const int treeDepth = 0;
 
-            //chnsSize  a quantidade de elementos em cada dimenso de prhs[0]
+            //chnsSize the number of elements in each dimension of prhs[0]
             const int chnsSize0 = 3, chnsSize1 = 3;//dummy
             const int height = chnsSize0;
             const int width = chnsSize1;
             const int nChns = 0;
             const int *fidsSize = NULL;
-            //nTreeNodes  a quantidade de elementos na primeira dimenso de fids
+            //nTreeNodes  number of elements in the first dimension of fids
             const int nTreeNodes = 0;
-            //nTrees  a quantidade de elementos na segunda dimenso de fids
+            //nTrees size of the second dimension of fids
             const int nTrees = 0;
             const int height1 = (int)ceil(float(height*shrink - modelHt + 1 / stride));
             const int width1 = (int)ceil(float(width*shrink - modelWd + 1 / stride));

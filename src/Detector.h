@@ -13,6 +13,6 @@ class Detector
 		Clf clf;
 		Info info;
 
-        void readDetectorModel(String);
+      void readDetectorModel(String);
 		inline void getChild(float*, uint32_t*, uint32_t*,	float*, uint32_t, uint32_t, uint32_t);
 };

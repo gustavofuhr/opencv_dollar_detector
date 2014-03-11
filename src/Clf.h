@@ -1,7 +1,7 @@
 class Clf
 {
 public:
-    Mat fids; //inteiros sem sinal
+    Mat fids; //unsigned integers
     Mat thrs; //
 	unsigned int child[7][2048];
 	float hs[7][2048];
