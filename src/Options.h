@@ -12,9 +12,9 @@ class Options
 		double modelDs[2];
 		double modelDsPad[2];
 		PNms pNms;
-		int stride;
-		int cascThr;
-		double cascCal;
+        int stride;
+        int cascadeThreshold;
+        double cascadeCalibration;
 		int nWeak[4];
 		PBoost pBoost;
 		int seed;

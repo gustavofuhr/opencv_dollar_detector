@@ -1,14 +1,14 @@
 #ifndef INFO_H
 #define INFO_H
 
-#include "ColorChannels.h"
+#include "ColorSpace.h"
 #include "GradientMagnitude.h"
 #include "GradientHistogram.h"
 
 class Info
 {
 public:
-	ColorChannels colorCh;
+    ColorSpace colorCh;
 	GradientMagnitude gradMag;
 	GradientHistogram gradHist;
 };
