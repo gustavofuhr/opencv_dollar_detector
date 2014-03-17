@@ -15,6 +15,6 @@ int main(int argc, char** argv)
 
     BoundingBox* bbs = d.acfDetect(image);
 
-	destroyAllWindows();
+    //destroyAllWindows();
     return a.exec();
 }

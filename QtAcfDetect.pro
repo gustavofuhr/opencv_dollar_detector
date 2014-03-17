@@ -17,25 +17,26 @@ SOURCES +=\
         src\CppAcfDetect.cpp \
         src\Detector.cpp
 
-HEADERS  += mainwindow.h \
-    Pyramid.h \
-    PTree.h \
-    PNms.h \
-    PChns.h \
-    PBoost.h \
-    Options.h \
-    Info.h \
-    GradientMagnitude.h \
-    GradientHistogram.h \
-    Detector.h \
-    CppAcfDetect.h \
-    ColorChannels.h \
-    Clf.h \
-    BoundingBox.h
+HEADERS  +=\
+    src\mainwindow.h \
+    src\Pyramid.h \
+    src\PTree.h \
+    src\PNms.h \
+    src\PChns.h \
+    src\PBoost.h \
+    src\Options.h \
+    src\Info.h \
+    src\GradientMagnitude.h \
+    src\GradientHistogram.h \
+    src\Detector.h \
+    src\CppAcfDetect.h \
+    src\ColorChannels.h \
+    src\Clf.h \
+    src\BoundingBox.h
 
-FORMS    += mainwindow.ui
+FORMS    += src\mainwindow.ui
 
-INCLUDEPATH += /usr/local/include/opencv
+INCLUDEPATH += D:\Programs\OpenCV
 LIBS += -L/usr/local/lib
 LIBS += -lopencv_core
 LIBS += -lopencv_imgproc

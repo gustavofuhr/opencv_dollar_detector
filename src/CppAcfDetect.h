@@ -1,7 +1,7 @@
 #pragma once
 
-#include "opencv/cv.h"
-#include "opencv/highgui.h"
+//#include "opencv/cv.h"
+//#include "opencv/highgui.h"
 #include "Detector.h"
 #include <QApplication>
 #include "mainwindow.h"

@@ -20,5 +20,6 @@ class Pyramid
         int computedChannels[]; //[nScales x nTypes] cell array of computed channels
 
 
-		Pyramid channelFeaturePyramid(Mat);
+        Pyramid computeMultiScaleChannelFeaturePyramid(Mat);
+        Pyramid computeSingleScaleChannelFeaturePyramid(Mat, Channel);
 };
