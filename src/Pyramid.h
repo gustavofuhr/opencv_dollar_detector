@@ -22,4 +22,5 @@ class Pyramid
 
         Pyramid computeMultiScaleChannelFeaturePyramid(Mat);
         Pyramid computeSingleScaleChannelFeaturePyramid(Mat, Channel);
+        Mat TriangleFilterConvolution(Mat I, int r, int s, int nomex);
 };

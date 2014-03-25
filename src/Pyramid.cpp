@@ -14,9 +14,11 @@ Pyramid Pyramid::computeSingleScaleChannelFeaturePyramid(Mat I, Channel pChns)
 
     //compute color channels
     I = this->pChns.pColor.rgbConvert(I);
+    I = this->pChns.pColor.convConst(I, CONV_TRI);
+
 }
 
-Mat TriangleFilterConvolution(Mat I, int r, int s, int nomex)
+Mat Pyramid::TriangleFilterConvolution(Mat I, int r, int s, int nomex)
 {
     Mat result = I;
     if(!I.empty() && !(r==0 && s==1))
@@ -27,9 +29,9 @@ Mat TriangleFilterConvolution(Mat I, int r, int s, int nomex)
             if(nomex==0)
             {
                 if(r>0 && r<=1 && s<=2)
-                    result = convConst("convTri1",I,12/r/(r+2)-2,s);
+                    result = this->pChns.pColor.convConst(I,CONV_TRI1);
                 else
-                    result = convConst("convTri", I, r, s);
+                    result = this->pChns.pColor.convConst(I,CONV_TRI);
             }
             else
             {
@@ -59,7 +61,7 @@ Mat TriangleFilterConvolution(Mat I, int r, int s, int nomex)
                     /*for (int i=t; i < result.rows-s+t+1; i = i + s)
                         for (int j=t; j < result.cols-s+t+1; j = j + s)
                             temp*/
-                    result = result(t:s:end-s+t,t:s:end-s+t,:);
+                    //result = result(t:s:end-s+t,t:s:end-s+t,:);
                 }
             }
         }

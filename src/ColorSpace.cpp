@@ -1,5 +1,49 @@
 #include "ColorSpace.h"
 
+Mat convTri1 (Mat I, int p, int s)
+{
+    float nrm = 1.0f/((p+2)*(p+2));
+    int i, j, h0 = I.rows-(I.rows%4);
+    float *Il, *Im, *Ir, *T=(float*)alMalloc(I.rows*sizeof(float),16);
+    for (int d0=0; d0<3; d0++) //imagino que o limie aqui deva ser o número de canais de cor
+        for (i=s/2; i < I.cols; i = i + s)
+        {
+            Il=Im=Ir=I+i*I.rows+d0*I.rows*I.cols;
+            if(i>0)
+                Il-=h;
+            if(i<w-1)
+                Ir+=h;
+            for( j=0; j<h0; j+=4 )
+                STR(T[j],MUL(nrm,ADD(ADD(LDu(Il[j]),MUL(p,LDu(Im[j]))),LDu(Ir[j]))));
+            for( j=h0; j<h; j++ )
+                T[j]=nrm*(Il[j]+p*Im[j]+Ir[j]);
+            convTri1Y(T,O,h,p,s);
+            O+=h/s;
+        }
+}
+
+Mat ColorSpace::convConst(Mat I, int r, int s, int tag)
+{
+    Mat result;
+    switch(tag)
+    {
+        case CONV_11:   break;
+        case CONV_BOX:  break;
+        case CONV_MAX:  break;
+        case CONV_TRI:  break;
+        case CONV_TRI1: break;
+    }
+    return result;
+}
+
+Mat ColorSpace::convolutionWithTriangleFilter(Mat I)
+{
+    Mat result;
+    if (this->smooth == 1)
+        result = convConst(I, 12/this->smooth/(this->smooth+2), s, CONVTRI1);
+    return result;
+}
+
 Mat ColorSpace::rgbConvert(Mat I)
 {
     Mat result;

@@ -153,6 +153,8 @@ void convTri1Y( float *I, float *O, int h, float p, int s ) {
   #undef C4
 }
 
+// convTri1( A, B, ns[0], ns[1], d, p, s );
+// convConst('convTri1',I,12/r/(r+2)-2,s);
 // convolve I by [1 p 1] filter (uses SSE)
 void convTri1( float *I, float *O, int h, int w, int d, float p, int s ) {
   const float nrm = 1.0f/((p+2)*(p+2)); int i, j, h0=h-(h%4);
