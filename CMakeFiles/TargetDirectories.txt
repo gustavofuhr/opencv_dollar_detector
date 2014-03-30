@@ -1,0 +1,3 @@
+D:/Cloud Storage/GitHub/opencv_dollar_detector/CMakeFiles/ALL_BUILD.dir
+D:/Cloud Storage/GitHub/opencv_dollar_detector/CMakeFiles/ZERO_CHECK.dir
+D:/Cloud Storage/GitHub/opencv_dollar_detector/CMakeFiles/opencv_dollar_detector.dir
