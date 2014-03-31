@@ -1,7 +1,6 @@
 #include "Pyramid.h"
 #include "PNms.h"
 #include "PBoost.h"
-//#include "opencv/cv.h"
 
 using namespace cv;
 
@@ -12,9 +11,9 @@ class Options
 		double modelDs[2];
 		double modelDsPad[2];
 		PNms pNms;
-        int stride;
-        int cascadeThreshold;
-        double cascadeCalibration;
+      int stride;
+      int cascadeThreshold;
+      double cascadeCalibration;
 		int nWeak[4];
 		PBoost pBoost;
 		int seed;

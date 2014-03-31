@@ -5,7 +5,7 @@ Mat convTri1 (Mat I, int p, int s)
     float nrm = 1.0f/((p+2)*(p+2));
     int i, j, h0 = I.rows-(I.rows%4);
     float *Il, *Im, *Ir, *T=(float*)alMalloc(I.rows*sizeof(float),16);
-    for (int d0=0; d0<3; d0++) //imagino que o limie aqui deva ser o número de canais de cor
+    for (int d0=0; d0<3; d0++) //imagino que o limite aqui deva ser o número de canais de cor
         for (i=s/2; i < I.cols; i = i + s)
         {
             Il=Im=Ir=I+i*I.rows+d0*I.rows*I.cols;

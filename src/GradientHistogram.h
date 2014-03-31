@@ -1,7 +1,7 @@
 #ifndef GRADHIST_H
 #define GRADHIST_H
 
-#include "opencv/cv.h"
+#include "cv.h"
 
 using namespace cv;
 

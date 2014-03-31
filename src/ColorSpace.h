@@ -1,7 +1,7 @@
 #ifndef COLORCH_H
 #define COLORCH_H
 
-#include "opencv\cv.h"
+#include "cv.h"
 
 enum method { CONV_BOX, CONV_TRI, CONV_11, CONV_TRI1, CONV_MAX};
 
@@ -13,8 +13,8 @@ public:
     int enabled;
     int smooth;
     String colorSpaceType;
-	int nChannels;
-	String padWith;
+	 int nChannels;
+	 String padWith;
 
     Mat convConst(Mat, int, int);
     Mat convolutionWithTriangleFilter(Mat);

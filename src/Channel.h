@@ -6,7 +6,7 @@ class Channel
 {
 public:
 	int shrink;
-    ColorSpace pColor;
+   ColorSpace pColor;
 	GradientMagnitude pGradMag;
 	GradientHistogram pGradHist;
 	//pCustom

@@ -72,11 +72,8 @@ void Detector::readDetectorModel(String fileName)
 		  //there's a problem to read these big matrices because the numbers are not in scientific notation
         currentRootNode = xml["detector"]["clf"];
         currentRootNode["fids"] >> clf.fids;
-
         //all of the elements in fids are zero
-        qDebug() << clf.fids.data[0];
-        qDebug() << clf.fids.data[1];
-        qDebug() << clf.fids.data[2];
+		  
         currentRootNode["thrs"] >> clf.thrs;
 
         //some more matrices would need to be read here...
