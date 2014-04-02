@@ -1,4 +1,4 @@
-#include "ColorSpace.h"
+#include "ColorChannel.h"
 
 Mat convTri1 (Mat I, int p, int s)
 {

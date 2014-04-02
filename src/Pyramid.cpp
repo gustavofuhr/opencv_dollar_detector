@@ -1,21 +1,47 @@
 #include "Pyramid.h"
 
-Pyramid computeMultiScaleChannelFeaturePyramid(Mat)
+//translation of the chnsPyramid.m file
+Pyramid computeMultiScaleChannelFeaturePyramid(Mat I)
 {
     ;
 }
 
-Pyramid Pyramid::computeSingleScaleChannelFeaturePyramid(Mat I, Channel pChns)
+//translation of the chnsCompute.m file
+//is the addChn function really needed?
+Pyramid Pyramid::computeSingleScaleChannelFeaturePyramid(Mat I)
 {
-    //crop I so it becomes divisible by shrink
-    int height = I.rows - (I.rows % pChns.shrink);
-    int width =  I.cols - (I.cols % pChns.shrink);
+	Mat colorChResult, gradMagResult, graHistResult;
+
+	//crop I so it becomes divisible by shrink
+	int height = I.rows - (I.rows % pChns.shrink);
+	int width =  I.cols - (I.cols % pChns.shrink);
 
 
-    //compute color channels
-    I = this->pChns.pColor.rgbConvert(I);
-    I = this->pChns.pColor.convConst(I, CONV_TRI);
+	//compute color channels
+	colorChResult = this->pChns.pColor.rgbConvert(I);
+	colorChResult = this->pChns.pColor.convConst(colorChResult, CONV_TRI);
+	if (this->pChns.pColor.enabled)
+		//chns = addChn(chns,I,nm,p,"replicate",h,w);
 
+	//compute gradient magnitude channel
+	if (this->pChns.pGradHist.enabled)
+		//gradMagResult, Omatrix = gradientMag(I,p.colorChn,p.normRad,p.normConst,full);
+	else
+	{
+		if (this->pChns.pGradMag.enabled)
+			//gradMagResult = gradientMag(I,p.colorChn,p.normRad,p.normConst,full);
+	}
+	if (this->pChns.pGradMag.enabled)
+		//chns=addChn(chns,gradMagResult,nm,p,0,h,w);
+
+	//compute gradient histgoram channels
+	if (this->pChns.pGradHist.enabled)
+	{
+		//gradHistResult = gradientHist(gradMagResult,O,binSize,p.nOrients,p.softBin,p.useHog, p.clipHog,full);
+		//chns=addChn(chns,gradHistResult,nm,pChns.pGradHist,0,h,w);
+	}	
+
+	//for now, i wont add cuputation of custom channels
 }
 
 Mat Pyramid::TriangleFilterConvolution(Mat I, int r, int s, int nomex)

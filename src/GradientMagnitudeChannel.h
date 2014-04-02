@@ -1,7 +1,7 @@
 #ifndef GRADMAG_H
 #define GRADMAG_H
 
-class GradientMagnitude
+class GradientMagnitudeChannel
 {
 public:
     int enabled; //if true enable gradient magnitude channel
@@ -11,6 +11,9 @@ public:
     int full; //if true compute angles in [0,2*pi) else in [0,pi)
     int nChannels;
     String padWith;
+
+	//comes from gradientMex.cpp, the return still needs a type
+	void mGradMag(int, Mat, int, Mat);
 };
 
 #endif

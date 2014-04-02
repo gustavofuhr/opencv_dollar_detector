@@ -1,7 +1,7 @@
 #pragma once
 
-//#include "opencv/cv.h"
-//#include "opencv/highgui.h"
+#include "cv.h"
+#include "highgui.h"
 #include "Detector.h"
 
 #define PREFIX ""

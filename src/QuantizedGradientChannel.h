@@ -5,10 +5,10 @@
 
 using namespace cv;
 
-class GradientHistogram
+class QuantizedGradientChannel
 {
 public:
-    int enable; //if true enable gradient histogram channels
+    int enabled; //if true enable gradient histogram channels
     int* binSize; //spatial bin size (defaults to shrink)
     int orientationChannels; //number of orientation channels
     int useSoftBinning; //if true use "soft" bilinear spatial binning
@@ -16,6 +16,9 @@ public:
     double clipHog; //value at which to clip hog histogram bins
     int nChannels;
     String padWith;
+
+	//comes from gradientMex.cpp, the return still needs a type
+	void mGradHist(int, Mat, int, Mat);
 };
 
 #endif

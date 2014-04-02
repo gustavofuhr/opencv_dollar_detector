@@ -1,15 +1,17 @@
 #ifndef INFO_H
 #define INFO_H
 
-#include "ColorSpace.h"
-#include "GradientMagnitude.h"
-#include "GradientHistogram.h"
+#include "ColorChannel.h"
+#include "GradientMagnitudeChannel.h"
+#include "QuantizedGradientChannel.h"
 
+
+//this whole class might be useless, it is the same as ChannelFeatures
 class Info
 {
 public:
-    ColorSpace colorCh;
-	GradientMagnitude gradMag;
-	GradientHistogram gradHist;
+    	ColorChannel colorCh;
+	GradientMagnitudeChannel gradMag;
+	GradientHistogramChannel gradHist;
 };
 #endif

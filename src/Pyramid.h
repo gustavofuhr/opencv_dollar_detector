@@ -1,9 +1,9 @@
-#include "Channel.h"
+#include "ChannelFeatures.h"
 
 class Pyramid
 {
 	public:
-        Channel pChns; //parameters for creating channels
+        ChannelFeatures pChns; //parameters for creating channels
         int scalesPerOctave; //number of scales per octave
         int upsampledOctaves; //number of upsampled octaves to compute
         int approximatedScales; //number of approx. scales
