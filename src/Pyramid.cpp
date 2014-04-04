@@ -25,11 +25,28 @@ Pyramid Pyramid::computeSingleScaleChannelFeaturePyramid(Mat I)
 
 	//compute gradient magnitude channel
 	if (this->pChns.pGradHist.enabled)
-		//gradMagResult, Omatrix = gradientMag(I,p.colorChn,p.normRad,p.normConst,full);
+	{
+		Mat tempResult = this->pChns.pGradMag.mGradMag(I,p.colorChn,full);
+		gradMagResult = tempResult[0];
+		Omatrix = tempResult[1];
+		//still need to understand this next part better:
+		/*if (this->pChns.pGradMag.normalizationRadius != 0)
+		{
+			S = convTri(M, normRad);
+			//gradientMex('gradientMagNorm',M,S,normConst); 
+		}*/
+	}		
 	else
 	{
 		if (this->pChns.pGradMag.enabled)
-			//gradMagResult = gradientMag(I,p.colorChn,p.normRad,p.normConst,full);
+		{
+			gradMagResult = (this->pChns.pGradMag.mGradMag(I,p.colorChn,full))[0];			
+			/*if (this->pChns.pGradMag.normalizationRadius != 0)
+			{
+				S = convTri(M, normRad);
+				//gradientMex('gradientMagNorm',M,S,normConst); 
+			}*/
+		}	
 	}
 	if (this->pChns.pGradMag.enabled)
 		//chns=addChn(chns,gradMagResult,nm,p,0,h,w);
@@ -41,7 +58,7 @@ Pyramid Pyramid::computeSingleScaleChannelFeaturePyramid(Mat I)
 		//chns=addChn(chns,gradHistResult,nm,pChns.pGradHist,0,h,w);
 	}	
 
-	//for now, i wont add cuputation of custom channels
+	//for now, i wont add computation of custom channels
 }
 
 Mat Pyramid::TriangleFilterConvolution(Mat I, int r, int s, int nomex)

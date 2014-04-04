@@ -14,7 +14,7 @@ void Detector::readDetectorModel(String fileName)
 	}
 	else
 	{
-        currentRootNode = xml["detector"]["opts"]["pPyramid"]["pChns"];
+		currentRootNode = xml["detector"]["opts"]["pPyramid"]["pChns"];
         opts.pPyramid.pChns.shrink = currentRootNode["shrink"];
         opts.pPyramid.pChns.pColor.enabled = currentRootNode["pColor"]["enabled"];
         opts.pPyramid.pChns.pColor.smooth = currentRootNode["pColor"]["smooth"];

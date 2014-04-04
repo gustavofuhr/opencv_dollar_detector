@@ -1,6 +1,10 @@
 #ifndef GRADMAG_H
 #define GRADMAG_H
 
+#include "cv.h"
+
+using namespace cv;
+
 class GradientMagnitudeChannel
 {
 public:
@@ -12,8 +16,12 @@ public:
     int nChannels;
     String padWith;
 
-	//comes from gradientMex.cpp, the return still needs a type
-	void mGradMag(int, Mat, int, Mat);
+	//all of the next procedures still need proper names and maybe some refactoring
+	//they are used in Pyramid.cpp's computeSingleScaleChannelFeaturePyramid(Mat)
+	Mat* mGradMag(Mat, int, int)
+	void gradMag(float*, float*, float*, int, int, int, bool)
+	void grad1(float*, float*, float*, int, int, int);
+	float* acosTable();
 };
 
 #endif

@@ -10,9 +10,9 @@ using namespace cv;
 class ColorSpace
 {
 public:
-    	int enabled;
-    	int smooth;
-    	String colorSpaceType;
+    int enabled;
+    int smooth;
+    String colorSpaceType;
 	int nChannels;
 	String padWith;
 

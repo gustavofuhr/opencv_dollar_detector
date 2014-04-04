@@ -10,7 +10,7 @@
 class Info
 {
 public:
-    	ColorChannel colorCh;
+    ColorChannel colorCh;
 	GradientMagnitudeChannel gradMag;
 	GradientHistogramChannel gradHist;
 };

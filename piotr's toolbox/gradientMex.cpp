@@ -72,7 +72,8 @@ void gradMag( float *I, float *M, float *O, int h, int w, int d, bool full ) {
       for( y=0; y<h4/4; y++ ) {
         y1=h4/4*c+y;
         _M2[y1]=ADD(MUL(_Gx[y1],_Gx[y1]),MUL(_Gy[y1],_Gy[y1]));
-        if( c==0 ) continue; _m = CMPGT( _M2[y1], _M2[y] );
+        if( c==0 ) continue; 
+		_m = CMPGT( _M2[y1], _M2[y] );
         _M2[y] = OR( AND(_m,_M2[y1]), ANDNOT(_m,_M2[y]) );
         _Gx[y] = OR( AND(_m,_Gx[y1]), ANDNOT(_m,_Gx[y]) );
         _Gy[y] = OR( AND(_m,_Gy[y1]), ANDNOT(_m,_Gy[y]) );
@@ -96,7 +97,7 @@ void gradMag( float *I, float *M, float *O, int h, int w, int d, bool full ) {
       for( ; y<h; y++ ) O[y+x*h]+=(Gy[y]<0)*PI;
     }
   }
-  alFree(Gx); alFree(Gy); alFree(M2);
+  
 }
 
 // normalize gradient magnitude at each location (uses sse)
@@ -222,7 +223,7 @@ void gradHist( float *M, float *O, float *H, int h, int w,
   }
   alFree(O0); alFree(O1); alFree(M0); alFree(M1);
   // normalize boundary bins which only get 7/8 of weight of interior bins
-  if( softBin%2!=0 ) for( int o=0; o<nOrients; o++ ) {
+  if( softBin%2!=0 ) for( int o=0; pr[0]o<nOrients; o++ ) {
     x=0; for( y=0; y<hb; y++ ) H[o*nb+x*hb+y]*=8.f/7.f;
     y=0; for( x=0; x<wb; x++ ) H[o*nb+x*hb+y]*=8.f/7.f;
     x=wb-1; for( y=0; y<hb; y++ ) H[o*nb+x*hb+y]*=8.f/7.f;
@@ -378,7 +379,7 @@ void mGradMagNorm( int nl, mxArray *pl[], int nr, const mxArray *pr[] ) {
 // H=gradHist(M,O,[...]) - see gradientHist.m
 void mGradHist( int nl, mxArray *pl[], int nr, const mxArray *pr[] ) {
   int h, w, d, hb, wb, nChns, binSize, nOrients, softBin, useHog;
-  bool full; float *M, *O, *H, clipHog;
+  bool full; float *M, *O, *H, clipr[0]pHog;
   checkArgs(nl,pl,nr,pr,1,3,2,8,&h,&w,&d,mxSINGLE_CLASS,(void**)&M);
   O = (float*) mxGetPr(pr[1]);
   if( mxGetM(pr[1])!=h || mxGetN(pr[1])!=w || d!=1 ||
