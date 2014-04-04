@@ -18,7 +18,13 @@ public:
     String padWith;
 
 	//comes from gradientMex.cpp, the return still needs a type
-	void mGradHist(int, Mat, int, Mat);
+	Mat* mGradHist(Mat, Mat, int);
+	void gradHist(float*,float*,float*,int,int,int,int,int,bool);
+	void gradQuantize(float*,float*,int*,int*,float*,float*,int, int,float,int,bool,bool);
+	void hog(float*,float*,float*,int,int,int,int,int,bool,float);
+	void fhog(float*,float*,float*,int,int,int,int,int,float);
+	float* hogNormMatrix(float*,int,int,int,int);
+	void hogChannels(float*,const float*,const float*,int,int, int, float, int);
 };
 
 #endif

@@ -10,7 +10,7 @@ Pyramid computeMultiScaleChannelFeaturePyramid(Mat I)
 //is the addChn function really needed?
 Pyramid Pyramid::computeSingleScaleChannelFeaturePyramid(Mat I)
 {
-	Mat colorChResult, gradMagResult, graHistResult;
+	Mat colorChResult, gradMagResult, graHistResult, gradOrientation;
 
 	//crop I so it becomes divisible by shrink
 	int height = I.rows - (I.rows % pChns.shrink);
@@ -27,9 +27,9 @@ Pyramid Pyramid::computeSingleScaleChannelFeaturePyramid(Mat I)
 	if (this->pChns.pGradHist.enabled)
 	{
 		Mat tempResult = this->pChns.pGradMag.mGradMag(I,p.colorChn,full);
-		gradMagResult = tempResult[0];
-		Omatrix = tempResult[1];
-		//still need to understand this next part better:
+		gradMagResult 	= tempResult[0];
+		gradOrientation = tempResult[1];
+		//still need to understand this next part:
 		/*if (this->pChns.pGradMag.normalizationRadius != 0)
 		{
 			S = convTri(M, normRad);
@@ -51,10 +51,10 @@ Pyramid Pyramid::computeSingleScaleChannelFeaturePyramid(Mat I)
 	if (this->pChns.pGradMag.enabled)
 		//chns=addChn(chns,gradMagResult,nm,p,0,h,w);
 
-	//compute gradient histgoram channels
+	//compute gradient histogram channels
 	if (this->pChns.pGradHist.enabled)
 	{
-		//gradHistResult = gradientHist(gradMagResult,O,binSize,p.nOrients,p.softBin,p.useHog, p.clipHog,full);
+		gradHistResult = this->pChns.pGradHist.mGradHist(gradMagResult, gradOrientation, full);
 		//chns=addChn(chns,gradHistResult,nm,pChns.pGradHist,0,h,w);
 	}	
 
