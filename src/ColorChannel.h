@@ -7,7 +7,7 @@ enum method { CONV_BOX, CONV_TRI, CONV_11, CONV_TRI1, CONV_MAX};
 
 using namespace cv;
 
-class ColorSpace
+class ColorChannel
 {
 public:
     int enabled;

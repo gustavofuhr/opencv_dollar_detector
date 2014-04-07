@@ -5,11 +5,15 @@
 #include "GradientMagnitudeChannel.h"
 #include "QuantizedGradientChannel.h"
 
-
-//this whole class might be useless, it is the same as ChannelFeatures
+//return class for the chnsCompute function
+//it contains the channels and the result of the computations
+//i might think of another way of doing this (or another name, at least), but i need to know how it si used first.
 class Info
 {
 public:
+	Mat image;
+	Mat gradientMagnitude;
+	Mat gradientHistogram;
     ColorChannel colorCh;
 	GradientMagnitudeChannel gradMag;
 	GradientHistogramChannel gradHist;

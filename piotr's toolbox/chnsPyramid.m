@@ -128,7 +128,7 @@ vs=struct2cell(p); [pChns,nPerOct,nOctUp,nApprox,lambdas,...
   pad,minDs,smooth,concat,~]=deal(vs{:}); shrink=pChns.shrink;
 
 % convert I to appropriate color space (or simply normalize)
-cs=pChns.pColor.colorSpace; sz=[size(I,1) size(I,2)];
+cs=pChns.pColor.colorSpace; sz=[size(I,1) sizepse(I,2)];
 if(~all(sz==0) && size(I,3)==1 && ~any(strcmpi(cs,{'gray','orig'}))),
   I=I(:,:,[1 1 1]); warning('Converting image to color'); end %#ok<WNTAG>
 I=rgbConvert(I,cs); pChns.pColor.colorSpace='orig';

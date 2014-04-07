@@ -1,4 +1,5 @@
 #include "ChannelFeatures.h"
+#include "Info.h"
 
 class Pyramid
 {
@@ -21,6 +22,6 @@ class Pyramid
 
 
         Pyramid computeMultiScaleChannelFeaturePyramid(Mat);
-        Pyramid computeSingleScaleChannelFeaturePyramid(Mat, Channel);
+        Info computeSingleScaleChannelFeaturePyramid(Mat);
         Mat TriangleFilterConvolution(Mat I, int r, int s, int nomex);
 };

@@ -3,14 +3,25 @@
 //translation of the chnsPyramid.m file
 Pyramid computeMultiScaleChannelFeaturePyramid(Mat I)
 {
-    ;
+	Mat convertedImage;
+	//if we are to allow incomplete Pyramids, we need to set what has to value to the default.
+	//for now, it wont be implemented. (lines 115-128 of chnsPyramid.m)
+
+	//convert I to appropriate color space (or simply normalize)
+    convertedImage = this->pChns.pColor.rgbConvert(I);
+	this->pChns.pColor.colorSpaceType = "orig";
+
+	//get scales at which to compute features and list of real/approx scales
+	/*
+	[scales,scaleshw]=getScales(nPerOct,nOctUp,minDs,shrink,sz);
+	*/
 }
 
 //translation of the chnsCompute.m file
-//is the addChn function really needed?
-Pyramid Pyramid::computeSingleScaleChannelFeaturePyramid(Mat I)
+Info Pyramid::computeSingleScaleChannelFeaturePyramid(Mat I)
 {
-	Mat colorChResult, gradMagResult, graHistResult, gradOrientation;
+	Mat gradOrientation;
+	Info result;
 
 	//crop I so it becomes divisible by shrink
 	int height = I.rows - (I.rows % pChns.shrink);
@@ -18,16 +29,16 @@ Pyramid Pyramid::computeSingleScaleChannelFeaturePyramid(Mat I)
 
 
 	//compute color channels
-	colorChResult = this->pChns.pColor.rgbConvert(I);
-	colorChResult = this->pChns.pColor.convConst(colorChResult, CONV_TRI);
+	result.image = this->pChns.pColor.rgbConvert(I);
+	result.image = this->pChns.pColor.convConst(colorChResult, CONV_TRI);
 	if (this->pChns.pColor.enabled)
-		//chns = addChn(chns,I,nm,p,"replicate",h,w);
+		result.colorCh = this->pChns.pColor;
 
 	//compute gradient magnitude channel
 	if (this->pChns.pGradHist.enabled)
 	{
-		Mat tempResult = this->pChns.pGradMag.mGradMag(I,p.colorChn,full);
-		gradMagResult 	= tempResult[0];
+		Mat tempResult = this->pChns.pGradMag.mGradMag(result.image,result.colorChn,full);
+		result.gradientMagnitude = tempResult[0];
 		gradOrientation = tempResult[1];
 		//still need to understand this next part:
 		/*if (this->pChns.pGradMag.normalizationRadius != 0)
@@ -40,7 +51,7 @@ Pyramid Pyramid::computeSingleScaleChannelFeaturePyramid(Mat I)
 	{
 		if (this->pChns.pGradMag.enabled)
 		{
-			gradMagResult = (this->pChns.pGradMag.mGradMag(I,p.colorChn,full))[0];			
+			result.gradMagnitude = (this->pChns.pGradMag.mGradMag(result.image,p.colorChn,full))[0];			
 			/*if (this->pChns.pGradMag.normalizationRadius != 0)
 			{
 				S = convTri(M, normRad);
@@ -48,17 +59,16 @@ Pyramid Pyramid::computeSingleScaleChannelFeaturePyramid(Mat I)
 			}*/
 		}	
 	}
-	if (this->pChns.pGradMag.enabled)
-		//chns=addChn(chns,gradMagResult,nm,p,0,h,w);
 
 	//compute gradient histogram channels
 	if (this->pChns.pGradHist.enabled)
 	{
-		gradHistResult = this->pChns.pGradHist.mGradHist(gradMagResult, gradOrientation, full);
-		//chns=addChn(chns,gradHistResult,nm,pChns.pGradHist,0,h,w);
+		result.gradientHistogram = this->pChns.pGradHist.mGradHist(result.gradientMagnitude, gradOrientation, full);
 	}	
 
 	//for now, i wont add computation of custom channels
+	
+	return result;
 }
 
 Mat Pyramid::TriangleFilterConvolution(Mat I, int r, int s, int nomex)
@@ -111,3 +121,58 @@ Mat Pyramid::TriangleFilterConvolution(Mat I, int r, int s, int nomex)
     }
     return result;
 }
+
+void Pyramid::getScales(int h, int w, int shrink)
+{
+	int nScales; 
+	int minSize, bgDim, smDim;
+	if (h!=0 && w!=0)
+	{
+		if (h <= w)
+		{
+			bgDim = w;
+			smDim = h;
+			minSizeRatio = h / minImgSize[0];
+		}
+		else
+		{
+			bgDim = h;
+			smDim = w;
+			minSizeRatio = w / minImgSize[1];
+		}
+		nScales = floor(scalesPerOctave*(upsampledOctaves+log2(minSizeRatio))+1);
+		double scales[nScales];
+		//this next for is made to substitute the following:
+		//scales = 2.^(-(0:nScales-1)/nPerOct+nOctUp);
+		for (int i=0; i < nScales; i++)
+		{
+			scales[i]=pow(-(i/scalesPerOctave+upsampledOctaves),2);
+			s0=(round(smDim*scales[i]/shrink)*shrink-.25*shrink)./smDim;
+			s1=(round(smDim*scales[i]/shrink)*shrink+.25*shrink)./smDim;
+			//the folowing will substitute ss=(0:.01:1-epsilon())*(s1-s0)+s0;
+			double ss[round(1-epsilon()/0.01)], es0[round(1-epsilon()/0.01)], es1[round(1-epsilon()/0.01)];						
+			int ssIndex = 0;			
+			for (int j=0; j < 1-epsilon(); j = j + 0.01)
+			{
+				ss[ssIndex] = j*(s1-s0)+s0;
+				es0[ssIndex]=smDim*ss[ssIndex]; 
+				es0[ssIndex]=abs(es0-round(es0/shrink)*shrink);
+				es1[ssIndex]=bgDim*ss[ssIndex]; 
+				es1[ssIndex]=abs(es1-round(es1/shrink)*shrink);
+				ssIndex++;
+			}
+			//gotta test to see exactly what this is doing.
+			/*[~,x]=min(max(es0,es1)); 
+			scales(i)=ss(x);*/
+		}
+		/*
+		kp=[scales(1:end-1)~=scales(2:end) true]; scales=scales(kp);
+		scaleshw = [round(sz(1)*scales/shrink)*shrink/sz(1);
+  round(sz(2)*scales/shrink)*shrink/sz(2)]';
+		*/
+	}
+	else //error
+		;
+}
+
+

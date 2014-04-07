@@ -5,10 +5,10 @@
 class ChannelFeatures
 {
 public:
-	int shrink;
+	int shrink; //amount to subsample the computed channels
    	ColorChannel pColor;
 	GradientMagnitudeChannel pGradMag;
 	QuantizedGradientChannel pGradHist;
-	//pCustom //custom channels (i dont think it is used)
+	//pCustom //to use custom channels (not implemented)
 	int complete;
 };
