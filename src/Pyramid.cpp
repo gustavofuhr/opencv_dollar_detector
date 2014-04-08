@@ -14,7 +14,33 @@ Pyramid computeMultiScaleChannelFeaturePyramid(Mat I)
 	//get scales at which to compute features and list of real/approx scales
 	/*
 	[scales,scaleshw]=getScales(nPerOct,nOctUp,minDs,shrink,sz);
+	//next, there's a bunch of weirdness happening:	
+	nScales=length(scales); if(1), isR=1; else isR=1+nOctUp*nPerOct; end
+isR=isR:nApprox+1:nScales; isA=1:nScales; isA(isR)=[];
+j=[0 floor((isR(1:end-1)+isR(2:end))/2) nScales];
+isN=1:nScales; for i=1:length(isR), isN(j(i)+1:j(i+1))=isR(i); end
+nTypes=0; data=cell(nScales,nTypes); info=struct([]);
 	*/
+	
+	//compute image pyramid [real scales]
+	//there is a for statement where the index i can only assume values of the array isR
+	//so i would guess isR could be useless
+	for (int i=0; i < nScales; i = i + approximatedScales + 1)
+	{
+		int is[nScales/approximatedScales+1]; //needs a better name
+		int isIndex = 0;
+		bool isError = false;
+		for (int j=1+upsampledOctaves*scalesPerOctave; j < nScales; j = j+approximatedScales+1)
+		{
+			is[isIndex] = j;	
+			if (is[isIndex] < 2)
+				isError = true;
+			isIndex++;	
+		}	
+		if (isIndex > 1)
+			//is=is(2:3)
+	}
+	
 }
 
 //translation of the chnsCompute.m file
@@ -126,6 +152,7 @@ void Pyramid::getScales(int h, int w, int shrink)
 {
 	int nScales; 
 	int minSize, bgDim, smDim;
+	
 	if (h!=0 && w!=0)
 	{
 		if (h <= w)
@@ -140,16 +167,20 @@ void Pyramid::getScales(int h, int w, int shrink)
 			smDim = w;
 			minSizeRatio = w / minImgSize[1];
 		}
+
 		nScales = floor(scalesPerOctave*(upsampledOctaves+log2(minSizeRatio))+1);
 		double scales[nScales];
-		//this next for is made to substitute the following:
+		double tempMaxScale[nscales];
+
+		//this next for statement will substitute the following:
 		//scales = 2.^(-(0:nScales-1)/nPerOct+nOctUp);
 		for (int i=0; i < nScales; i++)
 		{
 			scales[i]=pow(-(i/scalesPerOctave+upsampledOctaves),2);
 			s0=(round(smDim*scales[i]/shrink)*shrink-.25*shrink)./smDim;
 			s1=(round(smDim*scales[i]/shrink)*shrink+.25*shrink)./smDim;
-			//the folowing will substitute ss=(0:.01:1-epsilon())*(s1-s0)+s0;
+
+			//what follows will substitute ss=(0:.01:1-epsilon())*(s1-s0)+s0;
 			double ss[round(1-epsilon()/0.01)], es0[round(1-epsilon()/0.01)], es1[round(1-epsilon()/0.01)];						
 			int ssIndex = 0;			
 			for (int j=0; j < 1-epsilon(); j = j + 0.01)
@@ -161,17 +192,40 @@ void Pyramid::getScales(int h, int w, int shrink)
 				es1[ssIndex]=abs(es1-round(es1/shrink)*shrink);
 				ssIndex++;
 			}
-			//gotta test to see exactly what this is doing.
-			/*[~,x]=min(max(es0,es1)); 
-			scales(i)=ss(x);*/
+
+			//this is the max part of [~,x]=min(max(es0,es1)); 
+			for (int j=0; j < ssIndex; j++)
+				if (es0[j] > es1[j])
+					tempMaxScale[j] = es0[j];
+				else
+					tempMaxScale[j] = es1[j];
+
+			double minScaleValue = tempMaxScale[0];
+			int minScaleIndex = 0;
+			//this is the min part of [~,x]=min(max(es0,es1)); 
+			for (int j=1; j < ssIndex; j++)
+				if (tempMaxScale[j] < minScaleValue)
+				{
+					minScaleValue = tempMaxScale[j];
+					minScaleIndex = j;
+				}
+			
+			//scales(i)=ss(x);
+			scales[i] = ss[minScaleIndex];		
 		}
-		/*
-		kp=[scales(1:end-1)~=scales(2:end) true]; scales=scales(kp);
-		scaleshw = [round(sz(1)*scales/shrink)*shrink/sz(1);
-  round(sz(2)*scales/shrink)*shrink/sz(2)]';
-		*/
+		//the kp variable needs to be set up
+		//i'm yet to understand the purpose of this:		
+		//kp=[scales(1:end-1)~=scales(2:end) true]; 
+		
+		//next, the scales array is changed using kp:		
+		//scales=scales(kp);
+		
+		scaleshw = [round(h*scales/shrink)*shrink/h;
+  round(w*scales/shrink)*shrink/w]';
+		
+		//both scales and scalehw are returned
 	}
-	else //error
+	else //error, height or width are wrong
 		;
 }
 
