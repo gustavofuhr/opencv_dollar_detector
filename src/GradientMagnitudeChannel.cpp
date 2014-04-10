@@ -35,6 +35,29 @@ Mat* mGradMag(Mat I, int channel, int full)
 	return resultMatrix;
 }
 
+// gradMagNorm( M, S, norm ) - operates on M - see gradientMag.m
+//gradientMex('gradientMagNorm',M,S,normConst);
+// normalize gradient magnitude at each location (uses sse) 
+Mat gradMagNorm(float* M, float* S) {
+	Mat resultingM;
+	__m128 *_M, *_S, _norm; 
+	int i=0, n=h*w, n4=n/4;
+  	_S = (__m128*) S; 
+	_M = (__m128*) M; 
+	_norm = SET(normalizationConstant);
+  	bool sse = !(size_t(M)&15) && !(size_t(S)&15);
+  	if(sse) 
+	{ 
+		for(; i<n4; i++) 
+			*_M++=MUL(*_M,RCP(ADD(*_S++,_norm))); 
+		i*=4; 
+	}
+  	for(; i<n; i++) 
+		M[i] /= (S[i] + normalizationConstant);
+	resultingM.data = M;
+	return resultingM;
+}
+
 // compute gradient magnitude and orientation at each location
 // gradMag(I, M, O, h, w, d, full>0 );
 void gradMag( float *I, float *M, float *O, int h, int w, int d, bool full ) {
@@ -78,7 +101,6 @@ void gradMag( float *I, float *M, float *O, int h, int w, int d, bool full ) {
       for( ; y<h; y++ ) O[y+x*h]+=(Gy[y]<0)*PI;
     }
   }
-  
 }
 
 // compute x and y gradients for just one column (uses sse)

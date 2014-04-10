@@ -1,50 +1,58 @@
 #include "ColorChannel.h"
 
-Mat convTri1 (Mat I, int p, int s)
+//convolutions taken from convConst.cpp
+Mat convolution(Mat source, int radius, int s, int flag)
 {
-    float nrm = 1.0f/((p+2)*(p+2));
-    int i, j, h0 = I.rows-(I.rows%4);
-    float *Il, *Im, *Ir, *T=(float*)alMalloc(I.rows*sizeof(float),16);
-    for (int d0=0; d0<3; d0++) //imagino que o limite aqui deva ser o número de canais de cor
-        for (i=s/2; i < I.cols; i = i + s)
-        {
-            Il=Im=Ir=I+i*I.rows+d0*I.rows*I.cols;
-            if(i>0)
-                Il-=h;
-            if(i<w-1)
-                Ir+=h;
-            for( j=0; j<h0; j+=4 )
-                STR(T[j],MUL(nrm,ADD(ADD(LDu(Il[j]),MUL(p,LDu(Im[j]))),LDu(Ir[j]))));
-            for( j=h0; j<h; j++ )
-                T[j]=nrm*(Il[j]+p*Im[j]+Ir[j]);
-            convTri1Y(T,O,h,p,s);
-            O+=h/s;
-        }
+	float* I = source.data;
+	float* O;
+	Mat result;
+
+	switch(flag)
+	{
+		case CONV_TRI: convTri(I, O, source.rows, source.cols, source.dims, radius, s);
+		case CONV_TRI1:
+	}
+	
+	result.data = O;
+	return result;
 }
 
-Mat ColorSpace::convConst(Mat I, int r, int s, int tag)
-{
-    Mat result;
-    switch(tag)
-    {
-        case CONV_11:   break;
-        case CONV_BOX:  break;
-        case CONV_MAX:  break;
-        case CONV_TRI:  break;
-        case CONV_TRI1: break;
+// convolve I by a 2rx1 triangle filter (uses SSE)
+void convTri( float *I, float *O, int h, int w, int d, int r, int s ) {
+  r++; float nrm = 1.0f/(r*r*r*r); int i, j, k=(s-1)/2, h0, h1, w0;
+  if(h%4==0) h0=h1=h; else { h0=h-(h%4); h1=h0+4; } w0=(w/s)*s;
+  float *T=(float*) alMalloc(2*h1*sizeof(float),16), *U=T+h1;
+  while(d-- > 0) {
+    // initialize T and U
+    for(j=0; j<h0; j+=4) STR(U[j], STR(T[j], LDu(I[j])));
+    for(i=1; i<r; i++) for(j=0; j<h0; j+=4) INC(U[j],INC(T[j],LDu(I[j+i*h])));
+    for(j=0; j<h0; j+=4) STR(U[j],MUL(nrm,(SUB(MUL(2,LD(U[j])),LD(T[j])))));
+    for(j=0; j<h0; j+=4) STR(T[j],0);
+    for(j=h0; j<h; j++ ) U[j]=T[j]=I[j];
+    for(i=1; i<r; i++) for(j=h0; j<h; j++ ) U[j]+=T[j]+=I[j+i*h];
+    for(j=h0; j<h; j++ ) { U[j] = nrm * (2*U[j]-T[j]); T[j]=0; }
+    // prepare and convolve each column in turn
+    for( i=0; i<w0; i++ ) {
+      float *Il, *Ir, *Im; Il=Ir=Im=I; Im+=(i-1)*h;
+      if( i<=r ) { Il+=(r-i)*h; Ir+=(r-1+i)*h; }
+      else if( i<=w-r ) { Il-=(r+1-i)*h; Ir+=(r-1+i)*h; }
+      else { Il-=(r+1-i)*h; Ir+=(2*w-r-i)*h; }
+      if(i) for( j=0; j<h0; j+=4 ) {
+        __m128 del = SUB(ADD(LDu(Il[j]),LDu(Ir[j])),MUL(2,LDu(Im[j])));
+        INC(U[j], MUL(nrm,(INC(T[j],del))));
+      }
+      if(i) for( j=h0; j<h; j++ ) U[j]+=nrm*(T[j]+=Il[j]+Ir[j]-2*Im[j]);
+      k++; if(k==s) { k=0; convTriY(U,O,h,r-1,s); O+=h/s; }
     }
-    return result;
+    I+=w*h;
+  }
+  alFree(T);
 }
 
-Mat ColorSpace::convolutionWithTriangleFilter(Mat I)
-{
-    Mat result;
-    if (this->smooth == 1)
-        result = convConst(I, 12/this->smooth/(this->smooth+2), s, CONVTRI1);
-    return result;
-}
 
-Mat ColorSpace::rgbConvert(Mat I)
+/******************************************************/
+//colorspace conversions
+Mat ColorChannel::rgbConvert(Mat I)
 {
     Mat result;
     if (this->colorSpaceType == "luv")

@@ -7,7 +7,7 @@
 
 //return class for the chnsCompute function
 //it contains the channels and the result of the computations
-//i might think of another way of doing this (or another name, at least), but i need to know how it si used first.
+//i might think of another way of doing this (or another name, at least), but i need to know how it is used first.
 class Info
 {
 public:
@@ -16,6 +16,6 @@ public:
 	Mat gradientHistogram;
     ColorChannel colorCh;
 	GradientMagnitudeChannel gradMag;
-	GradientHistogramChannel gradHist;
+	QuantizedGradientChannel gradHist;
 };
 #endif

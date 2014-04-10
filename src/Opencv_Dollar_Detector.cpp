@@ -1,4 +1,4 @@
-#include "CppAcfDetect.h"
+#include "Opencv_Dollar_Detector.h"
 
 int main(int argc, char** argv) 
 {

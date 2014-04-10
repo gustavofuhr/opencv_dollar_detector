@@ -4,7 +4,7 @@
 Pyramid computeMultiScaleChannelFeaturePyramid(Mat I)
 {
 	Mat convertedImage;
-	//if we are to allow incomplete Pyramids, we need to set what has to value to the default.
+	//if we are to allow incomplete Pyramids, we need to set some values to default.
 	//for now, it wont be implemented. (lines 115-128 of chnsPyramid.m)
 
 	//convert I to appropriate color space (or simply normalize)
@@ -53,36 +53,35 @@ Info Pyramid::computeSingleScaleChannelFeaturePyramid(Mat I)
 	int height = I.rows - (I.rows % pChns.shrink);
 	int width =  I.cols - (I.cols % pChns.shrink);
 
-
 	//compute color channels
 	result.image = this->pChns.pColor.rgbConvert(I);
-	result.image = this->pChns.pColor.convConst(colorChResult, CONV_TRI);
+	result.image = this->pChns.pColor.convolution(result.image, this->pChns.pColor.smooth, 1, CONV_TRI);
 	if (this->pChns.pColor.enabled)
 		result.colorCh = this->pChns.pColor;
 
 	//compute gradient magnitude channel
 	if (this->pChns.pGradHist.enabled)
 	{
-		Mat tempResult = this->pChns.pGradMag.mGradMag(result.image,result.colorChn,full);
+		Mat *tempResult = this->pChns.pGradMag.mGradMag(result.image,result.colorChn,full);
 		result.gradientMagnitude = tempResult[0];
 		gradOrientation = tempResult[1];
 		//still need to understand this next part:
-		/*if (this->pChns.pGradMag.normalizationRadius != 0)
+		if (this->pChns.pGradMag.normalizationRadius != 0)
 		{
-			S = convTri(M, normRad);
-			//gradientMex('gradientMagNorm',M,S,normConst); 
-		}*/
+			float* S = (this->pChns.pColor.convolution(M, this->pChns.pGradMag.normalizationRadius, 1, CONV_TRI)).data;
+			result.gradientMagnitude = this->pChns.pGradMag.gradMagNorm(result.gradientMagnitude,S); 
+		}
 	}		
 	else
 	{
 		if (this->pChns.pGradMag.enabled)
 		{
 			result.gradMagnitude = (this->pChns.pGradMag.mGradMag(result.image,p.colorChn,full))[0];			
-			/*if (this->pChns.pGradMag.normalizationRadius != 0)
+			if (this->pChns.pGradMag.normalizationRadius != 0)
 			{
-				S = convTri(M, normRad);
-				//gradientMex('gradientMagNorm',M,S,normConst); 
-			}*/
+				float* S = (this->pChns.pColor.convolution(M, this->pChns.pGradMag.normalizationRadius, 1, CONV_TRI)).data;
+			result.gradientMagnitude = this->pChns.pGradMag.gradMagNorm(result.gradientMagnitude,S); 
+			}
 		}	
 	}
 
@@ -97,7 +96,7 @@ Info Pyramid::computeSingleScaleChannelFeaturePyramid(Mat I)
 	return result;
 }
 
-Mat Pyramid::TriangleFilterConvolution(Mat I, int r, int s, int nomex)
+/*Mat Pyramid::TriangleFilterConvolution(Mat I, int r, int s, int nomex)
 {
     Mat result = I;
     if(!I.empty() && !(r==0 && s==1))
@@ -137,17 +136,19 @@ Mat Pyramid::TriangleFilterConvolution(Mat I, int r, int s, int nomex)
                 {
                     int t=floor(s/2)+1;
                     Mat temp;
-                    /*for (int i=t; i < result.rows-s+t+1; i = i + s)
+                    for (int i=t; i < result.rows-s+t+1; i = i + s)
                         for (int j=t; j < result.cols-s+t+1; j = j + s)
-                            temp*/
+                            temp
                     //result = result(t:s:end-s+t,t:s:end-s+t,:);
                 }
             }
         }
     }
     return result;
-}
+}*/
 
+//set each scale s such that max(abs(round(sz*s/shrink)*shrink-sz*s)) is minimized 
+//without changing the smaller dim of sz (tricky algebra)
 void Pyramid::getScales(int h, int w, int shrink)
 {
 	int nScales; 
@@ -200,9 +201,9 @@ void Pyramid::getScales(int h, int w, int shrink)
 				else
 					tempMaxScale[j] = es1[j];
 
+			//this is the min part of [~,x]=min(max(es0,es1));
 			double minScaleValue = tempMaxScale[0];
-			int minScaleIndex = 0;
-			//this is the min part of [~,x]=min(max(es0,es1)); 
+			int minScaleIndex = 0; 
 			for (int j=1; j < ssIndex; j++)
 				if (tempMaxScale[j] < minScaleValue)
 				{

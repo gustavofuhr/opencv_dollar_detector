@@ -18,8 +18,8 @@ public:
 
 	//all of the next procedures still need proper names and maybe some refactoring
 	//they are used in Pyramid.cpp's computeSingleScaleChannelFeaturePyramid(Mat)
-	Mat* mGradMag(Mat, int, int)
-	void gradMag(float*, float*, float*, int, int, int, bool)
+	Mat* mGradMag(Mat, int, int);
+	void gradMag(float*, float*, float*, int, int, int, bool);
 	void grad1(float*, float*, float*, int, int, int);
 	float* acosTable();
 };
