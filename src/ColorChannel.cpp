@@ -1,16 +1,30 @@
 #include "ColorChannel.h"
 
-//convolutions taken from convConst.cpp
+//convolutions taken from the convConst.cpp file
+//I'm going to add just the ones that are actually called
+
+//this is the wrapper function that call the appropriate one
+//this one could go away, if we refactor the other ones to
+//operate on cvMat structures rather than just float*
 Mat convolution(Mat source, int radius, int s, int flag)
 {
 	float* I = source.data;
 	float* O;
 	Mat result;
 
+	h = source.rows;
+	w = source.cols;
+	d = source.dims;
+
 	switch(flag)
 	{
-		case CONV_TRI: convTri(I, O, source.rows, source.cols, source.dims, radius, s);
-		case CONV_TRI1:
+		case CONV_TRI: 	
+					triangleFilterConvolution(I, O, h, w, d, radius, s);
+					break;
+		case CONV_TRI1: 
+					int p = 12/radius/(radius+2)-2;
+					convTri1(I, O, h, w, d, p, s);
+					break;
 	}
 	
 	result.data = O;
@@ -18,7 +32,8 @@ Mat convolution(Mat source, int radius, int s, int flag)
 }
 
 // convolve I by a 2rx1 triangle filter (uses SSE)
-void convTri( float *I, float *O, int h, int w, int d, int r, int s ) {
+//aka convTri
+void triangleFilterConvolution( float *I, float *O, int h, int w, int d, int r, int s ) {
   r++; float nrm = 1.0f/(r*r*r*r); int i, j, k=(s-1)/2, h0, h1, w0;
   if(h%4==0) h0=h1=h; else { h0=h-(h%4); h1=h0+4; } w0=(w/s)*s;
   float *T=(float*) alMalloc(2*h1*sizeof(float),16), *U=T+h1;
@@ -48,6 +63,42 @@ void convTri( float *I, float *O, int h, int w, int d, int r, int s ) {
   }
   alFree(T);
 }
+
+// convolve one column of I by [1 p 1] filter (uses SSE)
+void convTri1Y( float *I, float *O, int h, float p, int s ) {
+  #define C4(m,o) ADD(ADD(LDu(I[m*j-1+o]),MUL(p,LDu(I[m*j+o]))),LDu(I[m*j+1+o]))
+  int j=0, k=((~((size_t) O) + 1) & 15)/4, h2=(h-1)/2;
+  if( s==2 ) {
+    for( ; j<k; j++ ) O[j]=I[2*j]+p*I[2*j+1]+I[2*j+2];
+    for( ; j<h2-4; j+=4 ) STR(O[j],_mm_shuffle_ps(C4(2,1),C4(2,5),136));
+    for( ; j<h2; j++ ) O[j]=I[2*j]+p*I[2*j+1]+I[2*j+2];
+    if( h%2==0 ) O[j]=I[2*j]+(1+p)*I[2*j+1];
+  } else {
+    O[j]=(1+p)*I[j]+I[j+1]; j++; if(k==0) k=(h<=4) ? h-1 : 4;
+    for( ; j<k; j++ ) O[j]=I[j-1]+p*I[j]+I[j+1];
+    for( ; j<h-4; j+=4 ) STR(O[j],C4(1,0));
+    for( ; j<h-1; j++ ) O[j]=I[j-1]+p*I[j]+I[j+1];
+    O[j]=I[j-1]+(1+p)*I[j];
+  }
+  #undef C4
+}
+
+// convTri1( A, B, ns[0], ns[1], d, p, s );
+// convConst('convTri1',I,12/r/(r+2)-2,s);
+// convolve I by [1 p 1] filter (uses SSE)
+void convTri1( float *I, float *O, int h, int w, int d, float p, int s ) {
+  const float nrm = 1.0f/((p+2)*(p+2)); int i, j, h0=h-(h%4);
+  float *Il, *Im, *Ir, *T=(float*) alMalloc(h*sizeof(float),16);
+  for( int d0=0; d0<d; d0++ ) for( i=s/2; i<w; i+=s ) {
+    Il=Im=Ir=I+i*h+d0*h*w; if(i>0) Il-=h; if(i<w-1) Ir+=h;
+    for( j=0; j<h0; j+=4 )
+      STR(T[j],MUL(nrm,ADD(ADD(LDu(Il[j]),MUL(p,LDu(Im[j]))),LDu(Ir[j]))));
+    for( j=h0; j<h; j++ ) T[j]=nrm*(Il[j]+p*Im[j]+Ir[j]);
+    convTri1Y(T,O,h,p,s); O+=h/s;
+  }
+  alFree(T);
+}
+
 
 
 /******************************************************/

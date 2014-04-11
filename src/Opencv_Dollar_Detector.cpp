@@ -6,9 +6,12 @@ int main(int argc, char** argv)
 	Detector d;
 
 	//call to read the detector file
-	d.readDetectorModel(DETECTOR_FILE);
+	//d.readDetectorModel(DETECTOR_FILE);
+	//d.readDetectorModel("../opencv_dollar_detector/detector.xml");
 
-	BoundingBox* bbs = d.acfDetect(image);
+	image = imread("../opencv_dollar_detector/frame0254.png");
+
+	//BoundingBox* bbs = d.acfDetect(image);
 
 	return 0;
 }

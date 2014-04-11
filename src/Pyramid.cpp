@@ -22,24 +22,29 @@ isN=1:nScales; for i=1:length(isR), isN(j(i)+1:j(i+1))=isR(i); end
 nTypes=0; data=cell(nScales,nTypes); info=struct([]);
 	*/
 	
-	//compute image pyramid [real scales]
+	//compute image pyramid, from chnsPyramid.m, line 144
 	//there is a for statement where the index i can only assume values of the array isR
-	//so i would guess isR could be useless
+	//I guess isR might be useless, if we do it like this instead:
 	for (int i=0; i < nScales; i = i + approximatedScales + 1)
 	{
-		int is[nScales/approximatedScales+1]; //needs a better name
-		int isIndex = 0;
-		bool isError = false;
-		for (int j=1+upsampledOctaves*scalesPerOctave; j < nScales; j = j+approximatedScales+1)
-		{
-			is[isIndex] = j;	
-			if (is[isIndex] < 2)
-				isError = true;
-			isIndex++;	
-		}	
-		if (isIndex > 1)
-			//is=is(2:3)
+		//still have to add what's inside this
 	}
+
+	//if lambdas not specified compute image specific lambdas
+	//chnsPyramid.m, line 154
+	int is[nScales/approximatedScales+1]; //needs a better name
+	int isIndex = 0;
+	bool isError = false;
+	for (int j=1+upsampledOctaves*scalesPerOctave; j < nScales; j = j+approximatedScales+1)
+	{
+		is[isIndex] = j;	
+		if (is[isIndex] < 2)
+			isError = true;
+		isIndex++;	
+	}	
+	if (isIndex > 1)
+		//is=is(2:3)
+	
 	
 }
 
@@ -65,6 +70,7 @@ Info Pyramid::computeSingleScaleChannelFeaturePyramid(Mat I)
 		Mat *tempResult = this->pChns.pGradMag.mGradMag(result.image,result.colorChn,full);
 		result.gradientMagnitude = tempResult[0];
 		gradOrientation = tempResult[1];
+
 		//still need to understand this next part:
 		if (this->pChns.pGradMag.normalizationRadius != 0)
 		{
@@ -77,6 +83,7 @@ Info Pyramid::computeSingleScaleChannelFeaturePyramid(Mat I)
 		if (this->pChns.pGradMag.enabled)
 		{
 			result.gradMagnitude = (this->pChns.pGradMag.mGradMag(result.image,p.colorChn,full))[0];			
+
 			if (this->pChns.pGradMag.normalizationRadius != 0)
 			{
 				float* S = (this->pChns.pColor.convolution(M, this->pChns.pGradMag.normalizationRadius, 1, CONV_TRI)).data;

@@ -1,4 +1,5 @@
 cmake_minimum_required (VERSION 2.6)
+SET(CMAKE_CXX_COMPILER g++)
 project (opencv_dollar_detector)
 find_package( OpenCV REQUIRED )
 add_executable(opencv_dollar_detector ./src/Opencv_Dollar_Detector.cpp)

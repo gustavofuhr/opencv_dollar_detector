@@ -115,7 +115,7 @@ inline void getChild(float *chns1, uint32_t *cids, uint32_t *fids,
 }
 
 //bb = acfDetect1(P.data{i},Ds{j}.clf,shrink,modelDsPad(1),modelDsPad(2),opts.stride,opts.cascThr);
-BoundingBox* Detector::acfDetect(Mat image)
+BoundingBox* acfDetect(Mat image)
 {
     BoundingBox bb;
     int detectorLength = 100; //what is the length of the detector model?
