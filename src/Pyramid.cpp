@@ -4,6 +4,8 @@
 Pyramid computeMultiScaleChannelFeaturePyramid(Mat I)
 {
 	Mat convertedImage;
+	Info computedChannels;
+
 	//if we are to allow incomplete Pyramids, we need to set some values to default.
 	//for now, it wont be implemented. (lines 115-128 of chnsPyramid.m)
 
@@ -25,31 +27,123 @@ nTypes=0; data=cell(nScales,nTypes); info=struct([]);
 	//compute image pyramid, from chnsPyramid.m, line 144
 	//there is a for statement where the index i can only assume values of the array isR
 	//I guess isR might be useless, if we do it like this instead:
+	int h1, w1;
+	Mat I1;
 	for (int i=0; i < nScales; i = i + approximatedScales + 1)
 	{
-		//still have to add what's inside this
+		h1 = round(I.rows*scales[i]/shrink)*shrink;
+		w1 = round(I.cols*scales[i]/shrink)*shrink;
+
+		if(h1 == I.rows && w1 == I.cols)
+			I1 = I;
+		else
+			//I1 = imResampleMex(I,h1,w1,1);
+	
+		if (scales[i] == 0.5 && (approximatedScales>0 || scalesPerOctave == 1))
+			convertedImage = I1;
+
+		computedChannels = computeSingleScaleChannelFeatures(I1);
+
+		//why is this here?
+		//couldn't it be outside the for?
+		//if(i==isR(1)), nTypes=chns.nTypes; data=cell(nScales,nTypes); end
+
+		//data is a structure initilized as data=cell(nScales,nTypes);
+		//in here data receives the content of chns.data, which...
+		//is the return of the chnsCompute function
+		data[i] = computedChannels;
 	}
 
-	//if lambdas not specified compute image specific lambdas
-	//chnsPyramid.m, line 154
 	int is[nScales/approximatedScales+1]; //needs a better name
 	int isIndex = 0;
 	bool isError = false;
-	for (int j=1+upsampledOctaves*scalesPerOctave; j < nScales; j = j+approximatedScales+1)
+
+	//suppliedLambdas must determine if the lambdas where supplied
+	//this value needs to be set properly in the future
+	bool suppliedLambdas = false;
+
+	//if lambdas not specified compute image specific lambdas
+	//chnsPyramid.m, line 154
+	//computedScales is the substitute for nScales, might need to 	
+	//set it in the computeSingleScaleChannelFeatures function
+	if (computedScales>0 && approximatedScales>0 && !suppliedLambdas)
 	{
-		is[isIndex] = j;	
-		if (is[isIndex] < 2)
-			isError = true;
-		isIndex++;	
-	}	
-	if (isIndex > 1)
-		//is=is(2:3)
+		for (int j=1+upsampledOctaves*scalesPerOctave; j < nScales; j = j+approximatedScales+1)
+		{
+			//since j is being used as the index in this for statement,
+			//the next line is equivalent to is=1+nOctUp*nPerOct:nApprox+1:nScales;
+			is[isIndex] = j;	
+
+			//the next if statement substitutes assert(length(is)>=2)
+			if (is[isIndex] < 2)
+				isError = true;
+
+			isIndex++;	
+		}
+
+		//next line substitutes if(length(is)>2), is=is(2:3); end	
+		//because isIndex is going to carry the number of iteractions
+		//made in the previous for statement
+		if (isIndex > 1)
+			//is=is(2:3)
+
+		//channelTypes is the substitute for the nTypes value
+		double f0[channelTypes] = {0};
+		double f1[channelTypes] = {0};
+
+		//these matrices are receiving the value of chns.data
+		//that would be the computed matrices of the Info type
+		//returned on the chnsCompute.m function
+		//the question is: why aren't the three channels read?
+		Mat d0 = computedChannels.image;
+		Mat d1 = computedChannels.gradMag;
+
+		for (int j=0; j<channelTypes; j++)
+		{
+			//f0 and f1 seem to be the average value of each cell 
+			//of d0 and d1
+			double sum=0;
+			int i;
+			for (i=0; i<computedChannels.image.dims; i++)
+				sum = sum + computedChannels.image.data[j][i];			
+			f0[j] = sum/i;
+
+			sum=0;
+			int k;
+			for (k=0; k<computedChannels.gradMag.dims; k++)
+			{
+				sum = sum + computedChannels.gradMag.data[j][k];	
+			}
+			f1[j] = sum/k;
+		}
+		
+		//next, we use the results of f0 and f1 to compute lambdas
+		//lambdas = - log2(f0./f1) / log2(scales(is(1))/scales(is(2)));
+		//this will be revisited at a later time
+	}
 	
+	//compute image pyramid [approximated scales]
+	//the next for statement is controlled by the isA array
+	//h1, w1 and I1 were declared earlier
+	for (int i=0; i<computedScales; i++)
+	{
+		h1 = round(I.rows*scales[i]/shrink);
+		w1 = round(I.cols*scales[i]/shrink);
+		
+		//to know which elements of scales are accessed, i need to
+		//finished get scales part, so this will be completed later
+		double ratio=0;
+		for (int j=0; j<channelTypes; j++)
+			ratio = (scales[i]/scales)
+	}
 	
+	//smooth channels, optionally pad and concatenate channels
+
+	//create output struct
 }
 
 //translation of the chnsCompute.m file
-Info Pyramid::computeSingleScaleChannelFeaturePyramid(Mat I)
+Info Pyramid::computeSingleScaleChannelFeatures(Mat I)
 {
 	Mat gradOrientation;
 	Info result;
