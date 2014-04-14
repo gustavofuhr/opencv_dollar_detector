@@ -19,9 +19,11 @@ class Pyramid
         int channelTypes; //number of channel types
         int computedScales; //number of scales computed
         int computedChannels[]; //[nScales x nTypes] cell array of computed channels
-
+				
+				
 
         Pyramid computeMultiScaleChannelFeaturePyramid(Mat);
         Info computeSingleScaleChannelFeatures(Mat);
         Mat TriangleFilterConvolution(Mat I, int r, int s, int nomex);
+				double* getScales(int h, int w, int shrink);
 };

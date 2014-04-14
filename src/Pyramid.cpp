@@ -4,31 +4,35 @@
 Pyramid computeMultiScaleChannelFeaturePyramid(Mat I)
 {
 	Mat convertedImage;
-	Info computedChannels;
 
 	//if we are to allow incomplete Pyramids, we need to set some values to default.
 	//for now, it wont be implemented. (lines 115-128 of chnsPyramid.m)
 
 	//convert I to appropriate color space (or simply normalize)
-    convertedImage = this->pChns.pColor.rgbConvert(I);
+  convertedImage = this->pChns.pColor.rgbConvert(I);
 	this->pChns.pColor.colorSpaceType = "orig";
 
 	//get scales at which to compute features and list of real/approx scales
-	/*
-	[scales,scaleshw]=getScales(nPerOct,nOctUp,minDs,shrink,sz);
-	//next, there's a bunch of weirdness happening:	
-	nScales=length(scales); if(1), isR=1; else isR=1+nOctUp*nPerOct; end
-isR=isR:nApprox+1:nScales; isA=1:nScales; isA(isR)=[];
-j=[0 floor((isR(1:end-1)+isR(2:end))/2) nScales];
-isN=1:nScales; for i=1:length(isR), isN(j(i)+1:j(i+1))=isR(i); end
-nTypes=0; data=cell(nScales,nTypes); info=struct([]);
-	*/
+	//i dont think scalehw is ever used
+	//[scales,scaleshw]=getScales(nPerOct,nOctUp,minDs,shrink,sz);
+	double* scales = getScales(convertedImage.rows, convertedImage.cols, pChns.shrink);
+	//computed scales must be calculated from scales or maybe 
+	//the detector model already has the right value
+	Info computedChannels[computedScales];
+
+	//next, the values os isA, isR and isN need to be set
+	//isA has all the values from 1 to nScales that isR doesn't
+	//j has the averages of all adjacent values of isR,
+	//but starts with 0 and ends with nScales
+	//isN is the full size array that has just the approximated
+	//values, so each value in isR occupies nApprox cells in isN 
 	
 	//compute image pyramid, from chnsPyramid.m, line 144
 	//there is a for statement where the index i can only assume values of the array isR
 	//I guess isR might be useless, if we do it like this instead:
 	int h1, w1;
 	Mat I1;
+	int ccIndex=0;
 	for (int i=0; i < nScales; i = i + approximatedScales + 1)
 	{
 		h1 = round(I.rows*scales[i]/shrink)*shrink;
@@ -42,16 +46,14 @@ nTypes=0; data=cell(nScales,nTypes); info=struct([]);
 		if (scales[i] == 0.5 && (approximatedScales>0 || scalesPerOctave == 1))
 			convertedImage = I1;
 
-		computedChannels = computeSingleScaleChannelFeatures(I1);
+		computedChannels[ccIndex] = computeSingleScaleChannelFeatures(I1);
+		ccIndex++;
 
 		//why is this here?
 		//couldn't it be outside the for?
+		//or is it really needed now that computedChannels=data?
 		//if(i==isR(1)), nTypes=chns.nTypes; data=cell(nScales,nTypes); end
 
-		//data is a structure initilized as data=cell(nScales,nTypes);
-		//in here data receives the content of chns.data, which...
-		//is the return of the chnsCompute function
-		data[i] = computedChannels;
 	}
 
 	int is[nScales/approximatedScales+1]; //needs a better name
@@ -91,28 +93,22 @@ nTypes=0; data=cell(nScales,nTypes); info=struct([]);
 		double f0[channelTypes] = {0};
 		double f1[channelTypes] = {0};
 
-		//these matrices are receiving the value of chns.data
-		//that would be the computed matrices of the Info type
-		//returned on the chnsCompute.m function
-		//the question is: why aren't the three channels read?
-		Mat d0 = computedChannels.image;
-		Mat d1 = computedChannels.gradMag;
-
+		//only two of the channel types seem to be considered here
+		//since chnsCompute computes the histogram channel after
+		//the other two, its ommited
 		for (int j=0; j<channelTypes; j++)
 		{
-			//f0 and f1 seem to be the average value of each cell 
-			//of d0 and d1
 			double sum=0;
 			int i;
-			for (i=0; i<computedChannels.image.dims; i++)
-				sum = sum + computedChannels.image.data[j][i];			
+			for (i=0; i<computedChannels[j].image.dims; i++)
+				sum = sum + computedChannels[j].image.data[j][i];			
 			f0[j] = sum/i;
 
 			sum=0;
 			int k;
-			for (k=0; k<computedChannels.gradMag.dims; k++)
+			for (k=0; k<computedChannels[j].gradMag.dims; k++)
 			{
-				sum = sum + computedChannels.gradMag.data[j][k];	
+				sum = sum + computedChannels[j].gradMag.data[j][k];	
 			}
 			f1[j] = sum/k;
 		}
@@ -138,8 +134,15 @@ nTypes=0; data=cell(nScales,nTypes); info=struct([]);
 	}
 	
 	//smooth channels, optionally pad and concatenate channels
+	for (int i=0; i < computedScales*channelTypes; i++)
+	{
+		
+	}
 
 	//create output struct
+	Pyramid result;
+	//maybe i'll return a new Pyramid or i'll just update the current
+	//but Pyramid needs one more attribute to carry the Pyramid itself
 }
 
 //translation of the chnsCompute.m file
@@ -197,60 +200,9 @@ Info Pyramid::computeSingleScaleChannelFeatures(Mat I)
 	return result;
 }
 
-/*Mat Pyramid::TriangleFilterConvolution(Mat I, int r, int s, int nomex)
-{
-    Mat result = I;
-    if(!I.empty() && !(r==0 && s==1))
-    {
-        int m = min(I.rows, I.cols);
-        if(m>=4 && m>2*r+1)
-        {
-            if(nomex==0)
-            {
-                if(r>0 && r<=1 && s<=2)
-                    result = this->pChns.pColor.convConst(I,CONV_TRI1);
-                else
-                    result = this->pChns.pColor.convConst(I,CONV_TRI);
-            }
-            else
-            {
-                double f[3];
-                if (r <= 1)
-                {
-                    double p=12/r/(r+2)-2;
-                    f[0] = 1/(2+p);
-                    f[2] = f[0];
-                    f[3] = p / (2+p);
-                    r=1;
-                }
-                else
-                {
-                    for (int i=1; i <= r+1; i++)
-                        f[i] = i/(pow(r+1,2));
-                    for (int i=2*r+1; i > r+1; i--)
-                        f[i] = i/(pow(r+1,2));
-                }
-                //result = padarray(I,[r r],"symmetric","both");
-                copyMakeBorder(I, result, 0, 0, r, r, BORDER_REPLICATE);
-                //result = convn(convn(result,f,"valid"),f',"valid");
-                if (s>1)
-                {
-                    int t=floor(s/2)+1;
-                    Mat temp;
-                    for (int i=t; i < result.rows-s+t+1; i = i + s)
-                        for (int j=t; j < result.cols-s+t+1; j = j + s)
-                            temp
-                    //result = result(t:s:end-s+t,t:s:end-s+t,:);
-                }
-            }
-        }
-    }
-    return result;
-}*/
-
 //set each scale s such that max(abs(round(sz*s/shrink)*shrink-sz*s)) is minimized 
 //without changing the smaller dim of sz (tricky algebra)
-void Pyramid::getScales(int h, int w, int shrink)
+double* Pyramid::getScales(int h, int w, int shrink)
 {
 	int nScales; 
 	int minSize, bgDim, smDim;
@@ -325,7 +277,8 @@ void Pyramid::getScales(int h, int w, int shrink)
 		scaleshw = [round(h*scales/shrink)*shrink/h;
   round(w*scales/shrink)*shrink/w]';
 		
-		//both scales and scalehw are returned
+		//both scales and scalehw are returned, but i dont see scaleshw being used ever
+		return scales;
 	}
 	else //error, height or width are wrong
 		;
