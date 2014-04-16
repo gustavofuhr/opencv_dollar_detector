@@ -16,9 +16,6 @@ Pyramid computeMultiScaleChannelFeaturePyramid(Mat I)
 	//i dont think scalehw is ever used
 	//[scales,scaleshw]=getScales(nPerOct,nOctUp,minDs,shrink,sz);
 	double* scales = getScales(convertedImage.rows, convertedImage.cols, pChns.shrink);
-	//computed scales must be calculated from scales or maybe 
-	//the detector model already has the right value
-	Info computedChannels[computedScales];
 
 	//next, the values os isA, isR and isN need to be set
 	//isA has all the values from 1 to nScales that isR doesn't
@@ -40,8 +37,8 @@ Pyramid computeMultiScaleChannelFeaturePyramid(Mat I)
 
 		if(h1 == I.rows && w1 == I.cols)
 			I1 = I;
-		else
-			//I1 = imResampleMex(I,h1,w1,1);
+		else //for now, i'll just call the Mex function and move on
+			I1 = imResampleMex(I.data,h1,w1,1);
 	
 		if (scales[i] == 0.5 && (approximatedScales>0 || scalesPerOctave == 1))
 			convertedImage = I1;
@@ -140,9 +137,7 @@ Pyramid computeMultiScaleChannelFeaturePyramid(Mat I)
 	}
 
 	//create output struct
-	Pyramid result;
 	//maybe i'll return a new Pyramid or i'll just update the current
-	//but Pyramid needs one more attribute to carry the Pyramid itself
 }
 
 //translation of the chnsCompute.m file
@@ -267,13 +262,12 @@ double* Pyramid::getScales(int h, int w, int shrink)
 			//scales(i)=ss(x);
 			scales[i] = ss[minScaleIndex];		
 		}
-		//the kp variable needs to be set up
-		//i'm yet to understand the purpose of this:		
-		//kp=[scales(1:end-1)~=scales(2:end) true]; 
 		
-		//next, the scales array is changed using kp:		
-		//scales=scales(kp);
+		//in here, we would have a text to just keep the values of 
+		//scales[i] which are different from their neighbours
+		//for now, this will be suppressed
 		
+		//still have to decide whether i need to return scaleshw
 		scaleshw = [round(h*scales/shrink)*shrink/h;
   round(w*scales/shrink)*shrink/w]';
 		

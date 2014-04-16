@@ -3,6 +3,10 @@
 
 #include "cv.h"
 
+#define CONV_TRI 256
+#define CONV_TRI1 257
+
+
 enum method { CONV_BOX, CONV_TRI, CONV_11, CONV_TRI1, CONV_MAX};
 
 using namespace cv;
@@ -10,9 +14,9 @@ using namespace cv;
 class ColorChannel
 {
 public:
-    int enabled;
-    int smooth;
-    String colorSpaceType;
+	int enabled;
+	int smooth;
+	String colorSpaceType;
 	int nChannels;
 	String padWith;
 

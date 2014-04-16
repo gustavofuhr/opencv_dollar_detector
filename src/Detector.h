@@ -8,11 +8,10 @@ using namespace cv;
 class Detector
 {
 public:
-	Options opts;
+	Options opts; //opts contains the Pyramid
 	Clf clf;
-	Info info;
 
-	void readDetectorModel(String);
+	void importDetectorModel(String);
 	inline void getChild(float*, uint32_t*, uint32_t*,	float*, uint32_t, uint32_t&, uint32_t&);
 	BoundingBox* acfDetect(Mat);
 };
