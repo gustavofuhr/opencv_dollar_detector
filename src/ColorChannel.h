@@ -3,10 +3,6 @@
 
 #include "cv.h"
 
-#define CONV_TRI 256
-#define CONV_TRI1 257
-
-
 enum method { CONV_BOX, CONV_TRI, CONV_11, CONV_TRI1, CONV_MAX};
 
 using namespace cv;
@@ -20,8 +16,10 @@ public:
 	int nChannels;
 	String padWith;
 
-	Mat convConst(Mat, int, int);
-	Mat convolutionWithTriangleFilter(Mat);
+	Mat convolution(Mat, int, int, int);
+	void triangleFilterConvolution(float*,float*,int,int,int,int, int);
+	void convTri1Y(float*, float*, int, float, int);
+	void convTri1(float*,float*,int,int,int,float,int);
 	Mat rgbConvert(Mat);
 	Mat rgb2luv(Mat);
 	Mat rgb2hsv(Mat);

@@ -1,3 +1,6 @@
+#ifndef OPTIONS_H
+#define OPTIONS_H
+
 #include "Pyramid.h"
 #include "PNms.h"
 #include "PBoost.h"
@@ -33,3 +36,5 @@ public:
 	int pJitterFlip;
 	int winsSave;
 };
+
+#endif

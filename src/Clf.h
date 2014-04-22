@@ -1,3 +1,6 @@
+#ifndef CLF_H
+#define CLF_H
+
 class Clf
 {
 public:
@@ -11,3 +14,5 @@ public:
 	double losses[2048];
 	int treeDepth;
 };
+
+#endif

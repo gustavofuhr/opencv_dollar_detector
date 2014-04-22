@@ -1,3 +1,6 @@
+#ifndef CHFEAT_H
+#define CHFEAT_H
+
 #include "QuantizedGradientChannel.h"
 #include "GradientMagnitudeChannel.h"
 #include "ColorChannel.h"
@@ -12,3 +15,5 @@ public:
 	//pCustom //to use custom channels (not implemented)
 	int complete;
 };
+
+#endif

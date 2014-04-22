@@ -3,18 +3,23 @@
 //convolutions taken from the convConst.cpp file
 //I'm going to add just the ones that are actually called
 
+//Probably need to change all of this or refactor some things
+
 //this is the wrapper function that call the appropriate one
 //this one could go away, if we refactor the other ones to
 //operate on cvMat structures rather than just float*
-Mat convolution(Mat source, int radius, int s, int flag)
+Mat ColorChannel::convolution(Mat source, int radius, int s, int flag)
 {
-	float* I = source.data;
+	Mat tempMat(source.rows, source.cols, CV_32FC1);
+	//src.convertTo(dst, CV_32F);
+	source.convertTo(tempMat, CV_32F);
+	uchar* I = tempMat.data;
 	float* O;
 	Mat result;
 
-	h = source.rows;
-	w = source.cols;
-	d = source.dims;
+	int h = source.rows;
+	int w = source.cols;
+	int d = source.dims;
 
 	switch(flag)
 	{

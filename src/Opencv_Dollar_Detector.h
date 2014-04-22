@@ -1,4 +1,5 @@
-#pragma once
+#ifndef ODD_H
+#define ODD_H
 
 #include "cv.h"
 #include "highgui.h"
@@ -11,3 +12,4 @@
 using namespace cv;
 using namespace std;
 
+#endif
