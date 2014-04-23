@@ -2,6 +2,8 @@
 #define GRADMAG_H
 
 #include "cv.h"
+#include "wrappers.hpp"
+#include "sse.hpp"
 
 using namespace cv;
 

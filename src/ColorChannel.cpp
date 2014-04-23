@@ -10,17 +10,21 @@
 //operate on cvMat structures rather than just float*
 Mat ColorChannel::convolution(Mat source, int radius, int s, int flag)
 {
-	Mat tempMat(source.rows, source.cols, CV_32FC1);
+	Mat floatMat;
 	//src.convertTo(dst, CV_32F);
-	source.convertTo(tempMat, CV_32F);
-	uchar* I = tempMat.data;
+	source.convertTo(floatMat, CV_32F);
+	float* I;
+	int indexForI = 0;
 	float* O;
 	Mat result;
-
 	int h = source.rows;
 	int w = source.cols;
 	int d = source.dims;
 
+	for (int i=0; i < floatMat.rows; i++)
+		for (int j=0; j < floatMat.cols; j++)
+				I[indexForI++] = floatMat.at<float>(i,j);
+	
 	switch(flag)
 	{
 		case CONV_TRI: 	
@@ -31,14 +35,13 @@ Mat ColorChannel::convolution(Mat source, int radius, int s, int flag)
 					convTri1(I, O, h, w, d, p, s);
 					break;
 	}
-	
-	result.data = O;
+	result.data = (uchar*)O;
 	return result;
 }
 
 // convolve I by a 2rx1 triangle filter (uses SSE)
 //aka convTri
-void triangleFilterConvolution( float *I, float *O, int h, int w, int d, int r, int s ) {
+void ColorChannel::triangleFilterConvolution( float *I, float *O, int h, int w, int d, int r, int s ) {
   r++; float nrm = 1.0f/(r*r*r*r); int i, j, k=(s-1)/2, h0, h1, w0;
   if(h%4==0) h0=h1=h; else { h0=h-(h%4); h1=h0+4; } w0=(w/s)*s;
   float *T=(float*) alMalloc(2*h1*sizeof(float),16), *U=T+h1;
@@ -62,7 +65,7 @@ void triangleFilterConvolution( float *I, float *O, int h, int w, int d, int r, 
         INC(U[j], MUL(nrm,(INC(T[j],del))));
       }
       if(i) for( j=h0; j<h; j++ ) U[j]+=nrm*(T[j]+=Il[j]+Ir[j]-2*Im[j]);
-      k++; if(k==s) { k=0; convTriY(U,O,h,r-1,s); O+=h/s; }
+      k++; if(k==s) { k=0; convTri1Y(U,O,h,r-1,s); O+=h/s; }
     }
     I+=w*h;
   }

@@ -2,6 +2,8 @@
 #define COLORCH_H
 
 #include "cv.h"
+#include "sse.hpp"
+#include "wrappers.hpp"
 
 enum method { CONV_BOX, CONV_TRI, CONV_11, CONV_TRI1, CONV_MAX};
 
