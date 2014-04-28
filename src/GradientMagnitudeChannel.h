@@ -2,7 +2,7 @@
 #define GRADMAG_H
 
 #include "cv.h"
-#include "wrappers.hpp"
+//#include "wrappers.hpp"
 #include "sse.hpp"
 #include "math.h"
 
@@ -23,7 +23,7 @@ public:
 
 	//all of the next procedures still need proper names and maybe some refactoring
 	//they are used in Pyramid.cpp's computeSingleScaleChannelFeaturePyramid(Mat)
-	Mat* mGradMag(Mat, int, int);
+	Mat* mGradMag(Mat, int);
 	void gradMag(float*, float*, float*, int, int, int, bool);
 	void grad1(float*, float*, float*, int, int, int);
 	float* acosTable();

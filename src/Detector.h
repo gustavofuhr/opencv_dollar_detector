@@ -7,6 +7,7 @@
 #include "BoundingBox.h"
 
 using namespace cv;
+using namespace std;
 
 class Detector
 {

@@ -29,13 +29,12 @@ void Detector::importDetectorModel(String fileName)
 		currentNode = xml["detector"]["opts"];
 		readOptions(currentNode);
 
-
-		//there's a problem to read these big matrices because the numbers are not in scientific notation
 		currentNode = xml["detector"]["clf"];
 		currentNode["fids"] >> clf.fids;
-		//all of the elements in fids become zero
-
 		currentNode["thrs"] >> clf.thrs;
+		currentNode["child"] >> clf.child;
+		currentNode["hs"] >> clf.hs;
+		currentNode["weights"] >> clf.weights;
 
 		//some more matrices would need to be read here...
 
@@ -129,7 +128,7 @@ void Detector::readOptions(FileNode optionsNode)
 }
 
 //this procedure was just copied verbatim
-void getChild(float *chns1, uint32_t *cids, uint32_t *fids,
+void Detector::getChild(float *chns1, uint32_t *cids, uint32_t *fids,
     float *thrs, uint32_t offset, uint32_t &k0, uint32_t &k)
 {
 	float ftr = chns1[cids[fids[k]]];
@@ -164,9 +163,9 @@ BoundingBox* Detector::acfDetect(Mat image)
 			const float cascThr = opts.cascadeThreshold;
 
 			float *thrs = (float*) clf.thrs.data;
-			float *hs = (float*) clf.hs;
+			float *hs = (float*) clf.hs.data;
 			uint32_t *fids = (uint32_t*) clf.fids.data;
-			uint32_t *child = (uint32_t*) clf.child;
+			uint32_t *child = (uint32_t*) clf.child.data;
 			const int treeDepth = clf.treeDepth;
 
 			const int height = image.rows;

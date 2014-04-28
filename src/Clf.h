@@ -4,11 +4,11 @@
 class Clf
 {
 public:
-    Mat fids; //unsigned integers
-    Mat thrs; //
-	unsigned int child[7][2048];
-	float hs[7][2048];
-	float weights[7][2048];
+   Mat fids;
+   Mat thrs;
+	Mat child;
+	Mat hs;
+	Mat weights;
 	unsigned int depth[7][2048];
     Mat errs;
 	double losses[2048];

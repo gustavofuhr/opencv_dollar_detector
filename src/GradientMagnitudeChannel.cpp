@@ -1,14 +1,16 @@
 #include "GradientMagnitudeChannel.h"
 
 // [M,O] = gradMag( I, channel, full ) - see gradientMag.m
-Mat* GradientMagnitudeChannel::mGradMag(Mat I, int channel, int full)
+Mat* GradientMagnitudeChannel::mGradMag(Mat I, int channel)
 {
 	int c, d; 
 	float *M, *O=0;
 	Mat resultMatrix[2];
+
 	//checkArgs procedure is called but it is not actually needed
 	//probably just need to test some of the parameters, if that
 	//checkArgs(nl,pl,nr,pr,1,2,3,3,&h,&w,&d,mxSINGLE_CLASS,(void**)&I);
+
 	if (I.rows>=2 && I.cols>=2)
 	{
 		//for now, the gradMag procedure will be unchanged so we put the raw data of the image in a float pointer to be used there 
@@ -67,9 +69,9 @@ void GradientMagnitudeChannel::gradMag( float *I, float *M, float *O, int h, int
   float *acost = acosTable(), acMult=10000.0f;
   // allocate memory for storing one column of output (padded so h4%4==0)
   h4=(h%4==0) ? h : h-(h%4)+4; s=d*h4*sizeof(float);
-  M2=(float*) alMalloc(s,16); _M2=(__m128*) M2;
-  Gx=(float*) alMalloc(s,16); _Gx=(__m128*) Gx;
-  Gy=(float*) alMalloc(s,16); _Gy=(__m128*) Gy;
+  M2=(float*) malloc(s); _M2=(__m128*) M2;
+  Gx=(float*) malloc(s); _Gx=(__m128*) Gx;
+  Gy=(float*) malloc(s); _Gy=(__m128*) Gy;
   // compute gradient magnitude and orientation for each column
   for( x=0; x<w; x++ ) {
     // compute gradients (Gx, Gy) with maximum squared magnitude (M2)
@@ -87,7 +89,7 @@ void GradientMagnitudeChannel::gradMag( float *I, float *M, float *O, int h, int
     }
     // compute gradient mangitude (M) and normalize Gx
     for( y=0; y<h4/4; y++ ) {
-		//_m = MIN( RCPSQRT(_M2[y]), SET(1e10f) );
+		_m = MMIN( RCPSQRT(_M2[y]), SET(1e10f) );
       _M2[y] = RCP(_m);
       if(O) _Gx[y] = MUL( MUL(_Gx[y],_m), SET(acMult) );
       if(O) _Gx[y] = XOR( _Gx[y], AND(_Gy[y], SET(-0.f)) );
@@ -106,7 +108,7 @@ void GradientMagnitudeChannel::gradMag( float *I, float *M, float *O, int h, int
 }
 
 // compute x and y gradients for just one column (uses sse)
-void grad1( float *I, float *Gx, float *Gy, int h, int w, int x ) {
+void GradientMagnitudeChannel::grad1( float *I, float *Gx, float *Gy, int h, int w, int x ) {
   int y, y1; float *Ip, *In, r; __m128 *_Ip, *_In, *_G, _r;
   // compute column of Gx
   Ip=I-h; In=I+h; r=.5f;
@@ -131,7 +133,7 @@ void grad1( float *I, float *Gx, float *Gy, int h, int w, int x ) {
 }
 
 // build lookup table a[] s.t. a[x*n]~=acos(x) for x in [-1,1]
-float* acosTable() {
+float* GradientMagnitudeChannel::acosTable() {
   const int n=10000, b=10; int i;
   static float a[n*2+b*2]; static bool init=false;
   float *a1=a+n+b; if( init ) return a1;

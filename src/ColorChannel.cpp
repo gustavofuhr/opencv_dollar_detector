@@ -44,7 +44,7 @@ Mat ColorChannel::convolution(Mat source, int radius, int s, int flag)
 void ColorChannel::triangleFilterConvolution( float *I, float *O, int h, int w, int d, int r, int s ) {
   r++; float nrm = 1.0f/(r*r*r*r); int i, j, k=(s-1)/2, h0, h1, w0;
   if(h%4==0) h0=h1=h; else { h0=h-(h%4); h1=h0+4; } w0=(w/s)*s;
-  float *T=(float*) alMalloc(2*h1*sizeof(float),16), *U=T+h1;
+  float *T=(float*) malloc(2*h1*sizeof(float)), *U=T+h1;
   while(d-- > 0) {
     // initialize T and U
     for(j=0; j<h0; j+=4) STR(U[j], STR(T[j], LDu(I[j])));
@@ -69,11 +69,11 @@ void ColorChannel::triangleFilterConvolution( float *I, float *O, int h, int w, 
     }
     I+=w*h;
   }
-  alFree(T);
+  free(T);
 }
 
 // convolve one column of I by [1 p 1] filter (uses SSE)
-void convTri1Y( float *I, float *O, int h, float p, int s ) {
+void ColorChannel::convTri1Y( float *I, float *O, int h, float p, int s ) {
   #define C4(m,o) ADD(ADD(LDu(I[m*j-1+o]),MUL(p,LDu(I[m*j+o]))),LDu(I[m*j+1+o]))
   int j=0, k=((~((size_t) O) + 1) & 15)/4, h2=(h-1)/2;
   if( s==2 ) {
@@ -94,9 +94,9 @@ void convTri1Y( float *I, float *O, int h, float p, int s ) {
 // convTri1( A, B, ns[0], ns[1], d, p, s );
 // convConst('convTri1',I,12/r/(r+2)-2,s);
 // convolve I by [1 p 1] filter (uses SSE)
-void convTri1( float *I, float *O, int h, int w, int d, float p, int s ) {
+void ColorChannel::convTri1( float *I, float *O, int h, int w, int d, float p, int s ) {
   const float nrm = 1.0f/((p+2)*(p+2)); int i, j, h0=h-(h%4);
-  float *Il, *Im, *Ir, *T=(float*) alMalloc(h*sizeof(float),16);
+  float *Il, *Im, *Ir, *T=(float*) malloc(h*sizeof(float));
   for( int d0=0; d0<d; d0++ ) for( i=s/2; i<w; i+=s ) {
     Il=Im=Ir=I+i*h+d0*h*w; if(i>0) Il-=h; if(i<w-1) Ir+=h;
     for( j=0; j<h0; j+=4 )
@@ -104,7 +104,7 @@ void convTri1( float *I, float *O, int h, int w, int d, float p, int s ) {
     for( j=h0; j<h; j++ ) T[j]=nrm*(Il[j]+p*Im[j]+Ir[j]);
     convTri1Y(T,O,h,p,s); O+=h/s;
   }
-  alFree(T);
+  free(T);
 }
 
 
@@ -125,7 +125,7 @@ Mat ColorChannel::rgbConvert(Mat I)
     return result;
 }
 
-Mat rgb2luv(Mat I)
+Mat ColorChannel::rgb2luv(Mat I)
 {
     Mat result;
     const double y0 = ((6.0/29)*(6.0/29)*(6.0/29));
@@ -165,7 +165,7 @@ Mat rgb2luv(Mat I)
     return result;
 }
 
-Mat rgb2hsv(Mat I)
+Mat ColorChannel::rgb2hsv(Mat I)
 {
     //image will be represented as h,s,v
     Mat result;
@@ -221,7 +221,7 @@ Mat rgb2hsv(Mat I)
     return result;
 }
 
-Mat rgb2gray (Mat I)
+Mat ColorChannel::rgb2gray (Mat I)
 {
     Mat grayImage;
     double redMultiplier   = 0.2989360213;

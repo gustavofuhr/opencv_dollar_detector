@@ -30,6 +30,7 @@ Pyramid Pyramid::computeMultiScaleChannelFeaturePyramid(Mat I)
 	int h1, w1;
 	Mat I1;
 	int ccIndex=0;
+
 	for (int i=0; i < computedScales; i = i + approximatedScales + 1)
 	{
 		h1 = round(I.rows*scales[i]/pChns.shrink)*pChns.shrink;
@@ -67,7 +68,7 @@ Pyramid Pyramid::computeMultiScaleChannelFeaturePyramid(Mat I)
 	//set it in the computeSingleScaleChannelFeatures function
 	if (computedScales>0 && approximatedScales>0 && !suppliedLambdas)
 	{
-		for (int j=1+upsampledOctaves*scalesPerOctave; j < nScales; j = j+approximatedScales+1)
+		for (int j=1+upsampledOctaves*scalesPerOctave; j < computedScales; j = j+approximatedScales+1)
 		{
 			//since j is being used as the index in this for statement,
 			//the next line is equivalent to is=1+nOctUp*nPerOct:nApprox+1:nScales;
@@ -83,12 +84,12 @@ Pyramid Pyramid::computeMultiScaleChannelFeaturePyramid(Mat I)
 		//next line substitutes if(length(is)>2), is=is(2:3); end	
 		//because isIndex is going to carry the number of iteractions
 		//made in the previous for statement
-		if (isIndex > 1)
+		if (isIndex > 1);
 			//is=is(2:3)
 
 		//channelTypes is the substitute for the nTypes value
-		double f0[channelTypes] = {0};
-		double f1[channelTypes] = {0};
+		double *f0 = (double*)memset(f0, 0, channelTypes*sizeof(double));		
+		double *f1 = (double*)memset(f1, 0, channelTypes*sizeof(double));;
 
 		//only two of the channel types seem to be considered here
 		//since chnsCompute computes the histogram channel after
@@ -98,14 +99,14 @@ Pyramid Pyramid::computeMultiScaleChannelFeaturePyramid(Mat I)
 			double sum=0;
 			int i;
 			for (i=0; i<computedChannels[j].image.dims; i++)
-				sum = sum + computedChannels[j].image.data[j][i];			
+				sum = sum + computedChannels[j].image.at<double>(j,i);			
 			f0[j] = sum/i;
 
 			sum=0;
 			int k;
-			for (k=0; k<computedChannels[j].gradMag.dims; k++)
+			for (k=0; k<computedChannels[j].gradientMagnitude.dims; k++)
 			{
-				sum = sum + computedChannels[j].gradMag.data[j][k];	
+				sum = sum + computedChannels[j].gradientMagnitude.at<double>(j,k);	
 			}
 			f1[j] = sum/k;
 		}
@@ -120,20 +121,20 @@ Pyramid Pyramid::computeMultiScaleChannelFeaturePyramid(Mat I)
 	//h1, w1 and I1 were declared earlier
 	for (int i=0; i<computedScales; i++)
 	{
-		h1 = round(I.rows*scales[i]/shrink);
-		w1 = round(I.cols*scales[i]/shrink);
+		h1 = round(I.rows*scales[i]/pChns.shrink);
+		w1 = round(I.cols*scales[i]/pChns.shrink);
 		
 		//to know which elements of scales are accessed, i need to
-		//finished get scales part, so this will be completed later
+		//finish get scales part, so this will be completed later
 		double ratio=0;
-		for (int j=0; j<channelTypes; j++)
-			ratio = (scales[i]/scales)
+		for (int j=0; j<channelTypes; j++);
+			//ratio = (scales[i]/scales)
 	}
 	
 	//smooth channels, optionally pad and concatenate channels
 	for (int i=0; i < computedScales*channelTypes; i++)
 	{
-		
+		;
 	}
 
 	//create output struct
@@ -151,43 +152,53 @@ Info Pyramid::computeSingleScaleChannelFeatures(Mat I)
 	int width =  I.cols - (I.cols % pChns.shrink);
 
 	//compute color channels
-	result.image = this->pChns.pColor.rgbConvert(I);
-	result.image = this->pChns.pColor.convolution(result.image, this->pChns.pColor.smooth, 1, CONV_TRI);
-	if (this->pChns.pColor.enabled)
-		result.colorCh = this->pChns.pColor;
+	result.image = pChns.pColor.rgbConvert(I);
+	result.image = pChns.pColor.convolution(result.image, pChns.pColor.smooth, 1, CONV_TRI);
+	if (pChns.pColor.enabled)
+		result.colorCh = pChns.pColor;
 
 	//compute gradient magnitude channel
-	if (this->pChns.pGradHist.enabled)
+	if (pChns.pGradHist.enabled)
 	{
-		Mat *tempResult = this->pChns.pGradMag.mGradMag(result.image,result.colorChn,full);
+		//i need to identify which is the color channel to know
+		//how to represent it in integer, or change mGradMag
+		/*Mat *tempResult = pChns.pGradMag.mGradMag(result.image,result.colorCh);
 		result.gradientMagnitude = tempResult[0];
-		gradOrientation = tempResult[1];
+		gradOrientation = tempResult[1];*/
 
 		//still need to understand this next part:
-		if (this->pChns.pGradMag.normalizationRadius != 0)
+		if (pChns.pGradMag.normalizationRadius != 0)
 		{
-			float* S = (this->pChns.pColor.convolution(M, this->pChns.pGradMag.normalizationRadius, 1, CONV_TRI)).data;
-			result.gradientMagnitude = this->pChns.pGradMag.gradMagNorm(result.gradientMagnitude,S); 
+			//where does this M come from?
+			//this part depends on the last one i took out
+			/*float* S = (pChns.pColor.convolution(M, pChns.pGradMag.normalizationRadius, 1, CONV_TRI)).data;
+			result.gradientMagnitude = pChns.pGradMag.gradMagNorm(result.gradientMagnitude,S);*/ 
 		}
 	}		
 	else
 	{
-		if (this->pChns.pGradMag.enabled)
+		if (pChns.pGradMag.enabled)
 		{
-			result.gradMagnitude = (this->pChns.pGradMag.mGradMag(result.image,p.colorChn,full))[0];			
+			//came problem with channel selection as before
+			//but maybe this is always done in the color channel
+			//result.gradientMagnitude = (pChns.pGradMag.mGradMag(result.image,pChns.pColor))[0];			
 
-			if (this->pChns.pGradMag.normalizationRadius != 0)
+			if (pChns.pGradMag.normalizationRadius != 0)
 			{
-				float* S = (this->pChns.pColor.convolution(M, this->pChns.pGradMag.normalizationRadius, 1, CONV_TRI)).data;
-			result.gradientMagnitude = this->pChns.pGradMag.gradMagNorm(result.gradientMagnitude,S); 
+				//also depends on previous problems
+				/*float* S = (pChns.pColor.convolution(M, pChns.pGradMag.normalizationRadius, 1, CONV_TRI)).data;
+			result.gradientMagnitude = pChns.pGradMag.gradMagNorm(result.gradientMagnitude,S);*/ 
 			}
 		}	
 	}
 
 	//compute gradient histogram channels
-	if (this->pChns.pGradHist.enabled)
+	if (pChns.pGradHist.enabled)
 	{
-		result.gradientHistogram = this->pChns.pGradHist.mGradHist(result.gradientMagnitude, gradOrientation, full);
+		//decided to send full as one
+		//this needs to be checked later, because of the
+		//gradOrientation Matrix
+		//result.gradientHistogram = pChns.pGradHist.mGradHist(result.gradientMagnitude, gradOrientation, 1);
 	}	
 
 	//for now, i wont add computation of custom channels
@@ -199,8 +210,8 @@ Info Pyramid::computeSingleScaleChannelFeatures(Mat I)
 //without changing the smaller dim of sz (tricky algebra)
 double* Pyramid::getScales(int h, int w, int shrink)
 {
-	int nScales; 
 	int minSize, bgDim, smDim;
+	double minSizeRatio;
 	
 	if (h!=0 && w!=0)
 	{
@@ -217,28 +228,30 @@ double* Pyramid::getScales(int h, int w, int shrink)
 			minSizeRatio = w / minImgSize[1];
 		}
 
-		nScales = floor(scalesPerOctave*(upsampledOctaves+log2(minSizeRatio))+1);
-		double scales[nScales];
-		double tempMaxScale[nscales];
+		computedScales = floor(scalesPerOctave*(upsampledOctaves+log2(minSizeRatio))+1);
+		double scales[computedScales];
+		double tempMaxScale[computedScales];
+		int s0, s1;
+		double epsilon = std::numeric_limits<double>::epsilon();
 
 		//this next for statement will substitute the following:
 		//scales = 2.^(-(0:nScales-1)/nPerOct+nOctUp);
-		for (int i=0; i < nScales; i++)
+		for (int i=0; i < computedScales; i++)
 		{
 			scales[i]=pow(-(i/scalesPerOctave+upsampledOctaves),2);
-			s0=(round(smDim*scales[i]/shrink)*shrink-.25*shrink)./smDim;
-			s1=(round(smDim*scales[i]/shrink)*shrink+.25*shrink)./smDim;
+			s0=(round(smDim*scales[i]/shrink)*shrink-.25*shrink)/smDim;
+			s1=(round(smDim*scales[i]/shrink)*shrink+.25*shrink)/smDim;
 
 			//what follows will substitute ss=(0:.01:1-epsilon())*(s1-s0)+s0;
-			double ss[round(1-epsilon()/0.01)], es0[round(1-epsilon()/0.01)], es1[round(1-epsilon()/0.01)];						
+			double ss[(int)round(1-epsilon/0.01)], es0[(int)round(1-epsilon/0.01)], es1[(int)round(1-epsilon/0.01)];						
 			int ssIndex = 0;			
-			for (int j=0; j < 1-epsilon(); j = j + 0.01)
+			for (int j=0; j < 1-epsilon; j = j + 0.01)
 			{
 				ss[ssIndex] = j*(s1-s0)+s0;
 				es0[ssIndex]=smDim*ss[ssIndex]; 
-				es0[ssIndex]=abs(es0-round(es0/shrink)*shrink);
+				//es0[ssIndex]=abs(es0-round(es0/shrink)*shrink);
 				es1[ssIndex]=bgDim*ss[ssIndex]; 
-				es1[ssIndex]=abs(es1-round(es1/shrink)*shrink);
+				//es1[ssIndex]=abs(es1-round(es1/shrink)*shrink);
 				ssIndex++;
 			}
 

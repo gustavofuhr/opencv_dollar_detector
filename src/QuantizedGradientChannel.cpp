@@ -3,10 +3,10 @@
 //Compute oriented gradient histograms
 //H=gradHist(M,O,[...]) - see gradientHist.m
 //H=gradientHist(M,O,binSize,p.nOrients,p.softBin,p.useHog,p.clipHog,full);
-Mat* mGradHist(Mat gradMag, Mat gradOri, int full)
+Mat QuantizedGradientChannel::mGradHist(Mat gradMag, Mat gradOri, int full)
 {
 	Mat result;
-	float *M, *O, *H, clipr[0]pHog;
+	float *M, *O, *H;
 	
 	//for now, we will make this trasnformations to avoid having to rewrite the other procedures
 	M = (float*) gradMag.data;
@@ -22,11 +22,11 @@ Mat* mGradHist(Mat gradMag, Mat gradOri, int full)
 	//next there's a bunch of tests to see which parameters were given and which are to be default, i won put that here for now at least
 
 	if (orientationChannels == 0)
-		result = NULL;
+		result.data = NULL;
 	else
 	{
 		if (useHogNormalization == 0)
-			gradHist(M, O, H, h, w, binSize, orientationChannels, useSoftBinning, full );
+			gradHist(M, O, H, h, w, binSize, orientationChannels, useSoftBinning, full);
 		else
 		{
 			if (useHogNormalization == 1)
@@ -35,20 +35,20 @@ Mat* mGradHist(Mat gradMag, Mat gradOri, int full)
 				fhog(M, O, H, h, w, binSize, orientationChannels, useSoftBinning, clipHog );
 		}
 		//the resulting histogram matrix is our return value
-		result.data = H;
+		result.data = (uchar*)H;
 	}
 	return result;
 }
 
 // compute nOrients gradient histograms per bin x bin block of pixels
-void gradHist( float *M, float *O, float *H, int h, int w,
-  int bin, int nOrients, int softBin, bool full )
+void QuantizedGradientChannel::gradHist( float *M, float *O, float *H, int h, int w,
+  int bin, int nOrients, int softBin, int full)
 {
   const int hb=h/bin, wb=w/bin, h0=hb*bin, w0=wb*bin, nb=wb*hb;
   const float s=(float)bin, sInv=1/s, sInv2=1/s/s;
   float *H0, *H1, *M0, *M1; int x, y; int *O0, *O1;
-  O0=(int*)alMalloc(h*sizeof(int),16); M0=(float*) alMalloc(h*sizeof(float),16);
-  O1=(int*)alMalloc(h*sizeof(int),16); M1=(float*) alMalloc(h*sizeof(float),16);
+  O0=(int*)malloc(h*sizeof(int)); M0=(float*) malloc(h*sizeof(float));
+  O1=(int*)malloc(h*sizeof(int)); M1=(float*) malloc(h*sizeof(float));
   // main loop
   for( x=0; x<w0; x++ ) {
     // compute target orientation bins for entire column - very fast
@@ -116,9 +116,9 @@ void gradHist( float *M, float *O, float *H, int h, int w,
       #undef GH
     }
   }
-  alFree(O0); alFree(O1); alFree(M0); alFree(M1);
+  free(O0); free(O1); free(M0); free(M1);
   // normalize boundary bins which only get 7/8 of weight of interior bins
-  if( softBin%2!=0 ) for( int o=0; pr[0]o<nOrients; o++ ) {
+  if( softBin%2!=0 ) for( int o=0; o<nOrients; o++ ) {
     x=0; for( y=0; y<hb; y++ ) H[o*nb+x*hb+y]*=8.f/7.f;
     y=0; for( x=0; x<wb; x++ ) H[o*nb+x*hb+y]*=8.f/7.f;
     x=wb-1; for( y=0; y<hb; y++ ) H[o*nb+x*hb+y]*=8.f/7.f;
@@ -127,8 +127,7 @@ void gradHist( float *M, float *O, float *H, int h, int w,
 }
 
 // helper for gradHist, quantize O and M into O0, O1 and M0, M1 (uses sse)
-void gradQuantize( float *O, float *M, int *O0, int *O1, float *M0, float *M1,
-  int nb, int n, float norm, int nOrients, bool full, bool interpolate )
+void QuantizedGradientChannel::gradQuantize( float *O, float *M, int *O0, int *O1, float *M0, float *M1, int nb, int n, float norm, int nOrients, int full, bool interpolate )
 {
   // assumes all *OUTPUT* matrices are 4-byte aligned
   int i, o0, o1; float o, od, m;
@@ -163,31 +162,29 @@ void gradQuantize( float *O, float *M, int *O0, int *O1, float *M0, float *M1,
 }
 
 // compute HOG features
-void hog( float *M, float *O, float *H, int h, int w, int binSize,
-  int nOrients, int softBin, bool full, float clip )
+void QuantizedGradientChannel::hog( float *M, float *O, float *H, int h, int w, int binSize, int nOrients, int softBin, int full, float clip )
 {
   float *N, *R; const int hb=h/binSize, wb=w/binSize, nb=hb*wb;
   // compute unnormalized gradient histograms
-  R = (float*) wrCalloc(wb*hb*nOrients,sizeof(float));
+  R = (float*) calloc(wb*hb*nOrients,sizeof(float));
   gradHist( M, O, R, h, w, binSize, nOrients, softBin, full );
   // compute block normalization values
   N = hogNormMatrix( R, nOrients, hb, wb, binSize );
   // perform four normalizations per spatial block
   hogChannels( H, R, N, hb, wb, nOrients, clip, 0 );
-  wrFree(N); wrFree(R);
+  free(N); free(R);
 }
 
 // compute FHOG features
-void fhog( float *M, float *O, float *H, int h, int w, int binSize,
-  int nOrients, int softBin, float clip )
+void QuantizedGradientChannel::fhog( float *M, float *O, float *H, int h, int w, int binSize, int nOrients, int softBin, float clip )
 {
   const int hb=h/binSize, wb=w/binSize, nb=hb*wb, nbo=nb*nOrients;
   float *N, *R1, *R2; int o, x;
   // compute unnormalized constrast sensitive histograms
-  R1 = (float*) wrCalloc(wb*hb*nOrients*2,sizeof(float));
+  R1 = (float*) calloc(wb*hb*nOrients*2,sizeof(float));
   gradHist( M, O, R1, h, w, binSize, nOrients*2, softBin, true );
   // compute unnormalized contrast insensitive histograms
-  R2 = (float*) wrCalloc(wb*hb*nOrients,sizeof(float));
+  R2 = (float*) calloc(wb*hb*nOrients,sizeof(float));
   for( o=0; o<nOrients; o++ ) for( x=0; x<nb; x++ )
     R2[o*nb+x] = R1[o*nb+x]+R1[(o+nOrients)*nb+x];
   // compute block normalization values
@@ -196,14 +193,14 @@ void fhog( float *M, float *O, float *H, int h, int w, int binSize,
   hogChannels( H+nbo*0, R1, N, hb, wb, nOrients*2, clip, 1 );
   hogChannels( H+nbo*2, R2, N, hb, wb, nOrients*1, clip, 1 );
   hogChannels( H+nbo*3, R1, N, hb, wb, nOrients*2, clip, 2 );
-  wrFree(N); mxFree(R1); wrFree(R2);
+  free(N); free(R1); free(R2);
 }
 
 // HOG helper: compute 2x2 block normalization values (padded by 1 pixel)
-float* hogNormMatrix( float *H, int nOrients, int hb, int wb, int bin ) {
+float* QuantizedGradientChannel::hogNormMatrix( float *H, int nOrients, int hb, int wb, int bin ) {
   float *N, *N1, *n; int o, x, y, dx, dy, hb1=hb+1, wb1=wb+1;
   float eps = 1e-4f/4/bin/bin/bin/bin; // precise backward equality
-  N = (float*) wrCalloc(hb1*wb1,sizeof(float)); N1=N+hb1+1;
+  N = (float*) calloc(hb1*wb1,sizeof(float)); N1=N+hb1+1;
   for( o=0; o<nOrients; o++ ) for( x=0; x<wb; x++ ) for( y=0; y<hb; y++ )
     N1[x*hb1+y] += H[o*wb*hb+x*hb+y]*H[o*wb*hb+x*hb+y];
   for( x=0; x<wb-1; x++ ) for( y=0; y<hb-1; y++ ) {
@@ -220,7 +217,7 @@ float* hogNormMatrix( float *H, int nOrients, int hb, int wb, int bin ) {
 }
 
 // HOG helper: compute HOG or FHOG channels
-void hogChannels( float *H, const float *R, const float *N,
+void QuantizedGradientChannel::hogChannels( float *H, const float *R, const float *N,
   int hb, int wb, int nOrients, float clip, int type )
 {
   #define GETT(blk) t=R1[y]*N1[y-(blk)]; if(t>clip) t=clip; c++;
