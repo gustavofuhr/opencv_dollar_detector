@@ -25,13 +25,14 @@ Mat* GradientMagnitudeChannel::mGradMag(Mat I, int channel, int full)
 		//void gradMag(float*, float*, float*, int, int, int, bool);
 		gradMag(If, M, O, I.rows, I.cols, I.dims, full>0 );
 		//next, we assign the values of M and O to the matrix thats going to be returned
-		resultMatrix[0].data = M;
-		resultMatrix[1].data = O;
+		resultMatrix[0].data = (uchar*)M;
+		resultMatrix[1].data = (uchar*)O;
 	}
 	else
 	{
 		//error: matrix I must be at least 2x2
-		resultMatrix = NULL;
+		resultMatrix[0].data = NULL;
+		resultMatrix[1].data = NULL;
 	}
 	return resultMatrix;
 }
@@ -39,7 +40,7 @@ Mat* GradientMagnitudeChannel::mGradMag(Mat I, int channel, int full)
 // gradMagNorm( M, S, norm ) - operates on M - see gradientMag.m
 //gradientMex('gradientMagNorm',M,S,normConst);
 // normalize gradient magnitude at each location (uses sse) 
-Mat gradMagNorm(float* M, float* S) {
+Mat GradientMagnitudeChannel::gradMagNorm(float* M, float* S, int h, int w) {
 	Mat resultingM;
 	__m128 *_M, *_S, _norm; 
 	int i=0, n=h*w, n4=n/4;
@@ -55,13 +56,13 @@ Mat gradMagNorm(float* M, float* S) {
 	}
   	for(; i<n; i++) 
 		M[i] /= (S[i] + normalizationConstant);
-	resultingM.data = M;
+	resultingM.data = (uchar*)M;
 	return resultingM;
 }
 
 // compute gradient magnitude and orientation at each location
 // gradMag(I, M, O, h, w, d, full>0 );
-void gradMag( float *I, float *M, float *O, int h, int w, int d, bool full ) {
+void GradientMagnitudeChannel::gradMag( float *I, float *M, float *O, int h, int w, int d, bool full ) {
   int x, y, y1, c, h4, s; float *Gx, *Gy, *M2; __m128 *_Gx, *_Gy, *_M2, _m;
   float *acost = acosTable(), acMult=10000.0f;
   // allocate memory for storing one column of output (padded so h4%4==0)
@@ -86,7 +87,7 @@ void gradMag( float *I, float *M, float *O, int h, int w, int d, bool full ) {
     }
     // compute gradient mangitude (M) and normalize Gx
     for( y=0; y<h4/4; y++ ) {
-      _m = MIN( RCPSQRT(_M2[y]), SET(1e10f) );
+		//_m = MIN( RCPSQRT(_M2[y]), SET(1e10f) );
       _M2[y] = RCP(_m);
       if(O) _Gx[y] = MUL( MUL(_Gx[y],_m), SET(acMult) );
       if(O) _Gx[y] = XOR( _Gx[y], AND(_Gy[y], SET(-0.f)) );

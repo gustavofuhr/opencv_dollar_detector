@@ -1,7 +1,7 @@
 #include "Pyramid.h"
 
 //translation of the chnsPyramid.m file
-Pyramid computeMultiScaleChannelFeaturePyramid(Mat I)
+Pyramid Pyramid::computeMultiScaleChannelFeaturePyramid(Mat I)
 {
 	Mat convertedImage;
 
@@ -9,8 +9,8 @@ Pyramid computeMultiScaleChannelFeaturePyramid(Mat I)
 	//for now, it wont be implemented. (lines 115-128 of chnsPyramid.m)
 
 	//convert I to appropriate color space (or simply normalize)
-  convertedImage = this->pChns.pColor.rgbConvert(I);
-	this->pChns.pColor.colorSpaceType = "orig";
+	convertedImage = pChns.pColor.rgbConvert(I);
+	pChns.pColor.colorSpaceType = "orig";
 
 	//get scales at which to compute features and list of real/approx scales
 	//i dont think scalehw is ever used
@@ -30,15 +30,15 @@ Pyramid computeMultiScaleChannelFeaturePyramid(Mat I)
 	int h1, w1;
 	Mat I1;
 	int ccIndex=0;
-	for (int i=0; i < nScales; i = i + approximatedScales + 1)
+	for (int i=0; i < computedScales; i = i + approximatedScales + 1)
 	{
-		h1 = round(I.rows*scales[i]/shrink)*shrink;
-		w1 = round(I.cols*scales[i]/shrink)*shrink;
+		h1 = round(I.rows*scales[i]/pChns.shrink)*pChns.shrink;
+		w1 = round(I.cols*scales[i]/pChns.shrink)*pChns.shrink;
 
 		if(h1 == I.rows && w1 == I.cols)
 			I1 = I;
-		else //for now, i'll just call the Mex function and move on
-			I1 = imResampleMex(I.data,h1,w1,1);
+		else //calling the mex.cpp file didnt work, need to implement those functions
+			//I1 = imResampleMex(I.data,h1,w1,1);
 	
 		if (scales[i] == 0.5 && (approximatedScales>0 || scalesPerOctave == 1))
 			convertedImage = I1;
@@ -53,7 +53,7 @@ Pyramid computeMultiScaleChannelFeaturePyramid(Mat I)
 
 	}
 
-	int is[nScales/approximatedScales+1]; //needs a better name
+	int is[computedScales/approximatedScales+1]; //needs a better name
 	int isIndex = 0;
 	bool isError = false;
 
@@ -268,8 +268,8 @@ double* Pyramid::getScales(int h, int w, int shrink)
 		//for now, this will be suppressed
 		
 		//still have to decide whether i need to return scaleshw
-		scaleshw = [round(h*scales/shrink)*shrink/h;
-  round(w*scales/shrink)*shrink/w]';
+		/*scaleshw = [round(h*scales/shrink)*shrink/h;
+  round(w*scales/shrink)*shrink/w]';*/
 		
 		//both scales and scalehw are returned, but i dont see scaleshw being used ever
 		return scales;

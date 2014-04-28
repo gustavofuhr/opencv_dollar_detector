@@ -10,7 +10,7 @@
 //operate on cvMat structures rather than just float*
 Mat ColorChannel::convolution(Mat source, int radius, int s, int flag)
 {
-	Mat floatMat;
+	Mat floatMat(source.rows, source.cols, CV_32F);
 	//src.convertTo(dst, CV_32F);
 	source.convertTo(floatMat, CV_32F);
 	float* I;
@@ -21,9 +21,9 @@ Mat ColorChannel::convolution(Mat source, int radius, int s, int flag)
 	int w = source.cols;
 	int d = source.dims;
 
-	for (int i=0; i < floatMat.rows; i++)
+	/*for (int i=0; i < floatMat.rows; i++)
 		for (int j=0; j < floatMat.cols; j++)
-				I[indexForI++] = floatMat.at<float>(i,j);
+				I[indexForI++] = floatMat.at<float>(i,j);*/
 	
 	switch(flag)
 	{
