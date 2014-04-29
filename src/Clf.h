@@ -9,9 +9,9 @@ public:
 	Mat child;
 	Mat hs;
 	Mat weights;
-	unsigned int depth[7][2048];
-    Mat errs;
-	double losses[2048];
+	Mat depth;
+   Mat errs;
+	Mat losses;
 	int treeDepth;
 };
 

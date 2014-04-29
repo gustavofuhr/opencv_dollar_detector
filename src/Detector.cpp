@@ -35,8 +35,9 @@ void Detector::importDetectorModel(String fileName)
 		currentNode["child"] >> clf.child;
 		currentNode["hs"] >> clf.hs;
 		currentNode["weights"] >> clf.weights;
-
-		//some more matrices would need to be read here...
+		currentNode["depth"] >> clf.depth;
+		currentNode["errs"] >> clf.errs;
+		currentNode["losses"] >> clf.losses;		
 
 		clf.treeDepth = currentNode["treeDepth"];
 	
