@@ -1,5 +1,29 @@
 #include "Detector.h"
 
+//i dont know if its gonna be needed but this is a good start
+void Detector::exportDetectorModel(String fileName)
+{
+	FileStorage xml;
+	
+	xml.open(fileName, FileStorage::WRITE);
+
+	xml << "opts" << "{";
+		xml << "pPyramid" << "{";
+			xml << "pChns" << "{";
+				xml << "shrink" << opts.pPyramid.pChns.shrink;
+				xml << "pColor" << "{";
+					xml << "enabled" << opts.pPyramid.pChns.pColor.enabled;
+				xml << "}";
+			xml << "}";
+		xml << "}";
+	xml << "stride" << opts.stride;
+	xml << "}";
+	
+	//xml << "clf" << this->clf;
+
+	xml.release();
+}
+
 //reads the detector model from the xml model
 //for now, it must be like this since the current model
 //was not written by this program this will change after we are 
@@ -9,8 +33,6 @@ void Detector::importDetectorModel(String fileName)
 	FileStorage xml;
 	FileNode currentNode;
 
-	printf("before opening File\n");
-
 	xml.open(fileName, FileStorage::READ);
 
 	if (!xml.isOpened())
@@ -19,7 +41,6 @@ void Detector::importDetectorModel(String fileName)
 	}
 	else
 	{
-		printf("after opening File\n");
 		currentNode = xml["detector"]["opts"]["pPyramid"]["pChns"];
 		readChannelFeatures(currentNode);
 
@@ -40,7 +61,7 @@ void Detector::importDetectorModel(String fileName)
 		currentNode["losses"] >> clf.losses;		
 
 		clf.treeDepth = currentNode["treeDepth"];
-	
+		xml.release();
 	}
 }
 
@@ -140,123 +161,138 @@ void Detector::getChild(float *chns1, uint32_t *cids, uint32_t *fids,
 //bb = acfDetect1(P.data{i},Ds{j}.clf,shrink,modelDsPad(1),modelDsPad(2),opts.stride,opts.cascThr);
 BoundingBox* Detector::acfDetect(Mat image)
 {
-	int detectorLength = 100; //what is the length of the detector model? and why is it useful?
-
 	//teste para ver se o conteudo da imagem eh char, se for aplica a funcao imreadf
 
 	//compute feature pyramid
 	opts.pPyramid.computeMultiScaleChannelFeaturePyramid(image);
 
+	//criar uma matriz de bounding boxes bbs[numero de escalas da piramide]
+	BoundingBox bb[opts.pPyramid.computedScales];
 
-	//criar uma matriz de bounding boxes bbs[numero de escalas da piramide][numero de elementos do detector]
-	BoundingBox bb[opts.pPyramid.computedScales][detectorLength];
-
-	//this loop was just copied from the original file (except some comments)
+	//this became a simple loop because we will apply just one detector here, 
+	//to apply multiple detector models you need to create multiple Detector objects. 
 	for (int i = 0; i < opts.pPyramid.computedScales; i++)
 	{
-		for (int j = 0; j < detectorLength; j++)
-		{
-			float* chns = (float*)image.data;
-			const int shrink = opts.pPyramid.pChns.shrink;
-			const int modelHt = opts.modelDsPad[0];
-			const int modelWd = opts.modelDsPad[1];
-			const int stride = opts.stride;
-			const float cascThr = opts.cascadeThreshold;
+		//all of this 
+		float* chns = (float*)image.data;
+		const int shrink = opts.pPyramid.pChns.shrink;
+		const int modelHt = opts.modelDsPad[0];
+		const int modelWd = opts.modelDsPad[1];
+		const int stride = opts.stride;
+		const float cascThr = opts.cascadeThreshold;
 
-			float *thrs = (float*) clf.thrs.data;
-			float *hs = (float*) clf.hs.data;
-			uint32_t *fids = (uint32_t*) clf.fids.data;
-			uint32_t *child = (uint32_t*) clf.child.data;
-			const int treeDepth = clf.treeDepth;
+		float *thrs = (float*) clf.thrs.data;
+		float *hs = (float*) clf.hs.data;
+		uint32_t *fids = (uint32_t*) clf.fids.data;
+		uint32_t *child = (uint32_t*) clf.child.data;
+		const int treeDepth = clf.treeDepth;
 
-			const int height = image.rows;
-			const int width = image.cols;
-			const int nChns = image.dims;
+		const int height = image.rows;
+		const int width = image.cols;
+		const int nChns = image.dims;
 
-			//nTreeNodes size of the first dimension of fids
-			const int nTreeNodes = clf.fids.rows;
-			//nTrees size of the second dimension of fids
-			const int nTrees = clf.fids.cols;
-			const int height1 = (int)ceil(float(height*shrink - modelHt + 1 / stride));
-			const int width1 = (int)ceil(float(width*shrink - modelWd + 1 / stride));
+		//nTreeNodes size of the first dimension of fids
+		const int nTreeNodes = clf.fids.rows;
+		//nTrees size of the second dimension of fids
+		const int nTrees = clf.fids.cols;
+		const int height1 = (int)ceil(float(height*shrink - modelHt + 1 / stride));
+		const int width1 = (int)ceil(float(width*shrink - modelWd + 1 / stride));
 
-			//The number of color channels
-			int nChannels = opts.pPyramid.pChns.pColor.nChannels;
+		//The number of color channels
+		int nChannels = opts.pPyramid.pChns.pColor.nChannels;
 
-			//construct cids array
-			int nFtrs = modelHt / shrink*modelWd / shrink*nChannels;
-			uint32_t *cids = new uint32_t[nFtrs];
-			int m = 0;
-			for (int z = 0; z<nChannels; z++)
-				for (int c = 0; c<modelWd / shrink; c++)
-					for (int r = 0; r<modelHt / shrink; r++)
-						cids[m++] = z*width*height + c*height + r;
+		//construct cids array
+		int nFtrs = modelHt / shrink*modelWd / shrink*nChannels;
+		uint32_t *cids = new uint32_t[nFtrs];
+		int m = 0;
+		for (int z = 0; z<nChannels; z++)
+			for (int c = 0; c<modelWd / shrink; c++)
+				for (int r = 0; r<modelHt / shrink; r++)
+					cids[m++] = z*width*height + c*height + r;
 
-			// apply classifier to each patch
-			vector<int> rs, cs; vector<float> hs1;
-			for (int c = 0; c<width1; c++) 
-				for (int r = 0; r<height1; r++) 
+		// apply classifier to each patch
+		vector<int> rs, cs; vector<float> hs1;
+		for (int c = 0; c<width1; c++) 
+			for (int r = 0; r<height1; r++) 
+			{
+				float h = 0, *chns1 = chns + (r*stride / shrink) + (c*stride / shrink)*height;
+				if (treeDepth == 1) 
 				{
-					float h = 0, *chns1 = chns + (r*stride / shrink) + (c*stride / shrink)*height;
-					if (treeDepth == 1) 
+					// specialized case for treeDepth==1
+					for (int t = 0; t < nTrees; t++) 
 					{
-						// specialized case for treeDepth==1
-						for (int t = 0; t < nTrees; t++) 
-						{
-							uint32_t offset = t*nTreeNodes, k = offset, k0 = 0;
-							getChild(chns1, cids, fids, thrs, offset, k0, k);
-							h += hs[k]; if (h <= cascThr) break;
-						}
-					}	
-					else if (treeDepth == 2) {
-						// specialized case for treeDepth==2
-						for (int t = 0; t < nTrees; t++) {
-							uint32_t offset = t*nTreeNodes, k = offset, k0 = 0;
-							getChild(chns1, cids, fids, thrs, offset, k0, k);
-							getChild(chns1, cids, fids, thrs, offset, k0, k);
-							h += hs[k]; if (h <= cascThr) break;
-						}
+						uint32_t offset = t*nTreeNodes, k = offset, k0 = 0;
+						getChild(chns1, cids, fids, thrs, offset, k0, k);
+						h += hs[k]; if (h <= cascThr) break;
 					}
-					else if (treeDepth>2) 
-					{
-						// specialized case for treeDepth>2
-						for (int t = 0; t < nTrees; t++) 
-						{
-							uint32_t offset = t*nTreeNodes, k = offset, k0 = 0;
-							for (int i = 0; i<treeDepth; i++)
-								getChild(chns1, cids, fids, thrs, offset, k0, k);
-							h += hs[k]; if (h <= cascThr) break;
-						}
+				}	
+				else if (treeDepth == 2) {
+					// specialized case for treeDepth==2
+					for (int t = 0; t < nTrees; t++) {
+						uint32_t offset = t*nTreeNodes, k = offset, k0 = 0;
+						getChild(chns1, cids, fids, thrs, offset, k0, k);
+						getChild(chns1, cids, fids, thrs, offset, k0, k);
+						h += hs[k]; if (h <= cascThr) break;
 					}
-					else 
-					{
-						// general case (variable tree depth)
-						for (int t = 0; t < nTrees; t++) 
-						{
-							uint32_t offset = t*nTreeNodes, k = offset, k0 = k;
-							while (child[k]) 
-							{
-								float ftr = chns1[cids[fids[k]]];
-								k = (ftr<thrs[k]) ? 1 : 0;
-								k0 = k = child[k0] - k + offset;
-							}
-							h += hs[k]; if (h <= cascThr) break;
-						}
-					}
-					if (h>cascThr) { cs.push_back(c); rs.push_back(r); hs1.push_back(h); }
 				}
-				delete [] cids;
-				m=cs.size();
-
-				// convert to bbs
-				double *bbs;
-				for( int i=0; i<m; i++ )
+				else if (treeDepth>2) 
 				{
-					bbs[i+0*m]=cs[i]*stride; bbs[i+2*m]=modelWd;
-					bbs[i+1*m]=rs[i]*stride; bbs[i+3*m]=modelHt;
-					bbs[i+4*m]=hs1[i];
+					// specialized case for treeDepth>2
+					for (int t = 0; t < nTrees; t++) 
+					{
+						uint32_t offset = t*nTreeNodes, k = offset, k0 = 0;
+						for (int i = 0; i<treeDepth; i++)
+							getChild(chns1, cids, fids, thrs, offset, k0, k);
+						h += hs[k]; if (h <= cascThr) break;
+					}
 				}
-		}
+				else 
+				{
+					// general case (variable tree depth)
+					for (int t = 0; t < nTrees; t++) 
+					{
+						uint32_t offset = t*nTreeNodes, k = offset, k0 = k;
+						while (child[k]) 
+						{
+							float ftr = chns1[cids[fids[k]]];
+							k = (ftr<thrs[k]) ? 1 : 0;
+							k0 = k = child[k0] - k + offset;
+						}
+						h += hs[k]; if (h <= cascThr) break;
+					}
+				}
+				if (h>cascThr) { cs.push_back(c); rs.push_back(r); hs1.push_back(h); }
+			}
+			delete [] cids;
+			m=cs.size();
+
+			// convert to bbs, this bbs matrix is the return of the 
+			// mexFunction, these are changed again in acfDetect.m
+			double *bbs;
+			for( int i=0; i<m; i++ )
+			{
+				bbs[i+0*m]=cs[i]*stride; bbs[i+2*m]=modelWd;
+				bbs[i+1*m]=rs[i]*stride; bbs[i+3*m]=modelHt;
+				bbs[i+4*m]=hs1[i];
+			}
+			// this next part needs to be translated
+			// the bb matrix is the return of acfDetect1.cpp
+			/*
+			shift=(modelDsPad-modelDs)/2-pad;
+		  bb(:,1)=(bb(:,1)+shift(2))/P.scaleshw(i,2);
+		  bb(:,2)=(bb(:,2)+shift(1))/P.scaleshw(i,1);
+		  bb(:,3)=modelDs(2)/P.scales(i);
+		  bb(:,4)=modelDs(1)/P.scales(i);
+		  if(separate), bb(:,6)=j; end; bbs{i,j}=bb;
+			*/
 	}
+ 	// last part before returning the bounding boxes
+	// in here, we create the return of this function
+	// the bbNms.m function needs to be brought here too,
+	// and this one will need some others.
+	/*
+	bbs=cat(1,bbs{:});
+	if(~isempty(pNms)), bbs=bbNms(bbs,pNms); end
+	*/
 	return NULL;
 }

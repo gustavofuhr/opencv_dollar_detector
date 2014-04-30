@@ -22,6 +22,7 @@ public:
 	void readInfo(FileNode);
 	void readGradientMagnitude(FileNode);
 	void readGradientHistogram(FileNode);
+	void exportDetectorModel(String);
 	void importDetectorModel(String);
 	void getChild(float*, uint32_t*, uint32_t*,	float*, uint32_t, uint32_t&, uint32_t&);
 	BoundingBox* acfDetect(Mat);
