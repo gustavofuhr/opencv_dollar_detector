@@ -35,6 +35,8 @@ public:
 	int nAccNeg;
 	int pJitterFlip;
 	int winsSave;
+
+	void readOptions(FileNode);
 };
 
 #endif

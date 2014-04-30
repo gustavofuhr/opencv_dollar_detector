@@ -18,6 +18,7 @@ public:
 	int nChannels;
 	String padWith;
 
+	void readColorChannel(FileNode);
 	Mat convolution(Mat, int, int, int);
 	void triangleFilterConvolution(float*,float*,int,int,int,int, int);
 	void convTri1Y(float*, float*, int, float, int);

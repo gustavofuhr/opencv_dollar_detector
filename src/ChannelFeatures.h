@@ -9,11 +9,13 @@ class ChannelFeatures
 {
 public:
 	int shrink; //amount to subsample the computed channels
-  	ColorChannel pColor;
+  ColorChannel pColor;
 	GradientMagnitudeChannel pGradMag;
 	QuantizedGradientChannel pGradHist;
 	//pCustom //to use custom channels (not implemented)
 	int complete;
+
+	void readChannelFeatures(FileNode);
 };
 
 #endif

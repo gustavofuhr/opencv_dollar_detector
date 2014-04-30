@@ -8,4 +8,5 @@ public:
 	Point firstPoint;
 	int height;
 	int width;
+	int score;
 };

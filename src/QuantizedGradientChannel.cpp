@@ -1,5 +1,14 @@
 #include "QuantizedGradientChannel.h"
 
+void QuantizedGradientChannel::readGradientHistogram(FileNode histNode)
+{
+	enabled = histNode["enabled"];
+	orientationChannels = histNode["nOrients"];
+	useSoftBinning = histNode["softBin"];
+	useHogNormalization = histNode["useHog"];
+	clipHog = histNode["clipHog"];
+}
+
 //Compute oriented gradient histograms
 //H=gradHist(M,O,[...]) - see gradientHist.m
 //H=gradientHist(M,O,binSize,p.nOrients,p.softBin,p.useHog,p.clipHog,full);

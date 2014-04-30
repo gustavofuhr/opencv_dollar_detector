@@ -46,7 +46,11 @@
 		</pPyramid>
 		<modelDs>100 41</modelDs>
 		<modelDsPad>128 64</modelDsPad>
-		<pNms>dummy</pNms>
+		<pNms>
+			<type>maxg</type>
+			<overlap>0.65</overlap>
+			<ovrDnm>min</ovrDnm>		
+		</pNms>
 		<stride>4</stride>
 		<cascThr>-1</cascThr>
 		<cascCal>0.005</cascCal>

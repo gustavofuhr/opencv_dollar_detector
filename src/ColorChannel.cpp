@@ -1,5 +1,14 @@
 #include "ColorChannel.h"
 
+void ColorChannel::readColorChannel(FileNode colorNode)
+{
+	enabled = colorNode["enabled"];
+	smooth = colorNode["smooth"];
+	colorSpaceType = (string)colorNode["colorSpace"];
+	nChannels = colorNode["nChns"];
+	padWith = (string)colorNode["padWith"];
+}
+
 //convolutions taken from the convConst.cpp file
 //I'm going to add just the ones that are actually called
 

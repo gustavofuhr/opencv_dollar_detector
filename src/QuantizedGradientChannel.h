@@ -21,7 +21,7 @@ public:
 	int nChannels;
 	String padWith;
 	
-	
+	void readGradientHistogram(FileNode);
 	//comes from gradientMex.cpp, the return still needs a type
 	Mat mGradHist(Mat, Mat, int);
 	void gradHist(float*,float*,float*,int,int,int,int,int,int);

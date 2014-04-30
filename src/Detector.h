@@ -19,14 +19,14 @@ public:
 	void readChannelFeatures(FileNode);
 	void readPyramid(FileNode);
 	void readOptions(FileNode);
+	void readPNms(FileNode);
 	void readInfo(FileNode);
 	void readGradientMagnitude(FileNode);
 	void readGradientHistogram(FileNode);
 	void exportDetectorModel(String);
 	void importDetectorModel(String);
 	void getChild(float*, uint32_t*, uint32_t*,	float*, uint32_t, uint32_t&, uint32_t&);
-	BoundingBox* acfDetect(Mat);
-	
+	BoundingBox** acfDetect(Mat);
 };
 
 #endif

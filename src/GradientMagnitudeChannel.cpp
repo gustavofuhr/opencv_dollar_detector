@@ -1,5 +1,14 @@
 #include "GradientMagnitudeChannel.h"
 
+void GradientMagnitudeChannel::readGradientMagnitude(FileNode gradMagNode)
+{
+	enabled = gradMagNode["enabled"];
+	colorChannelIndex = gradMagNode["colorChn"];
+	normalizationRadius = gradMagNode["normRad"];
+	normalizationConstant = gradMagNode["normConst"];
+	full = gradMagNode["full"];
+}
+
 // [M,O] = gradMag( I, channel, full ) - see gradientMag.m
 Mat* GradientMagnitudeChannel::mGradMag(Mat I, int channel)
 {

@@ -1,5 +1,24 @@
 #include "Pyramid.h"
 
+void Pyramid::readPyramid(FileNode pyramidNode)
+{
+	pChns.readChannelFeatures(pyramidNode["pChns"]);
+
+	scalesPerOctave = pyramidNode["nPerOct"];
+	upsampledOctaves = pyramidNode["nOctUp"];
+	approximatedScales = pyramidNode["nApprox"];
+	lambdas[0] = pyramidNode["lambdas"][0];
+	lambdas[1] = pyramidNode["lambdas"][1];
+	lambdas[2] = pyramidNode["lambdas"][2];
+	pad[0] = pyramidNode["pad"][0];
+	pad[1] = pyramidNode["pad"][1];
+	minImgSize[0] = pyramidNode["minDs"][0];
+	minImgSize[1] = pyramidNode["minDs"][1];
+	smoothRadius = pyramidNode["smooth"];
+	concatenateChannels = pyramidNode["concat"];
+	completeInput = pyramidNode["complete"];
+}
+
 //translation of the chnsPyramid.m file
 Pyramid Pyramid::computeMultiScaleChannelFeaturePyramid(Mat I)
 {
@@ -15,7 +34,7 @@ Pyramid Pyramid::computeMultiScaleChannelFeaturePyramid(Mat I)
 	//get scales at which to compute features and list of real/approx scales
 	//i dont think scalehw is ever used
 	//[scales,scaleshw]=getScales(nPerOct,nOctUp,minDs,shrink,sz);
-	double* scales = getScales(convertedImage.rows, convertedImage.cols, pChns.shrink);
+	getScales(convertedImage.rows, convertedImage.cols, pChns.shrink);
 
 	//next, the values os isA, isR and isN need to be set
 	//isA has all the values from 1 to nScales that isR doesn't
@@ -137,8 +156,6 @@ Pyramid Pyramid::computeMultiScaleChannelFeaturePyramid(Mat I)
 		;
 	}
 
-	//create output struct
-	//maybe i'll return a new Pyramid or i'll just update the current
 }
 
 //translation of the chnsCompute.m file
@@ -208,7 +225,7 @@ Info Pyramid::computeSingleScaleChannelFeatures(Mat I)
 
 //set each scale s such that max(abs(round(sz*s/shrink)*shrink-sz*s)) is minimized 
 //without changing the smaller dim of sz (tricky algebra)
-double* Pyramid::getScales(int h, int w, int shrink)
+void Pyramid::getScales(int h, int w, int shrink)
 {
 	int minSize, bgDim, smDim;
 	double minSizeRatio;
@@ -229,7 +246,6 @@ double* Pyramid::getScales(int h, int w, int shrink)
 		}
 
 		computedScales = floor(scalesPerOctave*(upsampledOctaves+log2(minSizeRatio))+1);
-		double scales[computedScales];
 		double tempMaxScale[computedScales];
 		int s0, s1;
 		double epsilon = std::numeric_limits<double>::epsilon();
@@ -280,12 +296,11 @@ double* Pyramid::getScales(int h, int w, int shrink)
 		//scales[i] which are different from their neighbours
 		//for now, this will be suppressed
 		
-		//still have to decide whether i need to return scaleshw
-		/*scaleshw = [round(h*scales/shrink)*shrink/h;
-  round(w*scales/shrink)*shrink/w]';*/
-		
-		//both scales and scalehw are returned, but i dont see scaleshw being used ever
-		return scales;
+		for (int i=0; i<computedScales; i++)
+		{
+			scaleshw[i].x = round(w*scales[i]/shrink)*shrink/w;
+			scaleshw[i].y = round(h*scales[i]/shrink)*shrink/h;
+		}
 	}
 	else //error, height or width are wrong
 		;

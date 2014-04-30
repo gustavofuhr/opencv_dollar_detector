@@ -8,5 +8,9 @@ add_executable(opencv_dollar_detector
 ./src/ColorChannel.cpp
 ./src/GradientMagnitudeChannel.cpp
 ./src/Pyramid.cpp
-./src/QuantizedGradientChannel.cpp)
+./src/QuantizedGradientChannel.cpp
+./src/ChannelFeatures.cpp
+./src/Options.cpp
+./src/PNms.cpp
+./src/Clf.cpp)
 target_link_libraries( opencv_dollar_detector ${OpenCV_LIBS} )

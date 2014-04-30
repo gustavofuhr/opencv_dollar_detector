@@ -5,7 +5,7 @@ function bbs = bbNms( bbs, varargin )
 % bbs, if their overlap, defined by:
 %  overlap(bb1,bb2) = area(intersect(bb1,bb2))/area(union(bb1,bb2))
 % is greater than overlap, then the bb with the lower score is suppressed.
-% In the Pascal critieria two bbs are considered a match if overlap>=.5. If
+% In the Pascal criteria two bbs are considered a match if overlap>=.5. If
 % ovrDnm='min', the 'union' in the above formula is replaced with 'min'.
 %
 % type=='maxg': Similar to 'max', except performs the nms in a greedy
