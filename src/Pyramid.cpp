@@ -20,22 +20,29 @@ void Pyramid::readPyramid(FileNode pyramidNode)
 }
 
 //translation of the chnsPyramid.m file
-Pyramid Pyramid::computeMultiScaleChannelFeaturePyramid(Mat I)
+void Pyramid::computeMultiScaleChannelFeaturePyramid(Mat I)
 {
 	Mat convertedImage;
 
 	//if we are to allow incomplete Pyramids, we need to set some values to default.
 	//for now, it wont be implemented. (lines 115-128 of chnsPyramid.m)
 
+	//im causing segmentation fault here, the colosSpaceType is luv
 	//convert I to appropriate color space (or simply normalize)
 	convertedImage = pChns.pColor.rgbConvert(I);
 	pChns.pColor.colorSpaceType = "orig";
 
+	imshow("conv",convertedImage);
+	waitKey();
+
+	//segmentation fault in here too
 	//get scales at which to compute features and list of real/approx scales
 	//i dont think scalehw is ever used
 	//[scales,scaleshw]=getScales(nPerOct,nOctUp,minDs,shrink,sz);
 	getScales(convertedImage.rows, convertedImage.cols, pChns.shrink);
-
+	imshow("scales",I);
+	waitKey();
+	
 	//next, the values os isA, isR and isN need to be set
 	//isA has all the values from 1 to nScales that isR doesn't
 	//j has the averages of all adjacent values of isR,
@@ -59,7 +66,7 @@ Pyramid Pyramid::computeMultiScaleChannelFeaturePyramid(Mat I)
 			I1 = I;
 		else //calling the mex.cpp file didnt work, need to implement those functions
 			//I1 = imResampleMex(I.data,h1,w1,1);
-	
+			;
 		if (scales[i] == 0.5 && (approximatedScales>0 || scalesPerOctave == 1))
 			convertedImage = I1;
 
@@ -72,7 +79,7 @@ Pyramid Pyramid::computeMultiScaleChannelFeaturePyramid(Mat I)
 		//if(i==isR(1)), nTypes=chns.nTypes; data=cell(nScales,nTypes); end
 
 	}
-
+	
 	int is[computedScales/approximatedScales+1]; //needs a better name
 	int isIndex = 0;
 	bool isError = false;
@@ -248,7 +255,8 @@ void Pyramid::getScales(int h, int w, int shrink)
 		computedScales = floor(scalesPerOctave*(upsampledOctaves+log2(minSizeRatio))+1);
 		double tempMaxScale[computedScales];
 		int s0, s1;
-		double epsilon = std::numeric_limits<double>::epsilon();
+		//double epsilon = std::numeric_limits<double>::epsilon();
+		double epsilon = 0.0001;
 
 		//this next for statement will substitute the following:
 		//scales = 2.^(-(0:nScales-1)/nPerOct+nOctUp);
@@ -258,18 +266,29 @@ void Pyramid::getScales(int h, int w, int shrink)
 			s0=(round(smDim*scales[i]/shrink)*shrink-.25*shrink)/smDim;
 			s1=(round(smDim*scales[i]/shrink)*shrink+.25*shrink)/smDim;
 
+			//the next for statement produces segmentation fault
+			//it fails after about 50 iterations
 			//what follows will substitute ss=(0:.01:1-epsilon())*(s1-s0)+s0;
-			double ss[(int)round(1-epsilon/0.01)], es0[(int)round(1-epsilon/0.01)], es1[(int)round(1-epsilon/0.01)];						
+			//double ss[(int)round(1-epsilon/0.01)], es0[(int)round(1-epsilon/0.01)], es1[(int)round(1-epsilon/0.01)];	
+			double ss[100], es0[100], es1[100];					
 			int ssIndex = 0;			
 			for (int j=0; j < 1-epsilon; j = j + 0.01)
 			{
+				if (ssIndex > 99)
+				{ //this cant happen, seems to be a mistake in the loop
+					namedWindow("die");
+					waitKey();
+				}
 				ss[ssIndex] = j*(s1-s0)+s0;
 				es0[ssIndex]=smDim*ss[ssIndex]; 
-				//es0[ssIndex]=abs(es0-round(es0/shrink)*shrink);
+				es0[ssIndex]=abs(es0[ssIndex]-round(es0[ssIndex]/shrink)*shrink);
 				es1[ssIndex]=bgDim*ss[ssIndex]; 
-				//es1[ssIndex]=abs(es1-round(es1/shrink)*shrink);
+				es1[ssIndex]=abs(es1[ssIndex]-round(es1[ssIndex]/shrink)*shrink);
 				ssIndex++;
 			}
+
+			namedWindow("after loop");
+			waitKey();
 
 			//this is the max part of [~,x]=min(max(es0,es1)); 
 			for (int j=0; j < ssIndex; j++)
@@ -289,7 +308,7 @@ void Pyramid::getScales(int h, int w, int shrink)
 				}
 			
 			//scales(i)=ss(x);
-			scales[i] = ss[minScaleIndex];		
+			scales[i] = ss[minScaleIndex];	
 		}
 		
 		//in here, we would have a text to just keep the values of 

@@ -11,10 +11,10 @@ int main(int argc, char** argv)
 	d.importDetectorModel(fileString);
 	
 	image = imread("../opencv_dollar_detector/frame0254.png");
-	//BoundingBox* bbs = d.acfDetect(image);
 	
-	//namedWindow("main");
 	imshow("main",image);
+
+	BoundingBox** bbs = d.acfDetect(image);
 
 	waitKey();
 

@@ -60,7 +60,7 @@ void Detector::getChild(float *chns1, uint32_t *cids, uint32_t *fids,
 //bb = acfDetect1(P.data{i},Ds{j}.clf,shrink,modelDsPad(1),modelDsPad(2),opts.stride,opts.cascThr);
 BoundingBox** Detector::acfDetect(Mat image)
 {
-	//teste para ver se o conteudo da imagem eh char, se for aplica a funcao imreadf
+	//teste para ver se o conteudo da imagem eh char, se for aplica a funcao imreadf 
 
 	//compute feature pyramid
 	opts.pPyramid.computeMultiScaleChannelFeaturePyramid(image);
@@ -188,15 +188,17 @@ BoundingBox** Detector::acfDetect(Mat image)
 			if(separate), bb(:,6)=j; end; 
 			*/
 
-			detections[i] = bb;
-	}
+			//detections[i] = new BoundingBox();
+			//detections[i] = bb;
+	} // */
  	// last part before returning the bounding boxes
 	// in here, we create the return of this function
 	// the bbNms.m function needs to be brought here too,
 	// and this one will need some others.
-	/*
+/*
 	bbs=cat(1,bbs{:});
 	if(~isempty(pNms)), bbs=bbNms(bbs,pNms); end
-	*/
+*/
+
 	return detections;
 }

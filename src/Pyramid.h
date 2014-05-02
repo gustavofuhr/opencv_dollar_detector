@@ -1,6 +1,10 @@
 #include "ChannelFeatures.h"
 #include "Info.h"
 
+#include "cv.h"
+#include "highgui.h"
+using namespace cv;
+
 class Pyramid
 {
 	public:
@@ -23,7 +27,7 @@ class Pyramid
 		Point* scaleshw;
 
 		void readPyramid(FileNode);
-		Pyramid computeMultiScaleChannelFeaturePyramid(Mat);
+		void computeMultiScaleChannelFeaturePyramid(Mat);
 		Info computeSingleScaleChannelFeatures(Mat);
 		Mat TriangleFilterConvolution(Mat I, int r, int s, int nomex);
 		void getScales(int h, int w, int shrink);
