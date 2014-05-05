@@ -87,16 +87,16 @@ BoundingBox** Detector::acfDetect(Mat image)
 		uint32_t *child = (uint32_t*) clf.child.data;
 		const int treeDepth = clf.treeDepth;
 
-		const int height = image.rows;
-		const int width = image.cols;
-		const int nChns = image.dims;
+		const int height = opts.pPyramid.channelTypes;
+		const int width = opts.pPyramid.computedScales;
+		const int nChns = 1;
 
 		//nTreeNodes size of the first dimension of fids
 		const int nTreeNodes = clf.fids.rows;
 		//nTrees size of the second dimension of fids
 		const int nTrees = clf.fids.cols;
-		const int height1 = (int)ceil(float(height*shrink - modelHt + 1 / stride));
-		const int width1 = (int)ceil(float(width*shrink - modelWd + 1 / stride));
+		const int height1 = (int)ceil(float(height*shrink-modelHt+1/stride));
+		const int width1 = (int)ceil(float(width*shrink-modelWd+1/stride));
 
 		//The number of color channels
 		int nChannels = opts.pPyramid.pChns.pColor.nChannels;

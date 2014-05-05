@@ -32,9 +32,11 @@ Mat* GradientMagnitudeChannel::mGradMag(Mat I, int channel)
 		//i dont think this next if statement will be necessary
 		/*if (nl>=2)
 			Mat pl; //pl[0] = mxCreateMatrix3(h,w,1,mxSINGLE_CLASS,0,(void**)&M);*/
+
 		//call to the actual function: 
 		//void gradMag(float*, float*, float*, int, int, int, bool);
 		gradMag(If, M, O, I.rows, I.cols, I.dims, full>0 );
+
 		//next, we assign the values of M and O to the matrix thats going to be returned
 		resultMatrix[0].data = (uchar*)M;
 		resultMatrix[1].data = (uchar*)O;

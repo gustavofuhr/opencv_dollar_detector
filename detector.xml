@@ -37,6 +37,7 @@
 			<nPerOct>8</nPerOct>
 			<nOctUp>0</nOctUp>
 			<nApprox>7</nApprox>
+			<providedLambdas>1</providedLambdas>
 			<lambdas>0 0.11579 0.11579</lambdas>
 			<pad>16 12</pad>
 			<minDs>100 41</minDs>

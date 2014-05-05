@@ -22,7 +22,7 @@ Mat ColorChannel::convolution(Mat source, int radius, int s, int flag)
 	Mat floatMat(source.rows, source.cols, CV_32F);
 	//src.convertTo(dst, CV_32F);
 	source.convertTo(floatMat, CV_32F);
-	float* I;
+	float* I = (float*)floatMat.data;
 	int indexForI = 0;
 	float* O;
 	Mat result;

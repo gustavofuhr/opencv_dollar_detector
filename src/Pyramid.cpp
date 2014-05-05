@@ -18,6 +18,7 @@ void Pyramid::readPyramid(FileNode pyramidNode)
 	scalesPerOctave = pyramidNode["nPerOct"];
 	upsampledOctaves = pyramidNode["nOctUp"];
 	approximatedScales = pyramidNode["nApprox"];
+	providedLambdas = pyramidNode["providedLambdas"];
 	lambdas[0] = pyramidNode["lambdas"][0];
 	lambdas[1] = pyramidNode["lambdas"][1];
 	lambdas[2] = pyramidNode["lambdas"][2];
@@ -42,15 +43,11 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(Mat I)
 	convertedImage = pChns.pColor.rgbConvert(I);
 	pChns.pColor.colorSpaceType = "orig";
 
-	// this in here is just for debug purposes
-	debugWindow("conv",0.0);
-
 	// get scales at which to compute features and list of real/approx scales
 	// [scales,scaleshw]=getScales(nPerOct,nOctUp,minDs,shrink,sz);
 	getScales(convertedImage.rows, convertedImage.cols, pChns.shrink);
 
-	// debug
-	debugWindow("after scales",0.0);
+	computedChannels = new Info[computedScales];
 	
 	//next, the values os isA, isR and isN need to be set
 	//isA has all the values from 1 to nScales that isR doesn't
@@ -80,15 +77,9 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(Mat I)
 			//I1 = imResampleMex(I.data,h1,w1,1);
 			;
 		if (scales[i] == 0.5 && (approximatedScales>0 || scalesPerOctave == 1))
-			convertedImage = I1;
-
-		//debug
-		debugWindow("before chnsCompute",0.0);
+			convertedImage = I1; //is this correct?
 
 		computedChannels[ccIndex] = computeSingleScaleChannelFeatures(I1);
-
-		//debug
-		debugWindow("after chnsCompute",0.0);
 
 		ccIndex++;
 
@@ -98,23 +89,16 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(Mat I)
 		//if(i==isR(1)), nTypes=chns.nTypes; data=cell(nScales,nTypes); end
 
 	}
-	
-	// debug
-	debugWindow("after computedChannels loop",0.0);
-	
+		
 	int is[computedScales/approximatedScales+1]; //needs a better name
 	int isIndex = 0;
 	bool isError = false;
-
-	//suppliedLambdas must determine if the lambdas where supplied
-	//this value needs to be set properly in the future
-	bool suppliedLambdas = false;
 
 	//if lambdas not specified compute image specific lambdas
 	//chnsPyramid.m, line 154
 	//computedScales is the substitute for nScales, might need to 	
 	//set it in the computeSingleScaleChannelFeatures function
-	if (computedScales>0 && approximatedScales>0 && !suppliedLambdas)
+	if (computedScales>0 && approximatedScales>0 && !providedLambdas)
 	{
 		for (int j=1+upsampledOctaves*scalesPerOctave; j < computedScales; j = j+approximatedScales+1)
 		{
@@ -167,17 +151,21 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(Mat I)
 	//compute image pyramid [approximated scales]
 	//the next for statement is controlled by the isA array
 	//h1, w1 and I1 were declared earlier
-	for (int i=0; i<computedScales; i++)
+	//this will use imResampleMex too, so it will be erased for now
+	/*for (int i=0; i<computedScales; i++)
 	{
 		h1 = round(I.rows*scales[i]/pChns.shrink);
 		w1 = round(I.cols*scales[i]/pChns.shrink);
 		
 		//to know which elements of scales are accessed, i need to
 		//finish get scales part, so this will be completed later
-		double ratio=0;
-		for (int j=0; j<channelTypes; j++);
-			//ratio = (scales[i]/scales)
-	}
+		double ratio[3];
+		//Ir = isN[i];
+		ratio[0] = pow(scales[i]/scales[iR],-lambdas[0]);
+		ratio[1] = pow(scales[i]/scales[iR],-lambdas[1]);
+		ratio[2] = pow(scales[i]/scales[iR],-lambdas[2]);
+		
+	}*/
 	
 	//smooth channels, optionally pad and concatenate channels
 	for (int i=0; i < computedScales*channelTypes; i++)
@@ -197,67 +185,54 @@ Info Pyramid::computeSingleScaleChannelFeatures(Mat I)
 	int height = I.rows - (I.rows % pChns.shrink);
 	int width =  I.cols - (I.cols % pChns.shrink);
 
-		// debug
-	debugWindow("before rgbConvert",0.0);
-
 	//compute color channels
 	result.image = pChns.pColor.rgbConvert(I);
 	result.image = pChns.pColor.convolution(result.image, pChns.pColor.smooth, 1, CONV_TRI);
 	if (pChns.pColor.enabled)
 		result.colorCh = pChns.pColor;
 
-	// debug
-	debugWindow("after rgbConvert",0.0);
-
-	//compute gradient magnitude channel
 	if (pChns.pGradHist.enabled)
 	{
 		//i need to identify which is the color channel to know
 		//how to represent it in integer, or change mGradMag
-		/*Mat *tempResult = pChns.pGradMag.mGradMag(result.image,result.colorCh);
+		Mat *tempResult = pChns.pGradMag.mGradMag(result.image,COLOR_CHANNEL);
 		result.gradientMagnitude = tempResult[0];
-		gradOrientation = tempResult[1];*/
+		gradOrientation = tempResult[1];
 
 		//still need to understand this next part:
 		if (pChns.pGradMag.normalizationRadius != 0)
 		{
-			//where does this M come from?
-			//this part depends on the last one i took out
-			/*float* S = (pChns.pColor.convolution(M, pChns.pGradMag.normalizationRadius, 1, CONV_TRI)).data;
-			result.gradientMagnitude = pChns.pGradMag.gradMagNorm(result.gradientMagnitude,S);*/ 
+			float *S = (float*)(pChns.pColor.convolution(result.gradientMagnitude, pChns.pGradMag.normalizationRadius, 1, CONV_TRI)).data;
+			float *M = (float*)result.gradientMagnitude.data;
+			int h = result.gradientMagnitude.rows;
+			int w = result.gradientMagnitude.cols;
+			result.gradientMagnitude = pChns.pGradMag.gradMagNorm(M, S, h, w); 
 		}
 	}		
 	else
 	{
 		if (pChns.pGradMag.enabled)
 		{
-			//came problem with channel selection as before
-			//but maybe this is always done in the color channel
-			//result.gradientMagnitude = (pChns.pGradMag.mGradMag(result.image,pChns.pColor))[0];			
+			result.gradientMagnitude = (pChns.pGradMag.mGradMag(result.image, COLOR_CHANNEL))[0];			
 
 			if (pChns.pGradMag.normalizationRadius != 0)
 			{
-				//also depends on previous problems
-				/*float* S = (pChns.pColor.convolution(M, pChns.pGradMag.normalizationRadius, 1, CONV_TRI)).data;
-			result.gradientMagnitude = pChns.pGradMag.gradMagNorm(result.gradientMagnitude,S);*/ 
+				float *S = (float*)(pChns.pColor.convolution(result.gradientMagnitude, pChns.pGradMag.normalizationRadius, 1, CONV_TRI)).data;
+				float *M = (float*)result.gradientMagnitude.data;
+				int h = result.gradientMagnitude.rows;
+				int w = result.gradientMagnitude.cols;
+				result.gradientMagnitude = pChns.pGradMag.gradMagNorm(M, S, h, w);
 			}
 		}	
 	}
 	
-	debugWindow("after big if",0.0);
-	
 	//compute gradient histogram channels
 	if (pChns.pGradHist.enabled)
 	{
-		//decided to send full as one
-		//this needs to be checked later, because of the
-		//gradOrientation Matrix
-		//result.gradientHistogram = pChns.pGradHist.mGradHist(result.gradientMagnitude, gradOrientation, 1);
+		result.gradientHistogram = pChns.pGradHist.mGradHist(result.gradientMagnitude, gradOrientation, pChns.pGradMag.full);
 	}	
 
 	//for now, i wont add computation of custom channels
-
-	debugWindow("before return",0.0);
 	
 	return result;
 }
@@ -290,9 +265,6 @@ void Pyramid::getScales(int h, int w, int shrink)
 		computedScales = floor(scalesPerOctave*(upsampledOctaves+log2(minSizeRatio))+1);
 		int s0, s1;
 		double epsilon = std::numeric_limits<double>::epsilon();	
-		
-		// debug
-		debugWindow("before scale loop",0.0);
 
 		scales = (double*)malloc(computedScales * sizeof(double));
 
@@ -341,9 +313,6 @@ void Pyramid::getScales(int h, int w, int shrink)
 			//scales(i)=ss(x);
 			scales[i] = ss[minScaleIndex];	
 		}
-
-		// debug
-		debugWindow("after scale loop",0.0);
 		
 		//in here, we would have a text to just keep the values of 
 		//scales[i] which are different from their neighbours
@@ -356,8 +325,6 @@ void Pyramid::getScales(int h, int w, int shrink)
 			scaleshw[i].x = round(w*scales[i]/shrink)*shrink/w;
 			scaleshw[i].y = round(h*scales[i]/shrink)*shrink/h;
 		}
-		// debug
-		debugWindow("after scalehw",0.0);
 	}
 	else //error, height or width of the image are wrong
 		;

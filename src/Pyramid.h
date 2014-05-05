@@ -12,6 +12,7 @@ class Pyramid
 		int scalesPerOctave; //number of scales per octave
 		int upsampledOctaves; //number of upsampled octaves to compute
 		int approximatedScales; //number of approx. scales
+		int providedLambdas;
 		double lambdas[3]; //for power law scaling
 		int pad[2]; //amount to pad channels (along T/B and L/R)
 		int minImgSize[2]; //minimum image size for channel computation
@@ -22,7 +23,7 @@ class Pyramid
 		//output parameters
 		int channelTypes; //number of channel types
 		int computedScales; //number of scales computed
-		Info computedChannels[]; //[nScales x nTypes] cell array of computed channels
+		Info* computedChannels; //[nScales x nTypes] cell array of computed channels
 		double* scales;
 		Point* scaleshw;
 

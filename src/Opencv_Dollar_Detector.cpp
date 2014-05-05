@@ -14,9 +14,12 @@ int main(int argc, char** argv)
 	
 	//imshow("main",image);
 
-	BoundingBox** bbs = d.acfDetect(image);
+	//still have a segmentation fault here
+	//but first i need to work a bit more on acfDetect's return
+	//BoundingBox** bbs = d.acfDetect(image);
+	d.acfDetect(image);
 
-	waitKey();
+	d.opts.pPyramid.debugWindow("done",0);
 
 	return 0;
 }

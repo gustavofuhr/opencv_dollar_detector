@@ -15,7 +15,7 @@ public:
 	Mat gradientMagnitude;
 	Mat gradientHistogram;
 
-  	ColorChannel colorCh;
+  ColorChannel colorCh;
 	GradientMagnitudeChannel gradMag;
 	QuantizedGradientChannel gradHist;
 };

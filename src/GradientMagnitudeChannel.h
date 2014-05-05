@@ -2,11 +2,12 @@
 #define GRADMAG_H
 
 #include "cv.h"
-//#include "wrappers.hpp"
 #include "sse.hpp"
 #include "math.h"
 
 #define PI 3.14159265f
+
+#define COLOR_CHANNEL 1
 
 using namespace cv;
 

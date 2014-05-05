@@ -5,8 +5,6 @@
 * Licensed under the Simplified BSD License [see external/bsd.txt]
 *******************************************************************************/
 
-//bb = acfDetect1(P.data{i},Ds{j}.clf,shrink,modelDsPad(1),modelDsPad(2),opts.stride,opts.cascThr);
-
 #include "mex.h"
 #include <vector>
 #include <cmath>
@@ -22,6 +20,7 @@ inline void getChild( float *chns1, uint32 *cids, uint32 *fids,
   k0=k+=k0*2; k+=offset;
 }
 
+//bb = acfDetect1(P.data{i},Ds{j}.clf,shrink,modelDsPad(1),modelDsPad(2),opts.stride,opts.cascThr);
 void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
 {
   // get inputs
