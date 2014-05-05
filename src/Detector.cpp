@@ -1,6 +1,6 @@
 #include "Detector.h"
 
-//i dont know if its gonna be needed but this is a good start
+//i dont know if its gonna be needed but this is start
 void Detector::exportDetectorModel(String fileName)
 {
 	FileStorage xml;
@@ -65,7 +65,7 @@ BoundingBox** Detector::acfDetect(Mat image)
 	//compute feature pyramid
 	opts.pPyramid.computeMultiScaleChannelFeaturePyramid(image);
 
-	// criar uma matriz de bounding boxes
+	// creates a bounding box matrix
 	// needs another dimension, one for the number of scales
 	// another for the number of detections in each scale
 	BoundingBox* detections[opts.pPyramid.computedScales];
@@ -74,7 +74,6 @@ BoundingBox** Detector::acfDetect(Mat image)
 	//to apply multiple detector models you need to create multiple Detector objects. 
 	for (int i = 0; i < opts.pPyramid.computedScales; i++)
 	{
-		//all of this 
 		float* chns = (float*)image.data;
 		const int shrink = opts.pPyramid.pChns.shrink;
 		const int modelHt = opts.modelDsPad[0];

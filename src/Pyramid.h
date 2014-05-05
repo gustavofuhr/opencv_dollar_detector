@@ -31,4 +31,7 @@ class Pyramid
 		Info computeSingleScaleChannelFeatures(Mat);
 		Mat TriangleFilterConvolution(Mat I, int r, int s, int nomex);
 		void getScales(int h, int w, int shrink);
+
+
+		void debugWindow (string name, double value);
 };

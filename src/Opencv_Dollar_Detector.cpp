@@ -12,7 +12,7 @@ int main(int argc, char** argv)
 	
 	image = imread("../opencv_dollar_detector/frame0254.png");
 	
-	imshow("main",image);
+	//imshow("main",image);
 
 	BoundingBox** bbs = d.acfDetect(image);
 

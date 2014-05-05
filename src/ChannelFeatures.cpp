@@ -8,5 +8,7 @@ void ChannelFeatures::readChannelFeatures(FileNode chFeatNode)
 
 	pGradHist.readGradientHistogram(chFeatNode["pGradHist"]);	
 
+	shrink = chFeatNode["shrink"];
 	complete = chFeatNode["complete"];
+
 }

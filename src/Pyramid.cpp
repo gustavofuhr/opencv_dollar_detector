@@ -1,5 +1,16 @@
 #include "Pyramid.h"
 
+void Pyramid::debugWindow (string name, double value)
+{
+	Mat debugImg = imread("../opencv_dollar_detector/frame0254.png");
+	char str[200];
+	sprintf(str,"%f",value);
+	putText(debugImg, str, Point2f(100,100), FONT_HERSHEY_PLAIN, 2,  Scalar(0,0,255,255));
+	imshow(name,debugImg);
+	waitKey();
+	destroyWindow(name);
+}
+
 void Pyramid::readPyramid(FileNode pyramidNode)
 {
 	pChns.readChannelFeatures(pyramidNode["pChns"]);
@@ -27,21 +38,19 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(Mat I)
 	//if we are to allow incomplete Pyramids, we need to set some values to default.
 	//for now, it wont be implemented. (lines 115-128 of chnsPyramid.m)
 
-	//im causing segmentation fault here, the colosSpaceType is luv
 	//convert I to appropriate color space (or simply normalize)
 	convertedImage = pChns.pColor.rgbConvert(I);
 	pChns.pColor.colorSpaceType = "orig";
 
-	imshow("conv",convertedImage);
-	waitKey();
+	// this in here is just for debug purposes
+	debugWindow("conv",0.0);
 
-	//segmentation fault in here too
-	//get scales at which to compute features and list of real/approx scales
-	//i dont think scalehw is ever used
-	//[scales,scaleshw]=getScales(nPerOct,nOctUp,minDs,shrink,sz);
+	// get scales at which to compute features and list of real/approx scales
+	// [scales,scaleshw]=getScales(nPerOct,nOctUp,minDs,shrink,sz);
 	getScales(convertedImage.rows, convertedImage.cols, pChns.shrink);
-	imshow("scales",I);
-	waitKey();
+
+	// debug
+	debugWindow("after scales",0.0);
 	
 	//next, the values os isA, isR and isN need to be set
 	//isA has all the values from 1 to nScales that isR doesn't
@@ -62,15 +71,25 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(Mat I)
 		h1 = round(I.rows*scales[i]/pChns.shrink)*pChns.shrink;
 		w1 = round(I.cols*scales[i]/pChns.shrink)*pChns.shrink;
 
+		//debug
+		I1 = I;
+
 		if(h1 == I.rows && w1 == I.cols)
 			I1 = I;
-		else //calling the mex.cpp file didnt work, need to implement those functions
+		else //need to implement the imResampleMex functions
 			//I1 = imResampleMex(I.data,h1,w1,1);
 			;
 		if (scales[i] == 0.5 && (approximatedScales>0 || scalesPerOctave == 1))
 			convertedImage = I1;
 
+		//debug
+		debugWindow("before chnsCompute",0.0);
+
 		computedChannels[ccIndex] = computeSingleScaleChannelFeatures(I1);
+
+		//debug
+		debugWindow("after chnsCompute",0.0);
+
 		ccIndex++;
 
 		//why is this here?
@@ -79,6 +98,9 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(Mat I)
 		//if(i==isR(1)), nTypes=chns.nTypes; data=cell(nScales,nTypes); end
 
 	}
+	
+	// debug
+	debugWindow("after computedChannels loop",0.0);
 	
 	int is[computedScales/approximatedScales+1]; //needs a better name
 	int isIndex = 0;
@@ -175,11 +197,17 @@ Info Pyramid::computeSingleScaleChannelFeatures(Mat I)
 	int height = I.rows - (I.rows % pChns.shrink);
 	int width =  I.cols - (I.cols % pChns.shrink);
 
+		// debug
+	debugWindow("before rgbConvert",0.0);
+
 	//compute color channels
 	result.image = pChns.pColor.rgbConvert(I);
 	result.image = pChns.pColor.convolution(result.image, pChns.pColor.smooth, 1, CONV_TRI);
 	if (pChns.pColor.enabled)
 		result.colorCh = pChns.pColor;
+
+	// debug
+	debugWindow("after rgbConvert",0.0);
 
 	//compute gradient magnitude channel
 	if (pChns.pGradHist.enabled)
@@ -215,7 +243,9 @@ Info Pyramid::computeSingleScaleChannelFeatures(Mat I)
 			}
 		}	
 	}
-
+	
+	debugWindow("after big if",0.0);
+	
 	//compute gradient histogram channels
 	if (pChns.pGradHist.enabled)
 	{
@@ -226,16 +256,20 @@ Info Pyramid::computeSingleScaleChannelFeatures(Mat I)
 	}	
 
 	//for now, i wont add computation of custom channels
+
+	debugWindow("before return",0.0);
 	
 	return result;
 }
 
-//set each scale s such that max(abs(round(sz*s/shrink)*shrink-sz*s)) is minimized 
-//without changing the smaller dim of sz (tricky algebra)
+// set each scale s such that max(abs(round(sz*s/shrink)*shrink-sz*s)) is minimized 
+// without changing the smaller dim of sz (tricky algebra)
+// getScales(convertedImage.rows, convertedImage.cols, pChns.shrink);
 void Pyramid::getScales(int h, int w, int shrink)
 {
 	int minSize, bgDim, smDim;
 	double minSizeRatio;
+
 	
 	if (h!=0 && w!=0)
 	{
@@ -252,11 +286,15 @@ void Pyramid::getScales(int h, int w, int shrink)
 			minSizeRatio = w / minImgSize[1];
 		}
 
+		//nScales = floor(nPerOct*(nOctUp+log2(min(sz./minDs)))+1);
 		computedScales = floor(scalesPerOctave*(upsampledOctaves+log2(minSizeRatio))+1);
-		double tempMaxScale[computedScales];
 		int s0, s1;
-		//double epsilon = std::numeric_limits<double>::epsilon();
-		double epsilon = 0.0001;
+		double epsilon = std::numeric_limits<double>::epsilon();	
+		
+		// debug
+		debugWindow("before scale loop",0.0);
+
+		scales = (double*)malloc(computedScales * sizeof(double));
 
 		//this next for statement will substitute the following:
 		//scales = 2.^(-(0:nScales-1)/nPerOct+nOctUp);
@@ -266,19 +304,11 @@ void Pyramid::getScales(int h, int w, int shrink)
 			s0=(round(smDim*scales[i]/shrink)*shrink-.25*shrink)/smDim;
 			s1=(round(smDim*scales[i]/shrink)*shrink+.25*shrink)/smDim;
 
-			//the next for statement produces segmentation fault
-			//it fails after about 50 iterations
 			//what follows will substitute ss=(0:.01:1-epsilon())*(s1-s0)+s0;
-			//double ss[(int)round(1-epsilon/0.01)], es0[(int)round(1-epsilon/0.01)], es1[(int)round(1-epsilon/0.01)];	
-			double ss[100], es0[100], es1[100];					
+			double ss[(int)round((1-epsilon)/0.01)], es0[(int)round((1-epsilon)/0.01)], es1[(int)round((1-epsilon)/0.01)];		
 			int ssIndex = 0;			
-			for (int j=0; j < 1-epsilon; j = j + 0.01)
+			for (double j=0; j < 1-epsilon; j = j + 0.01)
 			{
-				if (ssIndex > 99)
-				{ //this cant happen, seems to be a mistake in the loop
-					namedWindow("die");
-					waitKey();
-				}
 				ss[ssIndex] = j*(s1-s0)+s0;
 				es0[ssIndex]=smDim*ss[ssIndex]; 
 				es0[ssIndex]=abs(es0[ssIndex]-round(es0[ssIndex]/shrink)*shrink);
@@ -287,15 +317,16 @@ void Pyramid::getScales(int h, int w, int shrink)
 				ssIndex++;
 			}
 
-			namedWindow("after loop");
-			waitKey();
-
+			// should tempMaxScale be the size of ssIndex or is it 
+			// related to computedScales, or both?
+			double tempMaxScale[ssIndex];				
+		
 			//this is the max part of [~,x]=min(max(es0,es1)); 
-			for (int j=0; j < ssIndex; j++)
-				if (es0[j] > es1[j])
-					tempMaxScale[j] = es0[j];
+			for (int k=0; k < ssIndex; k++)
+				if (es0[k] > es1[k])
+					tempMaxScale[k] = es0[k];
 				else
-					tempMaxScale[j] = es1[j];
+					tempMaxScale[k] = es1[k];
 
 			//this is the min part of [~,x]=min(max(es0,es1));
 			double minScaleValue = tempMaxScale[0];
@@ -310,18 +341,25 @@ void Pyramid::getScales(int h, int w, int shrink)
 			//scales(i)=ss(x);
 			scales[i] = ss[minScaleIndex];	
 		}
+
+		// debug
+		debugWindow("after scale loop",0.0);
 		
 		//in here, we would have a text to just keep the values of 
 		//scales[i] which are different from their neighbours
 		//for now, this will be suppressed
 		
+		scaleshw = (Point*)malloc(computedScales * sizeof(Point));
+
 		for (int i=0; i<computedScales; i++)
 		{
 			scaleshw[i].x = round(w*scales[i]/shrink)*shrink/w;
 			scaleshw[i].y = round(h*scales[i]/shrink)*shrink/h;
 		}
+		// debug
+		debugWindow("after scalehw",0.0);
 	}
-	else //error, height or width are wrong
+	else //error, height or width of the image are wrong
 		;
 }
 
