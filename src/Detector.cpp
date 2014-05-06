@@ -58,7 +58,7 @@ void Detector::getChild(float *chns1, uint32_t *cids, uint32_t *fids,
 }
 
 //bb = acfDetect1(P.data{i},Ds{j}.clf,shrink,modelDsPad(1),modelDsPad(2),opts.stride,opts.cascThr);
-BoundingBox** Detector::acfDetect(Mat image)
+BB_Array* Detector::acfDetect(Mat image)
 {
 	//teste para ver se o conteudo da imagem eh char, se for aplica a funcao imreadf 
 
@@ -68,7 +68,7 @@ BoundingBox** Detector::acfDetect(Mat image)
 	// creates a bounding box matrix
 	// needs another dimension, one for the number of scales
 	// another for the number of detections in each scale
-	BoundingBox* detections[opts.pPyramid.computedScales];
+	BB_Array detections[opts.pPyramid.computedScales];
 
 	//this became a simple loop because we will apply just one detector here, 
 	//to apply multiple detector models you need to create multiple Detector objects. 
@@ -170,16 +170,18 @@ BoundingBox** Detector::acfDetect(Mat image)
 			shift[0] = (modelHt-opts.modelDs[0])/2-opts.pPyramid.pad[0];
 			shift[1] = (modelWd-opts.modelDs[1])/2-opts.pPyramid.pad[1];
 
-			BoundingBox bb[m];
+			//BoundingBox bb[m];
 			for( int j=0; j<m; j++ )
 			{
-				bb[j].firstPoint.x = cs[j]*stride;
-				bb[j].firstPoint.x = (bb[j].firstPoint.x+shift[1])/opts.pPyramid.scaleshw[j].x;
-				bb[j].firstPoint.y = rs[j]*stride;
-				bb[j].firstPoint.y = (bb[j].firstPoint.y+shift[0])/opts.pPyramid.scaleshw[j].y;
-				bb[j].height = modelHt/opts.pPyramid.scales[j];
-				bb[j].width = modelWd/opts.pPyramid.scales[j];
-				bb[j].score = hs1[j];
+				BoundingBox bb;
+				bb.firstPoint.x = cs[j]*stride;
+				bb.firstPoint.x = (bb.firstPoint.x+shift[1])/opts.pPyramid.scaleshw[j].x;
+				bb.firstPoint.y = rs[j]*stride;
+				bb.firstPoint.y = (bb.firstPoint.y+shift[0])/opts.pPyramid.scaleshw[j].y;
+				bb.height = modelHt/opts.pPyramid.scales[j];
+				bb.width = modelWd/opts.pPyramid.scales[j];
+				bb.score = hs1[j];
+				detections[i].push_back(bb);
 			}
 
 			// does this next part need to be translated?
@@ -187,8 +189,8 @@ BoundingBox** Detector::acfDetect(Mat image)
 			if(separate), bb(:,6)=j; end; 
 			*/
 
-			//detections[i] = new BoundingBox();
-			//detections[i] = bb;
+			//detections[i] = new BoundingBox[m];
+			//detections[i].push_back(bb);
 	} // */
  	// last part before returning the bounding boxes
 	// in here, we create the return of this function
@@ -201,3 +203,133 @@ BoundingBox** Detector::acfDetect(Mat image)
 
 	return detections;
 }
+
+BB_Array Detector::bbNms(BoundingBox* bbs, int size)
+{
+	std::vector<BoundingBox> result;
+	int j;
+
+	//keep just the bounding boxes with scores higher than the threshold
+	for (int i=0; i < size; i++)
+	{
+		if (bbs[i].score > opts.pNms.threshold)
+		{
+			result.push_back(bbs[i]);
+			//result[j] = bbs[i];
+			j++;
+		}
+	}
+
+	// bbNms would apply resize to the bounding boxes now
+	// but our models dont use that, so it will be suppressed
+		
+	// since we just apply one detector model at a time,
+	// our separate attribute would always be false
+	// so the next part is simpler, nms1 follows
+	
+	// if there are too many bounding boxes,
+	// he splits into two arrays and recurses, merging afterwards
+	// this will be done if needed
+	
+	// run actual nms on given bbs
+	if (opts.pNms.type == "maxg")
+		result = nmsMax(result, size, true);
+
+	return result;
+}
+
+// for each i suppress all j st j>i and area-overlap>overlap
+BB_Array Detector::nmsMax(BB_Array source, int size, bool greedy)
+{
+	BB_Array result;
+	
+	// sort the result array by score
+	
+	for (int i = 0; i < size; i++)
+	{
+		// continue only if its not greedy or result[i] was not yet discarded
+		for (int j = i+1; j < size; j++)
+		{
+			// continue this loop only if result[j] was not yet discarded
+			double xei, xej, xmin, xsMax, iw;
+			double yei, yej, ymin, ysMax, ih;
+			xei = source[i].firstPoint.x + source[i].width;
+			xej = source[j].firstPoint.x + source[j].width;
+			xmin = xej;			
+			if (xei < xej)
+				xmin = xei;
+			xsMax = source[i].firstPoint.x;
+			if (source[j].firstPoint.x > source[i].firstPoint.x)
+				xsMax = source[j].firstPoint.x;
+			iw = xmin - xsMax;
+			yei = source[i].firstPoint.y + source[i].height;
+			yej = source[j].firstPoint.y + source[j].height;
+			ymin = yej;			
+			if (yei < yej)
+				ymin = yei;
+			ysMax = source[i].firstPoint.y;
+			if (source[j].firstPoint.y > source[i].firstPoint.y)
+				ysMax = source[j].firstPoint.y;
+			ih = ymin - ysMax;
+			if (iw > 0 && ih > 0)
+			{
+				double o = iw * ih;
+				double u;
+				if (opts.pNms.ovrDnm == "union")
+						u = source[i].height*source[i].width + source[j].height*source[j].width-o;
+				else if (opts.pNms.ovrDnm == "min")
+				{
+					u = source[i].height*source[i].width;
+					if (source[i].height*source[i].width > source[j].height*source[j].width)
+						u = source[j].height*source[j].width;
+				}
+				o = o/u;
+				if (o > opts.pNms.overlap);
+					// source[j] is no longer needed (is discarded)
+			}
+		}	
+	}
+	
+	// result keeps only the bounding boxes that were not discarded
+
+	return result;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

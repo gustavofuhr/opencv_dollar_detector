@@ -1,6 +1,7 @@
 #ifndef DETECTOR_H
 #define DETECTOR_H
 
+#include <vector>
 #include "Options.h"
 #include "Clf.h"
 #include "Info.h"
@@ -8,6 +9,8 @@
 
 using namespace cv;
 using namespace std;
+
+typedef std::vector<BoundingBox> BB_Array;
 
 class Detector
 {
@@ -26,7 +29,9 @@ public:
 	void exportDetectorModel(String);
 	void importDetectorModel(String);
 	void getChild(float*, uint32_t*, uint32_t*,	float*, uint32_t, uint32_t&, uint32_t&);
-	BoundingBox** acfDetect(Mat);
+	BB_Array* acfDetect(Mat);
+	BB_Array bbNms(BoundingBox* bbs, int size);
+	BB_Array nmsMax (BB_Array source, int size, bool greedy);
 };
 
 #endif

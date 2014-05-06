@@ -16,7 +16,8 @@ int main(int argc, char** argv)
 
 	//still have a segmentation fault here
 	//but first i need to work a bit more on acfDetect's return
-	//BoundingBox** bbs = d.acfDetect(image);
+	//BoundingBox** bbs;
+	//bbs = d.acfDetect(image);
 	d.acfDetect(image);
 
 	d.opts.pPyramid.debugWindow("done",0);
