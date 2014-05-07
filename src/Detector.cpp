@@ -49,26 +49,21 @@ void Detector::importDetectorModel(cv::String fileName)
 }
 
 //this procedure was just copied verbatim
-void Detector::getChild(float *chns1, uint32_t *cids, uint32_t *fids,
-    float *thrs, uint32_t offset, uint32_t &k0, uint32_t &k)
+void Detector::getChild( float *chns1, uint32_t *cids, uint32_t *fids, float *thrs, uint32_t offset, uint32_t &k0, uint32_t &k )
 {
-	float ftr = chns1[cids[fids[k]]];
-	k = (ftr<thrs[k]) ? 1 : 2;
-	k0 = k += k0 * 2; k += offset;
+  float ftr = chns1[cids[fids[k]]];
+  k = (ftr<thrs[k]) ? 1 : 2;
+  k0=k+=k0*2;
+	k+=offset;
 }
 
 //bb = acfDetect1(P.data{i},Ds{j}.clf,shrink,modelDsPad(1),modelDsPad(2),opts.stride,opts.cascThr);
-BB_Array* Detector::acfDetect(cv::Mat image)
+void Detector::acfDetect(cv::Mat image)
 {
 	//teste para ver se o conteudo da imagem eh char, se for aplica a funcao imreadf 
 
 	//compute feature pyramid
 	opts.pPyramid.computeMultiScaleChannelFeaturePyramid(image);
-
-	// creates a bounding box matrix
-	// needs another dimension, one for the number of scales
-	// another for the number of detections in each scale
-	BB_Array detections[opts.pPyramid.computedScales];
 
 	//this became a simple loop because we will apply just one detector here, 
 	//to apply multiple detector models you need to create multiple Detector objects. 
@@ -170,7 +165,7 @@ BB_Array* Detector::acfDetect(cv::Mat image)
 			shift[0] = (modelHt-opts.modelDs[0])/2-opts.pPyramid.pad[0];
 			shift[1] = (modelWd-opts.modelDs[1])/2-opts.pPyramid.pad[1];
 
-			//BoundingBox bb[m];
+			BB_Array bbs;
 			for( int j=0; j<m; j++ )
 			{
 				BoundingBox bb;
@@ -181,17 +176,12 @@ BB_Array* Detector::acfDetect(cv::Mat image)
 				bb.height = modelHt/opts.pPyramid.scales[j];
 				bb.width = modelWd/opts.pPyramid.scales[j];
 				bb.score = hs1[j];
-				detections[i].push_back(bb);
+				bbs.push_back(bb);
 			}
 
-			// does this next part need to be translated?
-			/*
-			if(separate), bb(:,6)=j; end; 
-			*/
+			detections.push_back(bbs);
+	}
 
-			//detections[i] = new BoundingBox[m];
-			//detections[i].push_back(bb);
-	} // */
  	// last part before returning the bounding boxes
 	// in here, we create the return of this function
 	// the bbNms.m function needs to be brought here too,
@@ -200,8 +190,6 @@ BB_Array* Detector::acfDetect(cv::Mat image)
 	bbs=cat(1,bbs{:});
 	if(~isempty(pNms)), bbs=bbNms(bbs,pNms); end
 */
-
-	return detections;
 }
 
 BB_Array Detector::bbNms(BoundingBox* bbs, int size)

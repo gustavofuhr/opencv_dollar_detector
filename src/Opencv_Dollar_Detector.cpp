@@ -5,8 +5,6 @@ int main(int argc, char** argv)
 	cv::Mat image;
 	Detector d;
 
-	//call to read the detector file
-	//d.importDetectorModel(DETECTOR_FILE);
 	cv::String fileString = "../opencv_dollar_detector/detector.xml";
 	d.importDetectorModel(fileString);
 	
@@ -16,7 +14,8 @@ int main(int argc, char** argv)
 
 	//still have a segmentation fault here
 	//but first i need to work a bit more on acfDetect's return
-	//BoundingBox** bbs;
+	//BB_Array* bbs = (BB_Array*)malloc(100 * sizeof(BB_Array));
+
 	//bbs = d.acfDetect(image);
 	d.acfDetect(image);
 
