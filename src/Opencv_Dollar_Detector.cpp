@@ -2,15 +2,15 @@
 
 int main(int argc, char** argv) 
 {
-	Mat image;
+	cv::Mat image;
 	Detector d;
 
 	//call to read the detector file
 	//d.importDetectorModel(DETECTOR_FILE);
-	String fileString = "../opencv_dollar_detector/detector.xml";
+	cv::String fileString = "../opencv_dollar_detector/detector.xml";
 	d.importDetectorModel(fileString);
 	
-	image = imread("../opencv_dollar_detector/frame0254.png");
+	image = cv::imread("../opencv_dollar_detector/frame0254.png");
 	
 	//imshow("main",image);
 

@@ -1,12 +1,12 @@
 #include "ColorChannel.h"
 
-void ColorChannel::readColorChannel(FileNode colorNode)
+void ColorChannel::readColorChannel(cv::FileNode colorNode)
 {
 	enabled = colorNode["enabled"];
 	smooth = colorNode["smooth"];
-	colorSpaceType = (string)colorNode["colorSpace"];
+	colorSpaceType = (cv::String)colorNode["colorSpace"];
 	nChannels = colorNode["nChns"];
-	padWith = (string)colorNode["padWith"];
+	padWith = (cv::String)colorNode["padWith"];
 }
 
 //convolutions taken from the convConst.cpp file
@@ -17,15 +17,15 @@ void ColorChannel::readColorChannel(FileNode colorNode)
 //this is the wrapper function that call the appropriate one
 //this one could go away, if we refactor the other ones to
 //operate on cvMat structures rather than just float*
-Mat ColorChannel::convolution(Mat source, int radius, int s, int flag)
+cv::Mat ColorChannel::convolution(cv::Mat source, int radius, int s, int flag)
 {
-	Mat floatMat(source.rows, source.cols, CV_32F);
+	cv::Mat floatMat(source.rows, source.cols, CV_32F);
 	//src.convertTo(dst, CV_32F);
 	source.convertTo(floatMat, CV_32F);
 	float* I = (float*)floatMat.data;
 	int indexForI = 0;
 	float* O;
-	Mat result;
+	cv::Mat result;
 	int h = source.rows;
 	int w = source.cols;
 	int d = source.dims;
@@ -116,9 +116,9 @@ void ColorChannel::convTri1( float *I, float *O, int h, int w, int d, float p, i
 
 /******************************************************/
 //colorspace conversions
-Mat ColorChannel::rgbConvert(Mat I)
+cv::Mat ColorChannel::rgbConvert(cv::Mat I)
 {
-    Mat result;
+    cv::Mat result;
     if (this->colorSpaceType == "luv")
 				cvtColor(I, result, CV_BGR2Luv);
     else

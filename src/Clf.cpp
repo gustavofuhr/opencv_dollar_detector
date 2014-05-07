@@ -1,6 +1,6 @@
 #include "Clf.h"
 
-void Clf::readClf(FileNode clfNode)
+void Clf::readClf(cv::FileNode clfNode)
 {
 	clfNode["fids"] >> fids;
 	clfNode["thrs"] >> thrs;

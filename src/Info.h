@@ -11,9 +11,9 @@
 class Info
 {
 public:
-	Mat image;
-	Mat gradientMagnitude;
-	Mat gradientHistogram;
+	cv::Mat image;
+	cv::Mat gradientMagnitude;
+	cv::Mat gradientHistogram;
 
   ColorChannel colorCh;
 	GradientMagnitudeChannel gradMag;

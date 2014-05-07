@@ -1,6 +1,6 @@
 #include "ChannelFeatures.h"
 
-void ChannelFeatures::readChannelFeatures(FileNode chFeatNode)
+void ChannelFeatures::readChannelFeatures(cv::FileNode chFeatNode)
 {
 	pColor.readColorChannel(chFeatNode["pColor"]);
 	

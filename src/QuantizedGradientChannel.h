@@ -3,11 +3,8 @@
 
 #include "cv.h"
 #include "sse.hpp"
-//#include "wrappers.hpp"
 
 #define PI 3.14159265f
-
-using namespace cv;
 
 class QuantizedGradientChannel
 {
@@ -19,11 +16,11 @@ public:
    int useHogNormalization; //if true perform 4-way hog normalization/clipping
 	double clipHog; //value at which to clip hog histogram bins
 	int nChannels;
-	String padWith;
+	cv::String padWith;
 	
-	void readGradientHistogram(FileNode);
+	void readGradientHistogram(cv::FileNode);
 	//comes from gradientMex.cpp, the return still needs a type
-	Mat mGradHist(Mat, Mat, int);
+	cv::Mat mGradHist(cv::Mat, cv::Mat, int);
 	void gradHist(float*,float*,float*,int,int,int,int,int,int);
 	void gradQuantize(float*,float*,int*,int*,float*,float*,int, int,float,int,int,bool);
 	void hog(float*,float*,float*,int,int,int,int,int,int,float);

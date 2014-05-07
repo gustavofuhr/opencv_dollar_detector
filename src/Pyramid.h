@@ -3,36 +3,35 @@
 
 #include "cv.h"
 #include "highgui.h"
-using namespace cv;
 
 class Pyramid
 {
-	public:
-		ChannelFeatures pChns; //parameters for creating channels
-		int scalesPerOctave; //number of scales per octave
-		int upsampledOctaves; //number of upsampled octaves to compute
-		int approximatedScales; //number of approx. scales
-		int providedLambdas;
-		double lambdas[3]; //for power law scaling
-		int pad[2]; //amount to pad channels (along T/B and L/R)
-		int minImgSize[2]; //minimum image size for channel computation
-		int smoothRadius; //radius for channel smoothing (using convTri)
-		int concatenateChannels; //if true, concatenate channels
-		int completeInput; //if true does not check/set default vals in pPyramid
+public:
+	ChannelFeatures pChns; //parameters for creating channels
+	int scalesPerOctave; //number of scales per octave
+	int upsampledOctaves; //number of upsampled octaves to compute
+	int approximatedScales; //number of approx. scales
+	int providedLambdas;
+	double lambdas[3]; //for power law scaling
+	int pad[2]; //amount to pad channels (along T/B and L/R)
+	int minImgSize[2]; //minimum image size for channel computation
+	int smoothRadius; //radius for channel smoothing (using convTri)
+	int concatenateChannels; //if true, concatenate channels
+	int completeInput; //if true does not check/set default vals in pPyramid
 
-		//output parameters
-		int channelTypes; //number of channel types
-		int computedScales; //number of scales computed
-		Info* computedChannels; //[nScales x nTypes] cell array of computed channels
-		double* scales;
-		Point* scaleshw;
+	//output parameters
+	int channelTypes; //number of channel types
+	int computedScales; //number of scales computed
+	Info* computedChannels; //[nScales x nTypes] cell array of computed channels
+	double* scales;
+	cv::Point* scaleshw;
 
-		void readPyramid(FileNode);
-		void computeMultiScaleChannelFeaturePyramid(Mat);
-		Info computeSingleScaleChannelFeatures(Mat);
-		Mat TriangleFilterConvolution(Mat I, int r, int s, int nomex);
-		void getScales(int h, int w, int shrink);
+	void readPyramid(cv::FileNode);
+	void computeMultiScaleChannelFeaturePyramid(cv::Mat);
+	Info computeSingleScaleChannelFeatures(cv::Mat);
+	cv::Mat TriangleFilterConvolution(cv::Mat, int, int, int);
+	void getScales(int, int , int);
 
 
-		void debugWindow (string name, double value);
+	void debugWindow (cv::String, double);
 };

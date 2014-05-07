@@ -5,8 +5,6 @@
 #include "PNms.h"
 #include "PBoost.h"
 
-using namespace cv;
-
 class Options
 {
 public:
@@ -20,14 +18,14 @@ public:
 	int nWeak[4];
 	PBoost pBoost;
 	int seed;
-	String name;
-	String posGtDir;
-	String posImgDir;
-	String negImgDir;
-	String posWinDir;
-	String negWinDir;
+	cv::String name;
+	cv::String posGtDir;
+	cv::String posImgDir;
+	cv::String negImgDir;
+	cv::String posWinDir;
+	cv::String negWinDir;
 	//function imreadf;
-	Mat imreadp;
+	cv::Mat imreadp;
 	double pLoadSquarify[2];
 	int nPos;
 	int nNeg;
@@ -36,7 +34,7 @@ public:
 	int pJitterFlip;
 	int winsSave;
 
-	void readOptions(FileNode);
+	void readOptions(cv::FileNode);
 };
 
 #endif

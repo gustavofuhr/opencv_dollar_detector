@@ -1,8 +1,8 @@
 #include "PNms.h"
 
-void PNms::readPNms(FileNode pNmsNode)
+void PNms::readPNms(cv::FileNode pNmsNode)
 {
-	type = (string)pNmsNode["type"];
+	type = (cv::String)pNmsNode["type"];
 	overlap = pNmsNode["overlap"];
-	ovrDnm = (string)pNmsNode["ovrDnm"];
+	ovrDnm = (cv::String)pNmsNode["ovrDnm"];
 }

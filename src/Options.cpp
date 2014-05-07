@@ -1,6 +1,6 @@
 #include "Options.h"
 
-void Options::readOptions(FileNode optionsNode)
+void Options::readOptions(cv::FileNode optionsNode)
 {
 	pPyramid.readPyramid(optionsNode["pPyramid"]);
 
@@ -18,10 +18,10 @@ void Options::readOptions(FileNode optionsNode)
 	nWeak[2] = optionsNode["nWeak"][2];
 	nWeak[3] = optionsNode["nWeak"][3];
 	seed = optionsNode["seed"];
-	name = (string)optionsNode["name"];
-	posGtDir = (string)optionsNode["posGtDir"];
-	posImgDir = (string)optionsNode["posImgDir"];
-	negImgDir = (string)optionsNode["negImgDir"];
+	name = (cv::String)optionsNode["name"];
+	posGtDir = (cv::String)optionsNode["posGtDir"];
+	posImgDir = (cv::String)optionsNode["posImgDir"];
+	negImgDir = (cv::String)optionsNode["negImgDir"];
 	nPos = optionsNode["nPos"];
 	nNeg = optionsNode["nNeg"];
 	nPerNeg = optionsNode["nPerNeg"];

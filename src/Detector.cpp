@@ -1,11 +1,11 @@
 #include "Detector.h"
 
 //i dont know if its gonna be needed but this is start
-void Detector::exportDetectorModel(String fileName)
+void Detector::exportDetectorModel(cv::String fileName)
 {
-	FileStorage xml;
+	cv::FileStorage xml;
 	
-	xml.open(fileName, FileStorage::WRITE);
+	xml.open(fileName, cv::FileStorage::WRITE);
 
 	xml << "opts" << "{";
 		xml << "pPyramid" << "{";
@@ -28,11 +28,11 @@ void Detector::exportDetectorModel(String fileName)
 //for now, it must be like this since the current model
 //was not written by this program this will change after we are 
 //set on a class structure
-void Detector::importDetectorModel(String fileName)
+void Detector::importDetectorModel(cv::String fileName)
 {
-	FileStorage xml;
+	cv::FileStorage xml;
 
-	xml.open(fileName, FileStorage::READ);
+	xml.open(fileName, cv::FileStorage::READ);
 
 	if (!xml.isOpened())
 	{
@@ -58,7 +58,7 @@ void Detector::getChild(float *chns1, uint32_t *cids, uint32_t *fids,
 }
 
 //bb = acfDetect1(P.data{i},Ds{j}.clf,shrink,modelDsPad(1),modelDsPad(2),opts.stride,opts.cascThr);
-BB_Array* Detector::acfDetect(Mat image)
+BB_Array* Detector::acfDetect(cv::Mat image)
 {
 	//teste para ver se o conteudo da imagem eh char, se for aplica a funcao imreadf 
 
@@ -111,7 +111,7 @@ BB_Array* Detector::acfDetect(Mat image)
 					cids[m++] = z*width*height + c*height + r;
 
 		// apply classifier to each patch
-		vector<int> rs, cs; vector<float> hs1;
+		std::vector<int> rs, cs; std::vector<float> hs1;
 		for (int c = 0; c<width1; c++) 
 			for (int r = 0; r<height1; r++) 
 			{
@@ -206,7 +206,7 @@ BB_Array* Detector::acfDetect(Mat image)
 
 BB_Array Detector::bbNms(BoundingBox* bbs, int size)
 {
-	std::vector<BoundingBox> result;
+	BB_Array result;
 	int j;
 
 	//keep just the bounding boxes with scores higher than the threshold

@@ -1,6 +1,6 @@
 #include "GradientMagnitudeChannel.h"
 
-void GradientMagnitudeChannel::readGradientMagnitude(FileNode gradMagNode)
+void GradientMagnitudeChannel::readGradientMagnitude(cv::FileNode gradMagNode)
 {
 	enabled = gradMagNode["enabled"];
 	colorChannelIndex = gradMagNode["colorChn"];
@@ -10,11 +10,11 @@ void GradientMagnitudeChannel::readGradientMagnitude(FileNode gradMagNode)
 }
 
 // [M,O] = gradMag( I, channel, full ) - see gradientMag.m
-Mat* GradientMagnitudeChannel::mGradMag(Mat I, int channel)
+cv::Mat* GradientMagnitudeChannel::mGradMag(cv::Mat I, int channel)
 {
 	int c, d; 
 	float *M, *O=0;
-	Mat resultMatrix[2];
+	cv::Mat resultMatrix[2];
 
 	//checkArgs procedure is called but it is not actually needed
 	//probably just need to test some of the parameters, if that
@@ -53,8 +53,8 @@ Mat* GradientMagnitudeChannel::mGradMag(Mat I, int channel)
 // gradMagNorm( M, S, norm ) - operates on M - see gradientMag.m
 //gradientMex('gradientMagNorm',M,S,normConst);
 // normalize gradient magnitude at each location (uses sse) 
-Mat GradientMagnitudeChannel::gradMagNorm(float* M, float* S, int h, int w) {
-	Mat resultingM;
+cv::Mat GradientMagnitudeChannel::gradMagNorm(float* M, float* S, int h, int w) {
+	cv::Mat resultingM;
 	__m128 *_M, *_S, _norm; 
 	int i=0, n=h*w, n4=n/4;
   	_S = (__m128*) S; 

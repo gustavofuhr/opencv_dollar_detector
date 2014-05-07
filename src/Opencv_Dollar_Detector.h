@@ -9,7 +9,4 @@
 #define EXTENSION ".jpg"
 #define DETECTOR_FILE "../opencv_dollar_detector/detector.xml"
 
-using namespace cv;
-using namespace std;
-
 #endif

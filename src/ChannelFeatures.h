@@ -15,7 +15,7 @@ public:
 	//pCustom //to use custom channels (not implemented)
 	int complete;
 
-	void readChannelFeatures(FileNode);
+	void readChannelFeatures(cv::FileNode);
 };
 
 #endif

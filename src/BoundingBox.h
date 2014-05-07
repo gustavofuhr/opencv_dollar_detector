@@ -1,12 +1,12 @@
-#include "cv.h"
-
-using namespace cv;
+//#include "cv.h"
 
 class BoundingBox
 {
 public:
-	Point firstPoint;
+	cv::Point firstPoint;
 	int height;
 	int width;
 	int score;
 };
+
+typedef std::vector<BoundingBox> BB_Array;

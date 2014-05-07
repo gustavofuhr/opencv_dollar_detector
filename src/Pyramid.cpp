@@ -1,17 +1,17 @@
 #include "Pyramid.h"
 
-void Pyramid::debugWindow (string name, double value)
+void Pyramid::debugWindow (cv::String name, double value)
 {
-	Mat debugImg = imread("../opencv_dollar_detector/frame0254.png");
+	cv::Mat debugImg = cv::imread("../opencv_dollar_detector/frame0254.png");
 	char str[200];
 	sprintf(str,"%f",value);
-	putText(debugImg, str, Point2f(100,100), FONT_HERSHEY_PLAIN, 2,  Scalar(0,0,255,255));
-	imshow(name,debugImg);
-	waitKey();
-	destroyWindow(name);
+	putText(debugImg, str, cv::Point2f(100,100), cv::FONT_HERSHEY_PLAIN, 2,  cv::Scalar(0,0,255,255));
+	cv::imshow(name,debugImg);
+	cv::waitKey();
+	cv::destroyWindow(name);
 }
 
-void Pyramid::readPyramid(FileNode pyramidNode)
+void Pyramid::readPyramid(cv::FileNode pyramidNode)
 {
 	pChns.readChannelFeatures(pyramidNode["pChns"]);
 
@@ -32,9 +32,9 @@ void Pyramid::readPyramid(FileNode pyramidNode)
 }
 
 //translation of the chnsPyramid.m file
-void Pyramid::computeMultiScaleChannelFeaturePyramid(Mat I)
+void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 {
-	Mat convertedImage;
+	cv::Mat convertedImage;
 
 	//if we are to allow incomplete Pyramids, we need to set some values to default.
 	//for now, it wont be implemented. (lines 115-128 of chnsPyramid.m)
@@ -60,7 +60,7 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(Mat I)
 	//there is a for statement where the index i can only assume values of the array isR
 	//I guess isR might be useless, if we do it like this instead:
 	int h1, w1;
-	Mat I1;
+	cv::Mat I1;
 	int ccIndex=0;
 
 	for (int i=0; i < computedScales; i = i + approximatedScales + 1)
@@ -176,9 +176,9 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(Mat I)
 }
 
 //translation of the chnsCompute.m file
-Info Pyramid::computeSingleScaleChannelFeatures(Mat I)
+Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 {
-	Mat gradOrientation;
+	cv::Mat gradOrientation;
 	Info result;
 
 	//crop I so it becomes divisible by shrink
@@ -195,7 +195,7 @@ Info Pyramid::computeSingleScaleChannelFeatures(Mat I)
 	{
 		//i need to identify which is the color channel to know
 		//how to represent it in integer, or change mGradMag
-		Mat *tempResult = pChns.pGradMag.mGradMag(result.image,COLOR_CHANNEL);
+		cv::Mat *tempResult = pChns.pGradMag.mGradMag(result.image,COLOR_CHANNEL);
 		result.gradientMagnitude = tempResult[0];
 		gradOrientation = tempResult[1];
 
@@ -318,7 +318,7 @@ void Pyramid::getScales(int h, int w, int shrink)
 		//scales[i] which are different from their neighbours
 		//for now, this will be suppressed
 		
-		scaleshw = (Point*)malloc(computedScales * sizeof(Point));
+		scaleshw = (cv::Point*)malloc(computedScales * sizeof(cv::Point));
 
 		for (int i=0; i<computedScales; i++)
 		{

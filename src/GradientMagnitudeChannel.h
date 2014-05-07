@@ -9,8 +9,6 @@
 
 #define COLOR_CHANNEL 1
 
-using namespace cv;
-
 class GradientMagnitudeChannel
 {
 public:
@@ -20,16 +18,16 @@ public:
 	float normalizationConstant; //normalization constant for gradient
 	int full; //if true compute angles in [0,2*pi) else in [0,pi)
 	int nChannels;
-	String padWith;
+	cv::String padWith;
 
-	void readGradientMagnitude(FileNode);
+	void readGradientMagnitude(cv::FileNode);
 	//all of the next procedures still need proper names and maybe some refactoring
 	//they are used in Pyramid.cpp's computeSingleScaleChannelFeaturePyramid(Mat)
-	Mat* mGradMag(Mat, int);
+	cv::Mat* mGradMag(cv::Mat, int);
 	void gradMag(float*, float*, float*, int, int, int, bool);
 	void grad1(float*, float*, float*, int, int, int);
 	float* acosTable();
-	Mat gradMagNorm(float* M, float* S, int h, int w);
+	cv::Mat gradMagNorm(float* M, float* S, int h, int w);
 };
 
 #endif

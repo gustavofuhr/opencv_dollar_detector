@@ -1,6 +1,6 @@
 #include "QuantizedGradientChannel.h"
 
-void QuantizedGradientChannel::readGradientHistogram(FileNode histNode)
+void QuantizedGradientChannel::readGradientHistogram(cv::FileNode histNode)
 {
 	enabled = histNode["enabled"];
 	orientationChannels = histNode["nOrients"];
@@ -12,9 +12,9 @@ void QuantizedGradientChannel::readGradientHistogram(FileNode histNode)
 //Compute oriented gradient histograms
 //H=gradHist(M,O,[...]) - see gradientHist.m
 //H=gradientHist(M,O,binSize,p.nOrients,p.softBin,p.useHog,p.clipHog,full);
-Mat QuantizedGradientChannel::mGradHist(Mat gradMag, Mat gradOri, int full)
+cv::Mat QuantizedGradientChannel::mGradHist(cv::Mat gradMag, cv::Mat gradOri, int full)
 {
-	Mat result;
+	cv::Mat result;
 	float *M, *O, *H;
 	
 	//for now, we will make this trasnformations to avoid having to rewrite the other procedures

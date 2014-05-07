@@ -3,22 +3,20 @@
 
 #include "cv.h"
 
-using namespace cv;
-
 class Clf
 {
 public:
-	Mat fids;
-	Mat thrs;
-	Mat child;
-	Mat hs;
-	Mat weights;
-	Mat depth;
-	Mat errs;
-	Mat losses;
+	cv::Mat fids;
+	cv::Mat thrs;
+	cv::Mat child;
+	cv::Mat hs;
+	cv::Mat weights;
+	cv::Mat depth;
+	cv::Mat errs;
+	cv::Mat losses;
 	int treeDepth;
 
-	void readClf(FileNode);
+	void readClf(cv::FileNode);
 };
 
 #endif
