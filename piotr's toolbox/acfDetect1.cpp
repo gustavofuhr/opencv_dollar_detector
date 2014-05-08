@@ -37,8 +37,7 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
   float *hs = (float*) mxGetData(mxGetField(trees,0,"hs"));
   uint32 *fids = (uint32*) mxGetData(mxGetField(trees,0,"fids"));
   uint32 *child = (uint32*) mxGetData(mxGetField(trees,0,"child"));
-  const int treeDepth = mxGetField(trees,0,"treeDepth")==NULL ? 0 :
-    (int) mxGetScalar(mxGetField(trees,0,"treeDepth"));
+  const int treeDepth = mxGetField(trees,0,"treeDepth")==NULL ? 0 : (int) mxGetScalar(mxGetField(trees,0,"treeDepth"));
 
   // get dimensions and constants
   const mwSize *chnsSize = mxGetDimensions(prhs[0]);

@@ -62,6 +62,8 @@ void Detector::acfDetect(cv::Mat image)
 {
 	//teste para ver se o conteudo da imagem eh char, se for aplica a funcao imreadf 
 
+	totalDetections = 0;
+
 	//compute feature pyramid
 	opts.pPyramid.computeMultiScaleChannelFeaturePyramid(image);
 
@@ -69,7 +71,12 @@ void Detector::acfDetect(cv::Mat image)
 	//to apply multiple detector models you need to create multiple Detector objects. 
 	for (int i = 0; i < opts.pPyramid.computedScales; i++)
 	{
-		float* chns = (float*)image.data;
+		// mxGetData(P.data{i});
+		// this assingment is here for debug purposes
+		// this whole loop needs to be changed
+		// i could concatenate the parts to create this array
+		// or change the whole thing...
+		float* chns = (float*)opts.pPyramid.computedChannels[0].image.data;
 		const int shrink = opts.pPyramid.pChns.shrink;
 		const int modelHt = opts.modelDsPad[0];
 		const int modelWd = opts.modelDsPad[1];
@@ -82,9 +89,15 @@ void Detector::acfDetect(cv::Mat image)
 		uint32_t *child = (uint32_t*) clf.child.data;
 		const int treeDepth = clf.treeDepth;
 
-		const int height = opts.pPyramid.channelTypes;
-		const int width = opts.pPyramid.computedScales;
-		const int nChns = 1;
+		// int the original file: *chnsSize = mxGetDimensions(P.data{i});
+		// still need to check these values properly
+		// the height is ok, but i wonder if thats the right width
+		// the first dimension of chns
+		const int height = opts.pPyramid.computedScales;
+		// second dimension of chns
+		//const int width = opts.pPyramid.channelTypes;
+		const int width = 3;
+		const int nChns = 1; 
 
 		//nTreeNodes size of the first dimension of fids
 		const int nTreeNodes = clf.fids.rows;
@@ -97,7 +110,7 @@ void Detector::acfDetect(cv::Mat image)
 		int nChannels = opts.pPyramid.pChns.pColor.nChannels;
 
 		//construct cids array
-		int nFtrs = modelHt / shrink*modelWd / shrink*nChannels;
+		int nFtrs = modelHt/shrink * modelWd/shrink * nChannels;
 		uint32_t *cids = new uint32_t[nFtrs];
 		int m = 0;
 		for (int z = 0; z<nChannels; z++)
@@ -110,7 +123,7 @@ void Detector::acfDetect(cv::Mat image)
 		for (int c = 0; c<width1; c++) 
 			for (int r = 0; r<height1; r++) 
 			{
-				float h = 0, *chns1 = chns + (r*stride / shrink) + (c*stride / shrink)*height;
+				float h = 0, *chns1 = chns + (r*stride/shrink) + (c*stride/shrink)*height;
 				if (treeDepth == 1) 
 				{
 					// specialized case for treeDepth==1
@@ -166,7 +179,7 @@ void Detector::acfDetect(cv::Mat image)
 			shift[1] = (modelWd-opts.modelDs[1])/2-opts.pPyramid.pad[1];
 
 			BB_Array bbs;
-			for( int j=0; j<m; j++ )
+			for(int j=0; j<m; j++ )
 			{
 				BoundingBox bb;
 				bb.firstPoint.x = cs[j]*stride;
@@ -177,6 +190,7 @@ void Detector::acfDetect(cv::Mat image)
 				bb.width = modelWd/opts.pPyramid.scales[j];
 				bb.score = hs1[j];
 				bbs.push_back(bb);
+				totalDetections++;
 			}
 
 			detections.push_back(bbs);

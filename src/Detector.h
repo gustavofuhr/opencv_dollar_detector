@@ -14,6 +14,8 @@ public:
 	Clf clf;
 
 	BB_Array_Array detections;
+	// debug
+	int totalDetections;
 
 	void exportDetectorModel(cv::String);
 	void importDetectorModel(cv::String);

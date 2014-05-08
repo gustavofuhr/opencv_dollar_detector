@@ -63,12 +63,12 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 	cv::Mat I1;
 	int ccIndex=0;
 
-	for (int i=0; i < computedScales; i = i + approximatedScales + 1)
+	for (int i=0; i < computedScales; i = i+approximatedScales+1)
 	{
 		h1 = round(I.rows*scales[i]/pChns.shrink)*pChns.shrink;
 		w1 = round(I.cols*scales[i]/pChns.shrink)*pChns.shrink;
 
-		//debug
+		//debug, while we dont have imResampleMex
 		I1 = I;
 
 		if(h1 == I.rows && w1 == I.cols)
@@ -80,7 +80,6 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 			convertedImage = I1; //is this correct?
 
 		computedChannels[ccIndex] = computeSingleScaleChannelFeatures(I1);
-
 		ccIndex++;
 
 		//why is this here?
@@ -123,9 +122,9 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 		double *f0 = (double*)memset(f0, 0, channelTypes*sizeof(double));		
 		double *f1 = (double*)memset(f1, 0, channelTypes*sizeof(double));;
 
-		//only two of the channel types seem to be considered here
-		//since chnsCompute computes the histogram channel after
-		//the other two, its ommited
+		// only two of the channel types seem to be considered here
+		// since chnsCompute computes the histogram channel after
+		// the other two, its ommited
 		for (int j=0; j<channelTypes; j++)
 		{
 			double sum=0;
