@@ -72,11 +72,19 @@ void Detector::acfDetect(cv::Mat image)
 	for (int i = 0; i < opts.pPyramid.computedScales; i++)
 	{
 		// mxGetData(P.data{i});
-		// this assingment is here for debug purposes
-		// this whole loop needs to be changed
-		// i could concatenate the parts to create this array
-		// or change the whole thing...
-		float* chns = (float*)opts.pPyramid.computedChannels[0].image.data;
+		float* chns;
+		float* ch1 = (float*)opts.pPyramid.computedChannels[i].image.data;
+		int ch1Size = opts.pPyramid.computedChannels[i].image.rows * 
+		opts.pPyramid.computedChannels[i].image.cols;
+		float* ch2 = (float*)opts.pPyramid.computedChannels[i].gradientMagnitude.data;
+		int ch2Size = opts.pPyramid.computedChannels[i].gradientMagnitude.rows * opts.pPyramid.computedChannels[i].gradientMagnitude.cols;
+		float* ch3 = (float*)opts.pPyramid.computedChannels[i].gradientHistogram.data;
+		int ch3Size = opts.pPyramid.computedChannels[i].gradientHistogram.rows * opts.pPyramid.computedChannels[i].gradientHistogram.cols;
+		chns = (float*) malloc(ch1Size+ch2Size+ch3Size);
+		memcpy(chns, ch1, ch1Size) ;
+		memcpy(&chns[ch1Size], ch2, ch2Size);
+		memcpy(&chns[ch1Size+ch2Size], ch3, ch3Size);
+
 		const int shrink = opts.pPyramid.pChns.shrink;
 		const int modelHt = opts.modelDsPad[0];
 		const int modelWd = opts.modelDsPad[1];
@@ -91,13 +99,10 @@ void Detector::acfDetect(cv::Mat image)
 
 		// int the original file: *chnsSize = mxGetDimensions(P.data{i});
 		// still need to check these values properly
-		// the height is ok, but i wonder if thats the right width
-		// the first dimension of chns
 		const int height = opts.pPyramid.computedScales;
 		// second dimension of chns
-		//const int width = opts.pPyramid.channelTypes;
-		const int width = 3;
-		const int nChns = 1; 
+		const int width = opts.pPyramid.channelTypes;
+		const int nChns = 3; 
 
 		//nTreeNodes size of the first dimension of fids
 		const int nTreeNodes = clf.fids.rows;
@@ -117,11 +122,12 @@ void Detector::acfDetect(cv::Mat image)
 			for (int c = 0; c<modelWd / shrink; c++)
 				for (int r = 0; r<modelHt / shrink; r++)
 					cids[m++] = z*width*height + c*height + r;
-
+	
 		// apply classifier to each patch
 		std::vector<int> rs, cs; std::vector<float> hs1;
-		for (int c = 0; c<width1; c++) 
-			for (int r = 0; r<height1; r++) 
+		int c, r;
+		for (c = 0; c<width1; c++) 
+			for (r = 0; r<height1; r++) 
 			{
 				float h = 0, *chns1 = chns + (r*stride/shrink) + (c*stride/shrink)*height;
 				if (treeDepth == 1) 
@@ -134,7 +140,8 @@ void Detector::acfDetect(cv::Mat image)
 						h += hs[k]; if (h <= cascThr) break;
 					}
 				}	
-				else if (treeDepth == 2) {
+				else if (treeDepth == 2) 
+				{
 					// specialized case for treeDepth==2
 					for (int t = 0; t < nTrees; t++) {
 						uint32_t offset = t*nTreeNodes, k = offset, k0 = 0;
@@ -193,20 +200,13 @@ void Detector::acfDetect(cv::Mat image)
 				totalDetections++;
 			}
 
+			bbs = bbNms(bbs, m);
+
 			detections.push_back(bbs);
 	}
-
- 	// last part before returning the bounding boxes
-	// in here, we create the return of this function
-	// the bbNms.m function needs to be brought here too,
-	// and this one will need some others.
-/*
-	bbs=cat(1,bbs{:});
-	if(~isempty(pNms)), bbs=bbNms(bbs,pNms); end
-*/
 }
 
-BB_Array Detector::bbNms(BoundingBox* bbs, int size)
+BB_Array Detector::bbNms(BB_Array bbs, int size)
 {
 	BB_Array result;
 	int j;
@@ -234,6 +234,7 @@ BB_Array Detector::bbNms(BoundingBox* bbs, int size)
 	// this will be done if needed
 	
 	// run actual nms on given bbs
+	// other types might be added later
 	if (opts.pNms.type == "maxg")
 		result = nmsMax(result, size, true);
 

@@ -89,7 +89,7 @@ function pyramid = chnsPyramid( I, varargin )
 % OUTPUTS
 %  pyramid      - output struct
 %   .pPyramid     - exact input parameters used (may change from input)
-%   .nTypes       - number of channel types
+%   .nTypes       - number of chapyramidnnel types
 %   .nScales      - number of scales computed
 %   .data         - [nScales x nTypes] cell array of computed channels
 %   .info         - [nTypes x 1] struct array (mirrored from chnsCompute)

@@ -20,11 +20,9 @@ int main(int argc, char** argv)
 	d.acfDetect(image);
 
 	BB_Array test = d.detections[0];
-	// this next line generates a floating point error
-	//BoundingBox test2 = test[1];
 	
 	// this will print 0, so nothing is being detected
-	d.opts.pPyramid.debugWindow("done",d.totalDetections);
+	d.opts.pPyramid.debugWindow("number of detections",d.totalDetections);
 
 	return 0;
 }
