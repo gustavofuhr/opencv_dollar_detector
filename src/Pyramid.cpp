@@ -62,9 +62,12 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 	int h1, w1;
 	cv::Mat I1;
 	int ccIndex=0;
+	int isN[computedScales];
 
 	for (int i=0; i < computedScales; i = i+approximatedScales+1)
 	{
+		for (int j = 0; j < approximatedScales; j++)
+			isN[i+j] = i;
 		h1 = round(I.rows*scales[i]/pChns.shrink)*pChns.shrink;
 		w1 = round(I.cols*scales[i]/pChns.shrink)*pChns.shrink;
 
@@ -119,7 +122,7 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 			//is=is(2:3)
 
 		//channelTypes is the substitute for the nTypes value
-		double *f0 = (double*)memset(f0, 0, channelTypes*sizeof(double));		
+		double *f0 = (double*)memset(f0,0,channelTypes*sizeof(double));		
 		double *f1 = (double*)memset(f1, 0, channelTypes*sizeof(double));;
 
 		// only two of the channel types seem to be considered here
@@ -151,25 +154,27 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 	//the next for statement is controlled by the isA array
 	//h1, w1 and I1 were declared earlier
 	//this will use imResampleMex too, so it will be erased for now
-	/*for (int i=0; i<computedScales; i++)
+	for (int i=0; i<computedScales; i++)
 	{
 		h1 = round(I.rows*scales[i]/pChns.shrink);
 		w1 = round(I.cols*scales[i]/pChns.shrink);
 		
-		//to know which elements of scales are accessed, i need to
-		//finish get scales part, so this will be completed later
 		double ratio[3];
-		//Ir = isN[i];
+		int iR = isN[i];
 		ratio[0] = pow(scales[i]/scales[iR],-lambdas[0]);
 		ratio[1] = pow(scales[i]/scales[iR],-lambdas[1]);
 		ratio[2] = pow(scales[i]/scales[iR],-lambdas[2]);
 		
-	}*/
+	}
 	
 	//smooth channels, optionally pad and concatenate channels
-	for (int i=0; i < computedScales*channelTypes; i++)
+	for (int i=0; i < computedScales; i++)
 	{
-		;
+		// this is kinda of what needs to happen
+		// but the actual convolution needs to be reworked
+		/*computedChannels[i].image = convTri(computedChannels[i].image, smooth);
+		computedChannels[i].gradientMagnitude = convTri(computedChannels[i].gradientMagnitude, smooth);
+		computedChannels[i].gradientHistogram = convTri(computedChannels[i].gradientHistogram, smooth);*/
 	}
 
 }
