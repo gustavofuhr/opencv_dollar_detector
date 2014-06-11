@@ -16,6 +16,10 @@ cv::Mat* GradientMagnitudeChannel::mGradMag(cv::Mat I, int channel)
 	float *M, *O=0;
 	cv::Mat resultMatrix[2];
 
+	cv::imshow("I",I);
+	cv::waitKey();
+	cv::destroyAllWindows();
+
 	//checkArgs procedure is called but it is not actually needed
 	//probably just need to test some of the parameters, if that
 	//checkArgs(nl,pl,nr,pr,1,2,3,3,&h,&w,&d,mxSINGLE_CLASS,(void**)&I);
@@ -24,6 +28,13 @@ cv::Mat* GradientMagnitudeChannel::mGradMag(cv::Mat I, int channel)
 	{
 		//for now, the gradMag procedure will be unchanged so we put the raw data of the image in a float pointer to be used there 
 		float *If = (float*)I.data;
+		cv::Mat tempMat(I.rows, I.cols, CV_32F);
+		tempMat.data = (uchar*)If;
+
+		cv::imshow("tempMat",tempMat);
+		cv::waitKey();
+		cv::destroyAllWindows();
+
 		if (channel>0 && channel<=I.dims)
 		{
 			If += I.rows*I.cols*(channel-1); 

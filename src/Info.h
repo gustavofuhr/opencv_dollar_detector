@@ -15,7 +15,7 @@ public:
 	cv::Mat gradientMagnitude;
 	cv::Mat gradientHistogram;
 
-  ColorChannel colorCh;
+  	ColorChannel colorCh;
 	GradientMagnitudeChannel gradMag;
 	QuantizedGradientChannel gradHist;
 };

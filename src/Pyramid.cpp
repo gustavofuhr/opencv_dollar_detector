@@ -191,17 +191,28 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 
 	//compute color channels
 	result.image = pChns.pColor.rgbConvert(I);
+	debugWindow("blah",8);
 	result.image = pChns.pColor.convolution(result.image, pChns.pColor.smooth, 1, CONV_TRI);
+	debugWindow("blah",9);
 	if (pChns.pColor.enabled)
 		result.colorCh = pChns.pColor;
 
+	debugWindow("blah",4);
+
 	if (pChns.pGradHist.enabled)
 	{
+		debugWindow("blah",10);
+
 		//i need to identify which is the color channel to know
 		//how to represent it in integer, or change mGradMag
 		cv::Mat *tempResult = pChns.pGradMag.mGradMag(result.image,COLOR_CHANNEL);
+
+		debugWindow("blah",11);		
+
 		result.gradientMagnitude = tempResult[0];
 		gradOrientation = tempResult[1];
+
+		debugWindow("blah",5);
 
 		//still need to understand this next part:
 		if (pChns.pGradMag.normalizationRadius != 0)
@@ -212,6 +223,7 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 			int w = result.gradientMagnitude.cols;
 			result.gradientMagnitude = pChns.pGradMag.gradMagNorm(M, S, h, w); 
 		}
+		debugWindow("blah",6);
 	}		
 	else
 	{
@@ -229,6 +241,8 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 			}
 		}	
 	}
+
+	debugWindow("blah",7);
 	
 	//compute gradient histogram channels
 	if (pChns.pGradHist.enabled)
