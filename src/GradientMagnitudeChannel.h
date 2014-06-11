@@ -1,7 +1,7 @@
 #ifndef GRADMAG_H
 #define GRADMAG_H
 
-#include "cv.h"
+#include "opencv.hpp"
 #include "sse.hpp"
 #include "math.h"
 

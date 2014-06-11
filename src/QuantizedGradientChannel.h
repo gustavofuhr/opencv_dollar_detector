@@ -1,7 +1,7 @@
 #ifndef GRADHIST_H
 #define GRADHIST_H
 
-#include "cv.h"
+#include "opencv.hpp"
 #include "sse.hpp"
 
 #define PI 3.14159265f

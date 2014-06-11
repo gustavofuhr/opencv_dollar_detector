@@ -175,6 +175,7 @@ void mexFunction(int nl, mxArray *pl[], int nr, const mxArray *pr[]) {
   // Error checking
   if( nr!=3 ) mexErrMsgTxt("Three inputs expected.");
   if( nl>1 ) mexErrMsgTxt("One output expected.");
+  
   dims = (const int*) mxGetDimensions(pr[0]); n=dims[0]*dims[1];
   nDims = mxGetNumberOfDimensions(pr[0]); d=(nDims==2) ? 1 : dims[2];
 

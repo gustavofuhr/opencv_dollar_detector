@@ -1,8 +1,9 @@
 #include "ChannelFeatures.h"
 #include "Info.h"
 
-#include "cv.h"
-#include "highgui.h"
+//#include "opencv.hpp"
+//#include "highgui.hpp"
+#include <stdio.h>
 
 class Pyramid
 {

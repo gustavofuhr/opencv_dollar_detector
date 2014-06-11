@@ -147,7 +147,8 @@ h=h/shrink; w=w/shrink;
 
 % compute color channels
 p=pChns.pColor; nm='color channels';
-I=rgbConvert(I,p.colorSpace); I=convTri(I,p.smooth);
+I=rgbConvert(I,p.colorSpace);
+I=convTri(I,p.smooth);
 if(p.enabled), chns=addChn(chns,I,nm,p,'replicate',h,w); end
 
 % compute gradient magnitude channel

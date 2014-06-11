@@ -13,4 +13,6 @@ add_executable(opencv_dollar_detector
 ./src/Options.cpp
 ./src/PNms.cpp
 ./src/Clf.cpp)
+include_directories("/usr/include/opencv2")
+include_directories("/usr/include/opencv2/highgui")
 target_link_libraries( opencv_dollar_detector ${OpenCV_LIBS} )

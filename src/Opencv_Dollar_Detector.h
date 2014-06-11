@@ -1,8 +1,8 @@
 #ifndef ODD_H
 #define ODD_H
 
-#include "cv.h"
-#include "highgui.h"
+#include "opencv.hpp"
+#include "highgui.hpp"
 #include "Detector.h"
 
 #define PREFIX ""

@@ -1,4 +1,4 @@
-#include "cv.h"
+#include "opencv.hpp"
 
 // this class belongs to opts in the detector model but was empty
 class PNms
