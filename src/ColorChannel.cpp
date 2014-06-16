@@ -9,6 +9,25 @@ void ColorChannel::readColorChannel(cv::FileNode colorNode)
 	padWith = (cv::String)colorNode["padWith"];
 }
 
+float* transpose_opencv_to_matlab(cv::Mat img){
+    assert(img.type() == CV_8UC3);
+    int h = img.rows; //height
+    int w = img.cols; //width
+    int d = 3; //nChannels
+    float multiplier = 1 / 255.0f; //rescale pixels to range [0 to 1]
+
+    uchar* img_data = &img.data[0];
+    float* I = (float*)malloc(h * w * d * sizeof(float)); //img transposed to Matlab data layout. 
+    for(int y=0; y<h; y++){
+        for(int x=0; x<w; x++){
+            for(int ch=0; ch<d; ch++){
+                I[x*h + y + ch*w*h] = img_data[x*d + y*w*d + ch] * multiplier; 
+            }
+        }
+    }
+    return I;
+}
+
 //convolutions taken from the convConst.cpp file
 //I'm going to add just the ones that are actually called
 
@@ -39,15 +58,33 @@ cv::Mat ColorChannel::convolution(cv::Mat source, int radius, int s, int flag)
 	cv::waitKey();
 	cv::destroyAllWindows();
 
+	int sizeofI = 0;
 	float* I = (float*)malloc(source.rows * source.step * sizeof(float));
-	for (int k=0; k < source.rows; k++)
+	/*for (int k=0; k < source.rows; k++)
 		for (int l=0; l < source.cols; l++)
+		{
 			I[k*source.step+l] = floatMat.at<float>(k,l);
+			sizeofI++;
+		}*/
 
+	I = transpose_opencv_to_matlab(source);
+	
 	cv::Mat tempMat(source.rows, source.cols, CV_32F);
 	tempMat.data = (uchar*)I;
-	
+	//floatMat.data = I;	
+
+	for (int k=0; k < source.rows; k++)
+		for (int l=0; l < source.cols; l++)
+		{
+			floatMat.data[k,l] = I[indexForI++];
+			sizeofI++;
+		}
+
 	cv::imshow("tempMat",tempMat);
+	cv::waitKey();
+	cv::destroyAllWindows();
+
+	cv::imshow("floatMat",floatMat);
 	cv::waitKey();
 	cv::destroyAllWindows();
 	
