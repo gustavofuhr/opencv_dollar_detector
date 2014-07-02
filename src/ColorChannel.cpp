@@ -9,7 +9,8 @@ void ColorChannel::readColorChannel(cv::FileNode colorNode)
 	padWith = (cv::String)colorNode["padWith"];
 }
 
-float* transpose_opencv_to_matlab(cv::Mat img){
+float* cvMatToFloatArray(cv::Mat img)
+{
     assert(img.type() == CV_8UC3);
     int h = img.rows; //height
     int w = img.cols; //width
@@ -26,6 +27,18 @@ float* transpose_opencv_to_matlab(cv::Mat img){
         }
     }
     return I;
+}
+
+cv::Mat floatArrayToCvMat(float* I, int h, int w)
+{
+	cv::Mat img(h, w, CV_32F);
+	int indexForI = 0;
+
+	for (int i=0; i < h; i++)
+		for (int j=0; j < w; j++)
+			img.data[i,j] = I[indexForI++];
+
+	return img;
 }
 
 //convolutions taken from the convConst.cpp file
@@ -68,25 +81,106 @@ void ColorChannel::triangleFilterConvolution(cv::Mat source, float *O, int r, in
 	int w = source.cols;
 	int d = source.dims;
 	r++; float nrm = 1.0f/(r*r*r*r); int i, j, k=(s-1)/2, h0, h1, w0;
-	if(h%4==0) h0=h1=h; else { h0=h-(h%4); h1=h0+4; } w0=(w/s)*s;
+	if(h%4==0) 
+		h0=h1=h; 
+	else 
+	{ 
+		h0=h-(h%4); 
+		h1=h0+4; 
+	} 
+	w0=(w/s)*s;
+	
 	float *T=(float*) malloc(2*h1*sizeof(float)), *U=T+h1;
 
-	float* I = (float*)malloc(source.rows * source.step * sizeof(float));
-	I = transpose_opencv_to_matlab(source);
-
-	//I is aleready converted, this next part is here just for debug purposes
-	int indexForI = 0;
 	cv::Mat floatMat(h, w, CV_32F);
 	source.convertTo(floatMat, CV_32F, 1.0/255.0);
-	// this is the right way to do this conversion
+
+	cv::imshow("testing Mat after convertTo applied to source",floatMat);
+	cv::waitKey();
+	cv::destroyAllWindows();
+
+	float* I = (float*)malloc(source.rows * source.step * sizeof(float));
+	I = cvMatToFloatArray(source);
+	int indexForI = 0;
+	cv::Mat testMat(h, w, CV_32F);
+
+	//this is not working
+	for (int k=0; k < h; k++)
+		for (int l=0; l < w; l++)
+			for (int m=0; m < d; m++)
+			{
+				testMat.data[k,l,m] = I[indexForI++];
+			}
+	
+	cv::imshow("testing Mat assignment from float* in three dimensions",testMat);
+	cv::waitKey();
+	cv::destroyAllWindows();
+
+	cv::Mat test2Mat(h, w, CV_32F);
+	indexForI = 0;
+
+	//this is not working
 	for (int k=0; k < h; k++)
 		for (int l=0; l < w; l++)
 		{
-			floatMat.data[k,l] = I[indexForI++];
+			test2Mat.data[k,l] = I[indexForI++];
 		}
-	cv::imshow("triangle 0",floatMat);
+	
+	cv::imshow("testing Mat assignment from float* in two dimensions",test2Mat);
 	cv::waitKey();
 	cv::destroyAllWindows();
+
+	cv::Mat test3Mat(h, w, CV_32F);
+	indexForI = 0;
+
+	for (int k=0; k < h; k++)
+		for (int l=0; l < w; l++)
+			for (int m=0; m < d; m++)
+			{
+				test3Mat.data[k,l,m] = I[indexForI++] * 255; 
+			}
+	
+	cv::imshow("testing Mat assignment from float* in three dimensions, multiplied by 255",test3Mat);
+	cv::waitKey();
+	cv::destroyAllWindows();
+
+	cv::imshow("repeating all tests using just assingment for conversion",test3Mat);
+	cv::waitKey();
+	cv::destroyAllWindows();
+
+	float* I2 = (float*)malloc(source.rows * source.step * sizeof(float));
+	I2 = (float*) source.data;
+
+	cv::Mat test5Mat(h, w, CV_32F);
+	indexForI = 0;
+
+	//this is not working
+	for (int k=0; k < h; k++)
+		for (int l=0; l < w; l++)
+		{
+			test5Mat.data[k,l] = I2[indexForI++];
+		}
+	
+	cv::imshow("testing Mat assignment from float* in two dimensions",test5Mat);
+	cv::waitKey();
+	cv::destroyAllWindows();
+
+	cv::Mat test6Mat(h, w, CV_32F);
+	indexForI = 0;
+
+	//this is not working
+	for (int k=0; k < h; k++)
+		for (int l=0; l < w; l++)
+			for (int m=0; m < d; m++)
+			{
+				test6Mat.data[k,l] = I2[indexForI++];
+			}
+	
+	cv::imshow("testing Mat assignment from float* in three dimensions",test6Mat);
+	cv::waitKey();
+	cv::destroyAllWindows();
+
+
 
 	// in here, we go back to normal processing
 	while(d-- > 0) 
@@ -111,10 +205,6 @@ void ColorChannel::triangleFilterConvolution(cv::Mat source, float *O, int r, in
 			U[j] = nrm * (2*U[j]-T[j]); 
 			T[j]=0; 
 		}
-
-		cv::imshow("triangle 1",floatMat);
-		cv::waitKey();
-		cv::destroyAllWindows();
 
 		// prepare and convolve each column in turn
 		for( i=0; i<w0; i++ ) 
@@ -144,49 +234,96 @@ void ColorChannel::triangleFilterConvolution(cv::Mat source, float *O, int r, in
 					__m128 del = SUB(ADD(LDu(Il[j]),LDu(Ir[j])),MUL(2,LDu(Im[j])));
 					INC(U[j], MUL(nrm,(INC(T[j],del))));
 				}
-			cv::imshow("triangle 2",floatMat);
-			cv::waitKey();
-			cv::destroyAllWindows();
 			if(i) 
 				for( j=h0; j<h; j++ ) 
 					U[j]+=nrm*(T[j]+=Il[j]+Ir[j]-2*Im[j]);
-			cv::imshow("triangle 4",floatMat);
+			cv::imshow("triangle 1",floatMat);
 			cv::waitKey();
 			cv::destroyAllWindows();
 			k++; 
 			if(k==s) 
-			{ 
+			{
 				k=0; 
-				//the segmentation fault is caused in here, which makes sense
+				//the segmentation fault is caused in here
 				convTri1Y(U,O,h,r-1,s); 
 				O+=h/s; 
 			}
-			cv::imshow("triangle 5",floatMat);
+			cv::imshow("triangle 2",floatMat);
 			cv::waitKey();
 			cv::destroyAllWindows();
 		}
 		I+=w*h;
 	}
-	cv::imshow("triangle 3",floatMat);
-	cv::waitKey();
-	cv::destroyAllWindows();
 	free(T);
 }
 
 // convolve one column of I by [1 p 1] filter (uses SSE)
 void ColorChannel::convTri1Y( float *I, float *O, int h, float p, int s ) {
-  #define C4(m,o) ADD(ADD(LDu(I[m*j-1+o]),MUL(p,LDu(I[m*j+o]))),LDu(I[m*j+1+o]))
+	cv::Mat testMat = cv::Mat::zeros( 300, 300, CV_8UC3 );
+	cv::imshow("inside convTri1Y",testMat);
+	cv::waitKey();
+	cv::destroyAllWindows();
+
+	int indexForI = 0;
+	cv::Mat floatMat(300, 300, CV_32F);
+	floatMat.convertTo(floatMat, CV_32F, 1.0/255.0);
+	for (int k=0; k < 300; k++)
+		for (int l=0; l < 300; l++)
+		{
+			floatMat.data[k,l] = I[indexForI++];
+		}
+
+	cv::imshow("testing the content of I",floatMat);
+	cv::waitKey();
+	cv::destroyAllWindows();
+
+
+	#define C4(m,o) ADD(ADD(LDu(I[m*j-1+o]),MUL(p,LDu(I[m*j+o]))),LDu(I[m*j+1+o]))
   int j=0, k=((~((size_t) O) + 1) & 15)/4, h2=(h-1)/2;
-  if( s==2 ) {
-    for( ; j<k; j++ ) O[j]=I[2*j]+p*I[2*j+1]+I[2*j+2];
-    for( ; j<h2-4; j+=4 ) STR(O[j],_mm_shuffle_ps(C4(2,1),C4(2,5),136));
-    for( ; j<h2; j++ ) O[j]=I[2*j]+p*I[2*j+1]+I[2*j+2];
-    if( h%2==0 ) O[j]=I[2*j]+(1+p)*I[2*j+1];
-  } else {
-    O[j]=(1+p)*I[j]+I[j+1]; j++; if(k==0) k=(h<=4) ? h-1 : 4;
-    for( ; j<k; j++ ) O[j]=I[j-1]+p*I[j]+I[j+1];
-    for( ; j<h-4; j+=4 ) STR(O[j],C4(1,0));
-    for( ; j<h-1; j++ ) O[j]=I[j-1]+p*I[j]+I[j+1];
+  if( s==2 ) 
+  {
+  	cv::imshow("inside convTri1Y's if",testMat);
+		cv::waitKey();
+		cv::destroyAllWindows();
+    for( ; j<k; j++ ) 
+    	O[j]=I[2*j]+p*I[2*j+1]+I[2*j+2];
+    for( ; j<h2-4; j+=4 ) 
+    	STR(O[j],_mm_shuffle_ps(C4(2,1),C4(2,5),136));
+    for( ; j<h2; j++ ) 
+    	O[j]=I[2*j]+p*I[2*j+1]+I[2*j+2];
+    if( h%2==0 ) 
+    	O[j]=I[2*j]+(1+p)*I[2*j+1];
+  } 
+  else 
+  {
+  	cv::imshow("inside convTri1Y's else 1",testMat);
+		cv::waitKey();
+		cv::destroyAllWindows();
+    O[j]=(1+p)*I[j]+I[j+1]; 
+    cv::imshow("inside convTri1Y's else 1.1",testMat);
+		cv::waitKey();
+		cv::destroyAllWindows();
+    j++; 
+    cv::imshow("inside convTri1Y's else 2",testMat);
+		cv::waitKey();
+		cv::destroyAllWindows();
+    if(k==0) 
+    	k=(h<=4) ? h-1 : 4;
+    for( ; j<k; j++ ) 
+    	O[j]=I[j-1]+p*I[j]+I[j+1];
+    cv::imshow("inside convTri1Y's else 3",testMat);
+		cv::waitKey();
+		cv::destroyAllWindows();
+    for( ; j<h-4; j+=4 ) 
+    	STR(O[j],C4(1,0));
+    cv::imshow("inside convTri1Y's else 4",testMat);
+		cv::waitKey();
+		cv::destroyAllWindows();
+    for( ; j<h-1; j++ ) 
+    	O[j]=I[j-1]+p*I[j]+I[j+1];
+    cv::imshow("inside convTri1Y's else 5",testMat);
+		cv::waitKey();
+		cv::destroyAllWindows();
     O[j]=I[j-1]+(1+p)*I[j];
   }
   #undef C4
@@ -198,7 +335,8 @@ void ColorChannel::convTri1Y( float *I, float *O, int h, float p, int s ) {
 void ColorChannel::convTri1( float *I, float *O, int h, int w, int d, float p, int s ) {
   const float nrm = 1.0f/((p+2)*(p+2)); int i, j, h0=h-(h%4);
   float *Il, *Im, *Ir, *T=(float*) malloc(h*sizeof(float));
-  for( int d0=0; d0<d; d0++ ) for( i=s/2; i<w; i+=s ) {
+  for( int d0=0; d0<d; d0++ ) for( i=s/2; i<w; i+=s ) 
+  {
     Il=Im=Ir=I+i*h+d0*h*w; if(i>0) Il-=h; if(i<w-1) Ir+=h;
     for( j=0; j<h0; j+=4 )
       STR(T[j],MUL(nrm,ADD(ADD(LDu(Il[j]),MUL(p,LDu(Im[j]))),LDu(Ir[j]))));

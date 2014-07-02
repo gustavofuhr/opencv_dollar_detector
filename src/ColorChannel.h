@@ -17,6 +17,7 @@ public:
 	cv::String padWith;
 
 	void readColorChannel(cv::FileNode);
+	//float* cvMatToFloatArray(cv::Mat);
 	cv::Mat convolution(cv::Mat, int, int, int);
 	void triangleFilterConvolution(cv::Mat, float *O, int r, int s);
 	void convTri1Y(float*, float*, int, float, int);
