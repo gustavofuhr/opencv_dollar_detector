@@ -92,94 +92,27 @@ void ColorChannel::triangleFilterConvolution(cv::Mat source, float *O, int r, in
 	
 	float *T=(float*) malloc(2*h1*sizeof(float)), *U=T+h1;
 
+	//start of the debug section
 	cv::Mat floatMat(h, w, CV_32F);
 	source.convertTo(floatMat, CV_32F, 1.0/255.0);
-
 	cv::imshow("testing Mat after convertTo applied to source",floatMat);
 	cv::waitKey();
 	cv::destroyAllWindows();
 
-	float* I = (float*)malloc(source.rows * source.step * sizeof(float));
-	I = cvMatToFloatArray(source);
-	int indexForI = 0;
-	cv::Mat testMat(h, w, CV_32F);
+	float* I = cvMatToFloatArray(source);
+	cv::Mat test1(source.rows, source.cols, CV_32F, I);
+	cv::imshow("testing Mat after assignment from I",test1);
 
-	//this is not working
-	for (int k=0; k < h; k++)
-		for (int l=0; l < w; l++)
-			for (int m=0; m < d; m++)
-			{
-				testMat.data[k,l,m] = I[indexForI++];
-			}
-	
-	cv::imshow("testing Mat assignment from float* in three dimensions",testMat);
+	float* I2 = (float*) floatMat.data;
+	cv::Mat test2(source.rows, source.cols, CV_32F, I2);
+	cv::imshow("testing Mat after assignment from I2 without step",test2);
+
+	float* I3 = (float*) floatMat.data;
+	cv::Mat test3(source.rows, source.cols, CV_32F, I3, floatMat.step);
+	cv::imshow("testing Mat after assignment from I3 with step",test3);
+
 	cv::waitKey();
 	cv::destroyAllWindows();
-
-	cv::Mat test2Mat(h, w, CV_32F);
-	indexForI = 0;
-
-	//this is not working
-	for (int k=0; k < h; k++)
-		for (int l=0; l < w; l++)
-		{
-			test2Mat.data[k,l] = I[indexForI++];
-		}
-	
-	cv::imshow("testing Mat assignment from float* in two dimensions",test2Mat);
-	cv::waitKey();
-	cv::destroyAllWindows();
-
-	cv::Mat test3Mat(h, w, CV_32F);
-	indexForI = 0;
-
-	for (int k=0; k < h; k++)
-		for (int l=0; l < w; l++)
-			for (int m=0; m < d; m++)
-			{
-				test3Mat.data[k,l,m] = I[indexForI++] * 255; 
-			}
-	
-	cv::imshow("testing Mat assignment from float* in three dimensions, multiplied by 255",test3Mat);
-	cv::waitKey();
-	cv::destroyAllWindows();
-
-	cv::imshow("repeating all tests using just assingment for conversion",test3Mat);
-	cv::waitKey();
-	cv::destroyAllWindows();
-
-	float* I2 = (float*)malloc(source.rows * source.step * sizeof(float));
-	I2 = (float*) source.data;
-
-	cv::Mat test5Mat(h, w, CV_32F);
-	indexForI = 0;
-
-	//this is not working
-	for (int k=0; k < h; k++)
-		for (int l=0; l < w; l++)
-		{
-			test5Mat.data[k,l] = I2[indexForI++];
-		}
-	
-	cv::imshow("testing Mat assignment from float* in two dimensions",test5Mat);
-	cv::waitKey();
-	cv::destroyAllWindows();
-
-	cv::Mat test6Mat(h, w, CV_32F);
-	indexForI = 0;
-
-	//this is not working
-	for (int k=0; k < h; k++)
-		for (int l=0; l < w; l++)
-			for (int m=0; m < d; m++)
-			{
-				test6Mat.data[k,l] = I2[indexForI++];
-			}
-	
-	cv::imshow("testing Mat assignment from float* in three dimensions",test6Mat);
-	cv::waitKey();
-	cv::destroyAllWindows();
-
 
 
 	// in here, we go back to normal processing
@@ -244,7 +177,7 @@ void ColorChannel::triangleFilterConvolution(cv::Mat source, float *O, int r, in
 			if(k==s) 
 			{
 				k=0; 
-				//the segmentation fault is caused in here
+				//the segmentation fault is caused in convTri1Y
 				convTri1Y(U,O,h,r-1,s); 
 				O+=h/s; 
 			}
@@ -263,20 +196,6 @@ void ColorChannel::convTri1Y( float *I, float *O, int h, float p, int s ) {
 	cv::imshow("inside convTri1Y",testMat);
 	cv::waitKey();
 	cv::destroyAllWindows();
-
-	int indexForI = 0;
-	cv::Mat floatMat(300, 300, CV_32F);
-	floatMat.convertTo(floatMat, CV_32F, 1.0/255.0);
-	for (int k=0; k < 300; k++)
-		for (int l=0; l < 300; l++)
-		{
-			floatMat.data[k,l] = I[indexForI++];
-		}
-
-	cv::imshow("testing the content of I",floatMat);
-	cv::waitKey();
-	cv::destroyAllWindows();
-
 
 	#define C4(m,o) ADD(ADD(LDu(I[m*j-1+o]),MUL(p,LDu(I[m*j+o]))),LDu(I[m*j+1+o]))
   int j=0, k=((~((size_t) O) + 1) & 15)/4, h2=(h-1)/2;
@@ -299,7 +218,10 @@ void ColorChannel::convTri1Y( float *I, float *O, int h, float p, int s ) {
   	cv::imshow("inside convTri1Y's else 1",testMat);
 		cv::waitKey();
 		cv::destroyAllWindows();
+
+	//this operation causes segmentation fault
     O[j]=(1+p)*I[j]+I[j+1]; 
+
     cv::imshow("inside convTri1Y's else 1.1",testMat);
 		cv::waitKey();
 		cv::destroyAllWindows();
@@ -309,6 +231,11 @@ void ColorChannel::convTri1Y( float *I, float *O, int h, float p, int s ) {
 		cv::destroyAllWindows();
     if(k==0) 
     	k=(h<=4) ? h-1 : 4;
+    cv::imshow("inside convTri1Y's else 2.1",testMat);
+		cv::waitKey();
+		cv::destroyAllWindows();
+
+	//segmenteation fault in here too
     for( ; j<k; j++ ) 
     	O[j]=I[j-1]+p*I[j]+I[j+1];
     cv::imshow("inside convTri1Y's else 3",testMat);
@@ -325,6 +252,9 @@ void ColorChannel::convTri1Y( float *I, float *O, int h, float p, int s ) {
 		cv::waitKey();
 		cv::destroyAllWindows();
     O[j]=I[j-1]+(1+p)*I[j];
+    cv::imshow("inside convTri1Y's else 5.1",testMat);
+		cv::waitKey();
+		cv::destroyAllWindows();
   }
   #undef C4
 }
