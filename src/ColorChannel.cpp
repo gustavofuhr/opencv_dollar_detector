@@ -54,22 +54,62 @@ cv::Mat ColorChannel::convolution(cv::Mat source, int radius, int s, int flag)
 	int indexForI = 0;
 	float* O;
 	cv::Mat result;
+<<<<<<< Updated upstream
 	
+=======
+	int h = source.rows;
+	int w = source.cols;
+	int d = source.dims;
+
+	cv::imshow("source_1",source);
+	cv::waitKey();
+	//cv::destroyAllWindows();
+
+	cv::imshow("floatMat_1",floatMat);
+	cv::waitKey();
+	//cv::destroyAllWindows();
+
+	// float* I = (float*)malloc(source.rows * source.step * sizeof(float));
+	// for (int k=0; k < source.rows; k++)
+	// 	for (int l=0; l < source.cols; l++)
+	// 		I[k*source.step+l] = floatMat.at<float>(k,l);
+
+	cv::Mat tempMat(source.rows, source.cols, CV_32F);
+	tempMat.data = (uchar*)floatMat.data;
+	
+	cv::imshow("tempMat",tempMat);
+	cv::waitKey();
+	//cv::destroyAllWindows();
+>>>>>>> Stashed changes
 	
 	switch(flag)
 	{
 		case CONV_TRI: 	
+<<<<<<< Updated upstream
 					triangleFilterConvolution(source, O, radius, s);
+=======
+					triangleFilterConvolution((float*)floatMat.data, O, h, w, d, radius, s);
+>>>>>>> Stashed changes
 					cv::imshow("conv2",source);
 					cv::waitKey();				
-					cv::destroyAllWindows();	
+					//cv::destroyAllWindows();	
 					break;
 		case CONV_TRI1: 
 					int p = 12/radius/(radius+2)-2;
+<<<<<<< Updated upstream
 					//convTri1(I, O, h, w, d, p, s);
+=======
+					convTri1((float*)floatMat.data, O, h, w, d, p, s);
+>>>>>>> Stashed changes
 					break;
 	}
-	result.data = (uchar*)O;
+	floatMat.data = (uchar*)O;
+
+	floatMat.convertTo(result, CV_8UC3);
+	cv::imshow("result", result);
+	cv::waitKey();
+
+	//result.data = (uchar*)O;
 	return result;
 }
 
@@ -92,6 +132,7 @@ void ColorChannel::triangleFilterConvolution(cv::Mat source, float *O, int r, in
 	
 	float *T=(float*) malloc(2*h1*sizeof(float)), *U=T+h1;
 
+<<<<<<< Updated upstream
 	//start of the debug section
 	cv::Mat floatMat(h, w, CV_32F);
 	source.convertTo(floatMat, CV_32F, 1.0/255.0);
@@ -111,6 +152,12 @@ void ColorChannel::triangleFilterConvolution(cv::Mat source, float *O, int r, in
 	cv::Mat test3(source.rows, source.cols, CV_32F, I3, floatMat.step);
 	cv::imshow("testing Mat after assignment from I3 with step",test3);
 
+=======
+	cv::Mat input(h, w, CV_32F);
+	//input.convertTo(input, CV_32F);
+	input.data = (uchar*)I;
+	cv::imshow("triangle 0",input);
+>>>>>>> Stashed changes
 	cv::waitKey();
 	cv::destroyAllWindows();
 
