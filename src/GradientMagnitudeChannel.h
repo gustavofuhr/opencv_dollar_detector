@@ -23,7 +23,7 @@ public:
 	void readGradientMagnitude(cv::FileNode);
 	//all of the next procedures still need proper names and maybe some refactoring
 	//they are used in Pyramid.cpp's computeSingleScaleChannelFeaturePyramid(Mat)
-	cv::Mat* mGradMag(cv::Mat, int);
+	std::vector<cv::Mat> mGradMag(cv::Mat, int);
 	void gradMag(float*, float*, float*, int, int, int, bool);
 	void grad1(float*, float*, float*, int, int, int);
 	float* acosTable();

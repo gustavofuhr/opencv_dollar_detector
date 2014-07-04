@@ -9,38 +9,6 @@ void ColorChannel::readColorChannel(cv::FileNode colorNode)
 	padWith = (cv::String)colorNode["padWith"];
 }
 
-float* cvMatToFloatArray(cv::Mat img)
-{
-    assert(img.type() == CV_8UC3);
-    int h = img.rows; //height
-    int w = img.cols; //width
-    int d = 3; //nChannels
-    float multiplier = 1 / 255.0f; //rescale pixels to range [0 to 1]
-
-    uchar* img_data = &img.data[0];
-    float* I = (float*)malloc(h * w * d * sizeof(float)); //img transposed to Matlab data layout. 
-    for(int y=0; y<h; y++){
-        for(int x=0; x<w; x++){
-            for(int ch=0; ch<d; ch++){
-                I[x*h + y + ch*w*h] = img_data[x*d + y*w*d + ch] * multiplier; 
-            }
-        }
-    }
-    return I;
-}
-
-cv::Mat floatArrayToCvMat(float* I, int h, int w)
-{
-	cv::Mat img(h, w, CV_32F);
-	int indexForI = 0;
-
-	for (int i=0; i < h; i++)
-		for (int j=0; j < w; j++)
-			img.data[i,j] = I[indexForI++];
-
-	return img;
-}
-
 //convolutions taken from the convConst.cpp file
 //I'm going to add just the ones that are actually called
 
@@ -51,36 +19,33 @@ cv::Mat floatArrayToCvMat(float* I, int h, int w)
 //operate on cvMat structures rather than just float*
 cv::Mat ColorChannel::convolution(cv::Mat source, int radius, int s, int flag)
 {
-	int indexForI = 0;
-	float* O;
 	cv::Mat result;
-	
 	
 	switch(flag)
 	{
 		case CONV_TRI: 	
-					triangleFilterConvolution(source, O, radius, s);
-					cv::imshow("conv2",source);
-					cv::waitKey();				
-					cv::destroyAllWindows();	
+					result = triangleFilterConvolution(source, radius, s);
 					break;
 		case CONV_TRI1: 
 					int p = 12/radius/(radius+2)-2;
-					//convTri1(I, O, h, w, d, p, s);
+					result = convTri1(source, p, s);
 					break;
 	}
-	result.data = (uchar*)O;
 	return result;
 }
 
 // convolve I by a 2rx1 triangle filter (uses SSE)
 //aka convTri
-void ColorChannel::triangleFilterConvolution(cv::Mat source, float *O, int r, int s)
+cv::Mat ColorChannel::triangleFilterConvolution(cv::Mat source, int r, int s)
 {
+	cv::Mat result;
 	int h = source.rows;
 	int w = source.cols;
 	int d = source.dims;
-	r++; float nrm = 1.0f/(r*r*r*r); int i, j, k=(s-1)/2, h0, h1, w0;
+	float* O = (float*)malloc(h*w*d*sizeof(float));
+	r++; 
+	float nrm = 1.0f/(r*r*r*r); 
+	int i, j, k=(s-1)/2, h0, h1, w0;
 	if(h%4==0) 
 		h0=h1=h; 
 	else 
@@ -93,27 +58,11 @@ void ColorChannel::triangleFilterConvolution(cv::Mat source, float *O, int r, in
 	float *T=(float*) malloc(2*h1*sizeof(float)), *U=T+h1;
 
 	//start of the debug section
-	cv::Mat floatMat(h, w, CV_32F);
-	source.convertTo(floatMat, CV_32F, 1.0/255.0);
-	cv::imshow("testing Mat after convertTo applied to source",floatMat);
-	cv::waitKey();
-	cv::destroyAllWindows();
+	cv::Mat floatMat;
+	source.convertTo(floatMat, CV_32FC1, 1.0/255.0);
 
-	float* I = cvMatToFloatArray(source);
-	cv::Mat test1(source.rows, source.cols, CV_32F, I);
-	cv::imshow("testing Mat after assignment from I",test1);
-
-	float* I2 = (float*) floatMat.data;
-	cv::Mat test2(source.rows, source.cols, CV_32F, I2);
-	cv::imshow("testing Mat after assignment from I2 without step",test2);
-
-	float* I3 = (float*) floatMat.data;
-	cv::Mat test3(source.rows, source.cols, CV_32F, I3, floatMat.step);
-	cv::imshow("testing Mat after assignment from I3 with step",test3);
-
-	cv::waitKey();
-	cv::destroyAllWindows();
-
+	float* I;
+	I = (float*)floatMat.data;
 
 	// in here, we go back to normal processing
 	while(d-- > 0) 
@@ -170,40 +119,27 @@ void ColorChannel::triangleFilterConvolution(cv::Mat source, float *O, int r, in
 			if(i) 
 				for( j=h0; j<h; j++ ) 
 					U[j]+=nrm*(T[j]+=Il[j]+Ir[j]-2*Im[j]);
-			cv::imshow("triangle 1",floatMat);
-			cv::waitKey();
-			cv::destroyAllWindows();
 			k++; 
 			if(k==s) 
 			{
 				k=0; 
-				//the segmentation fault is caused in convTri1Y
 				convTri1Y(U,O,h,r-1,s); 
 				O+=h/s; 
 			}
-			cv::imshow("triangle 2",floatMat);
-			cv::waitKey();
-			cv::destroyAllWindows();
 		}
 		I+=w*h;
 	}
 	free(T);
+	result.data = (uchar*)O;
+	return result;
 }
 
 // convolve one column of I by [1 p 1] filter (uses SSE)
 void ColorChannel::convTri1Y( float *I, float *O, int h, float p, int s ) {
-	cv::Mat testMat = cv::Mat::zeros( 300, 300, CV_8UC3 );
-	cv::imshow("inside convTri1Y",testMat);
-	cv::waitKey();
-	cv::destroyAllWindows();
-
 	#define C4(m,o) ADD(ADD(LDu(I[m*j-1+o]),MUL(p,LDu(I[m*j+o]))),LDu(I[m*j+1+o]))
   int j=0, k=((~((size_t) O) + 1) & 15)/4, h2=(h-1)/2;
   if( s==2 ) 
   {
-  	cv::imshow("inside convTri1Y's if",testMat);
-		cv::waitKey();
-		cv::destroyAllWindows();
     for( ; j<k; j++ ) 
     	O[j]=I[2*j]+p*I[2*j+1]+I[2*j+2];
     for( ; j<h2-4; j+=4 ) 
@@ -215,46 +151,17 @@ void ColorChannel::convTri1Y( float *I, float *O, int h, float p, int s ) {
   } 
   else 
   {
-  	cv::imshow("inside convTri1Y's else 1",testMat);
-		cv::waitKey();
-		cv::destroyAllWindows();
-
-	//this operation causes segmentation fault
     O[j]=(1+p)*I[j]+I[j+1]; 
-
-    cv::imshow("inside convTri1Y's else 1.1",testMat);
-		cv::waitKey();
-		cv::destroyAllWindows();
     j++; 
-    cv::imshow("inside convTri1Y's else 2",testMat);
-		cv::waitKey();
-		cv::destroyAllWindows();
     if(k==0) 
     	k=(h<=4) ? h-1 : 4;
-    cv::imshow("inside convTri1Y's else 2.1",testMat);
-		cv::waitKey();
-		cv::destroyAllWindows();
-
-	//segmenteation fault in here too
     for( ; j<k; j++ ) 
     	O[j]=I[j-1]+p*I[j]+I[j+1];
-    cv::imshow("inside convTri1Y's else 3",testMat);
-		cv::waitKey();
-		cv::destroyAllWindows();
     for( ; j<h-4; j+=4 ) 
     	STR(O[j],C4(1,0));
-    cv::imshow("inside convTri1Y's else 4",testMat);
-		cv::waitKey();
-		cv::destroyAllWindows();
     for( ; j<h-1; j++ ) 
     	O[j]=I[j-1]+p*I[j]+I[j+1];
-    cv::imshow("inside convTri1Y's else 5",testMat);
-		cv::waitKey();
-		cv::destroyAllWindows();
     O[j]=I[j-1]+(1+p)*I[j];
-    cv::imshow("inside convTri1Y's else 5.1",testMat);
-		cv::waitKey();
-		cv::destroyAllWindows();
   }
   #undef C4
 }
@@ -262,7 +169,16 @@ void ColorChannel::convTri1Y( float *I, float *O, int h, float p, int s ) {
 // convTri1( A, B, ns[0], ns[1], d, p, s );
 // convConst('convTri1',I,12/r/(r+2)-2,s);
 // convolve I by [1 p 1] filter (uses SSE)
-void ColorChannel::convTri1( float *I, float *O, int h, int w, int d, float p, int s ) {
+cv::Mat ColorChannel::convTri1( cv::Mat source, float p, int s ) {
+	cv::Mat result;
+	int h = source.rows;
+	int w = source.cols;
+	int d = source.dims;
+	float* O = (float*)malloc(h*w*d*sizeof(float));
+	cv::Mat floatMat;
+	source.convertTo(floatMat, CV_32FC1, 1.0/255.0);
+	float* I;
+	I = (float*)floatMat.data;
   const float nrm = 1.0f/((p+2)*(p+2)); int i, j, h0=h-(h%4);
   float *Il, *Im, *Ir, *T=(float*) malloc(h*sizeof(float));
   for( int d0=0; d0<d; d0++ ) for( i=s/2; i<w; i+=s ) 
@@ -274,6 +190,8 @@ void ColorChannel::convTri1( float *I, float *O, int h, int w, int d, float p, i
     convTri1Y(T,O,h,p,s); O+=h/s;
   }
   free(T);
+  result.data = (uchar*)O;
+  return result;
 }
 
 

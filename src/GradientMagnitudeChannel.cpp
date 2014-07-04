@@ -10,15 +10,11 @@ void GradientMagnitudeChannel::readGradientMagnitude(cv::FileNode gradMagNode)
 }
 
 // [M,O] = gradMag( I, channel, full ) - see gradientMag.m
-cv::Mat* GradientMagnitudeChannel::mGradMag(cv::Mat I, int channel)
+std::vector<cv::Mat> GradientMagnitudeChannel::mGradMag(cv::Mat I, int channel)
 {
-	int c, d; 
+  int c, d; 
 	float *M, *O=0;
-	cv::Mat resultMatrix[2];
-
-	cv::imshow("I",I);
-	cv::waitKey();
-	cv::destroyAllWindows();
+	std::vector<cv::Mat> resultMatrix;
 
 	//checkArgs procedure is called but it is not actually needed
 	//probably just need to test some of the parameters, if that
@@ -27,13 +23,10 @@ cv::Mat* GradientMagnitudeChannel::mGradMag(cv::Mat I, int channel)
 	if (I.rows>=2 && I.cols>=2)
 	{
 		//for now, the gradMag procedure will be unchanged so we put the raw data of the image in a float pointer to be used there 
-		float *If = (float*)I.data;
-		cv::Mat tempMat(I.rows, I.cols, CV_32F);
-		tempMat.data = (uchar*)If;
-
-		cv::imshow("tempMat",tempMat);
-		cv::waitKey();
-		cv::destroyAllWindows();
+    cv::Mat floatMat;
+    I.convertTo(floatMat, CV_32FC1, 1.0/255.0);
+    float* If;
+    If = (float*)floatMat.data;
 
 		if (channel>0 && channel<=I.dims)
 		{
@@ -49,14 +42,17 @@ cv::Mat* GradientMagnitudeChannel::mGradMag(cv::Mat I, int channel)
 		gradMag(If, M, O, I.rows, I.cols, I.dims, full>0 );
 
 		//next, we assign the values of M and O to the matrix thats going to be returned
-		resultMatrix[0].data = (uchar*)M;
-		resultMatrix[1].data = (uchar*)O;
+    cv::Mat matM;
+    matM.data = (uchar*)M;
+    cv::Mat matO;
+    matO.data = (uchar*)O;
+    resultMatrix.push_back(matM);
+    resultMatrix.push_back(matO);
+    int f = resultMatrix[0].cols;
 	}
 	else
 	{
 		//error: matrix I must be at least 2x2
-		resultMatrix[0].data = NULL;
-		resultMatrix[1].data = NULL;
 	}
 	return resultMatrix;
 }

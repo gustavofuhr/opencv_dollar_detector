@@ -189,20 +189,60 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 	int height = I.rows - (I.rows % pChns.shrink);
 	int width =  I.cols - (I.cols % pChns.shrink);
 
+	cv::imshow("image before conversion", I);
+	cv::waitKey();				
+	cv::destroyAllWindows();
+
 	//compute color channels
 	result.image = pChns.pColor.rgbConvert(I);
+
+	cv::imshow("image after conversion, before convolution", result.image);
+	cv::waitKey();				
+	cv::destroyAllWindows();
+
 	result.image = pChns.pColor.convolution(result.image, pChns.pColor.smooth, 1, CONV_TRI);
+
+	if (result.image.cols < 2)
+	{
+		cv::imshow("image is empty after convolution", I);
+		cv::waitKey();				
+		cv::destroyAllWindows();
+	}
+	else
+	{
+		cv::imshow("image after convolution", result.image);
+		cv::waitKey();				
+		cv::destroyAllWindows();
+	}
+
 	if (pChns.pColor.enabled)
 		result.colorCh = pChns.pColor;
 
 	if (pChns.pGradHist.enabled)
 	{
+		cv::imshow("before mGradMag", I);
+		cv::waitKey();				
+		cv::destroyAllWindows();
+
+		if (result.image.cols < 2)
+		{
+			cv::imshow("empty result.image", I);
+			cv::waitKey();				
+			cv::destroyAllWindows();
+		}
+
 		//i need to identify which is the color channel to know
 		//how to represent it in integer, or change mGradMag
-		cv::Mat *tempResult = pChns.pGradMag.mGradMag(result.image,COLOR_CHANNEL);
+		std::vector<cv::Mat> tempResult = pChns.pGradMag.mGradMag(result.image,COLOR_CHANNEL);
 
-		result.gradientMagnitude = tempResult[0];
-		gradOrientation = tempResult[1];
+		if (tempResult.size() > 1)
+			result.gradientMagnitude = tempResult[0];
+		if (tempResult.size() > 1)
+			gradOrientation = tempResult[1];
+
+		cv::imshow("after assignments", I);
+		cv::waitKey();				
+		cv::destroyAllWindows();
 
 		//still need to understand this next part:
 		if (pChns.pGradMag.normalizationRadius != 0)
@@ -239,6 +279,10 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 
 	//for now, i wont add computation of custom channels
 	
+	cv::imshow("results of chnsCompute", I);
+	cv::waitKey();				
+	cv::destroyAllWindows();	
+
 	return result;
 }
 

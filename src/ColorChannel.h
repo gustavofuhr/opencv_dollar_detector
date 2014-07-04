@@ -17,11 +17,10 @@ public:
 	cv::String padWith;
 
 	void readColorChannel(cv::FileNode);
-	//float* cvMatToFloatArray(cv::Mat);
 	cv::Mat convolution(cv::Mat, int, int, int);
-	void triangleFilterConvolution(cv::Mat, float *O, int r, int s);
+	cv::Mat triangleFilterConvolution(cv::Mat, int, int);
 	void convTri1Y(float*, float*, int, float, int);
-	void convTri1(float*,float*,int,int,int,float,int);
+	cv::Mat convTri1(cv::Mat, float, int);
 	cv::Mat rgbConvert(cv::Mat);
 	cv::Mat rgb2luv(cv::Mat);
 	cv::Mat rgb2hsv(cv::Mat);
