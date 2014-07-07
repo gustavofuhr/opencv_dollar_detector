@@ -38,11 +38,12 @@ cv::Mat ColorChannel::convolution(cv::Mat source, int radius, int s, int flag)
 //aka convTri
 cv::Mat ColorChannel::triangleFilterConvolution(cv::Mat source, int r, int s)
 {
-	cv::Mat result;
 	int h = source.rows;
 	int w = source.cols;
 	int d = source.dims;
-	float* O = (float*)malloc(h*w*d*sizeof(float));
+	float* O = (float*)malloc(h*w*3*sizeof(float));
+	std::cout << "h: " << h << ", w: " << w << ", d: " << d << std::endl;
+	std::cout << "size of O (number of float values): " << h*w*d << std::endl;
 	r++; 
 	float nrm = 1.0f/(r*r*r*r); 
 	int i, j, k=(s-1)/2, h0, h1, w0;
@@ -100,6 +101,7 @@ cv::Mat ColorChannel::triangleFilterConvolution(cv::Mat source, int r, int s)
 				Ir+=(r-1+i)*h; 
 			}
 			else 
+			{
 				if( i<=w-r ) 
 				{ 
 					Il-=(r+1-i)*h; 
@@ -110,15 +112,20 @@ cv::Mat ColorChannel::triangleFilterConvolution(cv::Mat source, int r, int s)
 					Il-=(r+1-i)*h; 
 					Ir+=(2*w-r-i)*h; 
 				}
+			}
 			if(i) 
+			{
 				for( j=0; j<h0; j+=4 ) 
 				{
 					__m128 del = SUB(ADD(LDu(Il[j]),LDu(Ir[j])),MUL(2,LDu(Im[j])));
 					INC(U[j], MUL(nrm,(INC(T[j],del))));
 				}
+			}
 			if(i) 
+			{
 				for( j=h0; j<h; j++ ) 
 					U[j]+=nrm*(T[j]+=Il[j]+Ir[j]-2*Im[j]);
+			}
 			k++; 
 			if(k==s) 
 			{
@@ -130,7 +137,20 @@ cv::Mat ColorChannel::triangleFilterConvolution(cv::Mat source, int r, int s)
 		I+=w*h;
 	}
 	free(T);
+	cv::Mat result(floatMat.rows, floatMat.cols, floatMat.type());
 	result.data = (uchar*)O;
+	std::cout << "result: rows = "<< result.rows << ", cols = " << result.cols << ", dims = " << result.dims << std::endl;
+	std::cout << "value 0,0 = " << result.at<double>(0,0) << std::endl;
+	std::cout << "value 0,100 = " << result.at<double>(0,100) << std::endl;
+	std::cout << "value 0,719 = " << result.at<double>(0,719) << std::endl;
+	std::cout << "value 1,0 = " << result.at<double>(1,0) << std::endl;
+	std::cout << "value 100,0 = " << result.at<double>(100,0) << std::endl;
+	std::cout << "value 10,10 = " << result.at<double>(10,10) << std::endl;
+	std::cout << "value 100,100 = " << result.at<double>(100,100) << std::endl;
+	std::cout << "inside convolution, before printing result" << std::endl;
+	cv::imshow("image after conversion", result);
+	cv::waitKey();				
+	cv::destroyAllWindows();
 	return result;
 }
 
@@ -169,7 +189,8 @@ void ColorChannel::convTri1Y( float *I, float *O, int h, float p, int s ) {
 // convTri1( A, B, ns[0], ns[1], d, p, s );
 // convConst('convTri1',I,12/r/(r+2)-2,s);
 // convolve I by [1 p 1] filter (uses SSE)
-cv::Mat ColorChannel::convTri1( cv::Mat source, float p, int s ) {
+cv::Mat ColorChannel::convTri1( cv::Mat source, float p, int s ) 
+{
 	cv::Mat result;
 	int h = source.rows;
 	int w = source.cols;
@@ -179,19 +200,19 @@ cv::Mat ColorChannel::convTri1( cv::Mat source, float p, int s ) {
 	source.convertTo(floatMat, CV_32FC1, 1.0/255.0);
 	float* I;
 	I = (float*)floatMat.data;
-  const float nrm = 1.0f/((p+2)*(p+2)); int i, j, h0=h-(h%4);
-  float *Il, *Im, *Ir, *T=(float*) malloc(h*sizeof(float));
-  for( int d0=0; d0<d; d0++ ) for( i=s/2; i<w; i+=s ) 
-  {
-    Il=Im=Ir=I+i*h+d0*h*w; if(i>0) Il-=h; if(i<w-1) Ir+=h;
-    for( j=0; j<h0; j+=4 )
-      STR(T[j],MUL(nrm,ADD(ADD(LDu(Il[j]),MUL(p,LDu(Im[j]))),LDu(Ir[j]))));
-    for( j=h0; j<h; j++ ) T[j]=nrm*(Il[j]+p*Im[j]+Ir[j]);
-    convTri1Y(T,O,h,p,s); O+=h/s;
-  }
-  free(T);
-  result.data = (uchar*)O;
-  return result;
+	const float nrm = 1.0f/((p+2)*(p+2)); int i, j, h0=h-(h%4);
+	float *Il, *Im, *Ir, *T=(float*) malloc(h*sizeof(float));
+	for( int d0=0; d0<d; d0++ ) for( i=s/2; i<w; i+=s ) 
+	{
+	Il=Im=Ir=I+i*h+d0*h*w; if(i>0) Il-=h; if(i<w-1) Ir+=h;
+	for( j=0; j<h0; j+=4 )
+	  STR(T[j],MUL(nrm,ADD(ADD(LDu(Il[j]),MUL(p,LDu(Im[j]))),LDu(Ir[j]))));
+	for( j=h0; j<h; j++ ) T[j]=nrm*(Il[j]+p*Im[j]+Ir[j]);
+	convTri1Y(T,O,h,p,s); O+=h/s;
+	}
+	free(T);
+	result.data = (uchar*)O;
+	return result;
 }
 
 

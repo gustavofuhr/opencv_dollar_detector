@@ -193,43 +193,31 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 	cv::waitKey();				
 	cv::destroyAllWindows();
 
+	// this initialization makes no difference
+	result.image = cv::Mat(I.rows, I.cols, I.type());
+
 	//compute color channels
 	result.image = pChns.pColor.rgbConvert(I);
 
-	cv::imshow("image after conversion, before convolution", result.image);
+	cv::imshow("image after color space conversion, before convolution", result.image);
 	cv::waitKey();				
 	cv::destroyAllWindows();
 
 	result.image = pChns.pColor.convolution(result.image, pChns.pColor.smooth, 1, CONV_TRI);
 
-	if (result.image.cols < 2)
-	{
-		cv::imshow("image is empty after convolution", I);
-		cv::waitKey();				
-		cv::destroyAllWindows();
-	}
-	else
-	{
-		cv::imshow("image after convolution", result.image);
-		cv::waitKey();				
-		cv::destroyAllWindows();
-	}
+	std::cout << "after convolution, before printing result" << std::endl;
+
+	//when i try to print the matrix, it causes a segmentation fault
+	cv::imshow("image after convolution", result.image);
+	cv::waitKey();				
+	cv::destroyAllWindows();
 
 	if (pChns.pColor.enabled)
 		result.colorCh = pChns.pColor;
 
 	if (pChns.pGradHist.enabled)
 	{
-		cv::imshow("before mGradMag", I);
-		cv::waitKey();				
-		cv::destroyAllWindows();
-
-		if (result.image.cols < 2)
-		{
-			cv::imshow("empty result.image", I);
-			cv::waitKey();				
-			cv::destroyAllWindows();
-		}
+		std::cout << "before mGradMag" << std::endl;
 
 		//i need to identify which is the color channel to know
 		//how to represent it in integer, or change mGradMag
@@ -240,9 +228,7 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 		if (tempResult.size() > 1)
 			gradOrientation = tempResult[1];
 
-		cv::imshow("after assignments", I);
-		cv::waitKey();				
-		cv::destroyAllWindows();
+		std::cout << "after assignments" << std::endl;
 
 		//still need to understand this next part:
 		if (pChns.pGradMag.normalizationRadius != 0)
@@ -279,7 +265,7 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 
 	//for now, i wont add computation of custom channels
 	
-	cv::imshow("results of chnsCompute", I);
+	std::cout << "end of chnsCompute" << std::endl;
 	cv::waitKey();				
 	cv::destroyAllWindows();	
 

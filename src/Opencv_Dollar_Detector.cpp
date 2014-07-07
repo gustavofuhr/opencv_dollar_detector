@@ -20,12 +20,10 @@ int main(int argc, char** argv)
 
 	//bbs = d.acfDetect(image);
 	//d.acfDetect(image);
-	
-	d.opts.pPyramid.debugWindow("blah",0);
 
 	result = d.opts.pPyramid.computeSingleScaleChannelFeatures(image);
 
-	d.opts.pPyramid.debugWindow("blah",1);
+	std::cout << "on main, after chnsCompute" << std::endl;
 
 	file << result.image;
 	//file << result.gradientMagnitude;
