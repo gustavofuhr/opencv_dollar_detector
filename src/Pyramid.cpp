@@ -207,8 +207,8 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 
 	std::cout << "after convolution, before printing result" << std::endl;
 
-	//when i try to print the matrix, it causes a segmentation fault
-	cv::imshow("image after convolution", result.image);
+	//no more segmentation fault here, but result is wrong
+	cv::imshow("inside chnsCompute, image after convolution", result.image);
 	cv::waitKey();				
 	cv::destroyAllWindows();
 

@@ -18,9 +18,10 @@ public:
 
 	void readColorChannel(cv::FileNode);
 	cv::Mat convolution(cv::Mat, int, int, int);
-	cv::Mat triangleFilterConvolution(cv::Mat, int, int);
+	void triangleFilterConvolution(float*, float*, int, int, int, int, int);
+	void convTriY(float*, float*, int, int, int);
 	void convTri1Y(float*, float*, int, float, int);
-	cv::Mat convTri1(cv::Mat, float, int);
+	void convTri1(float*, float*, int, int, int, float, int);
 	cv::Mat rgbConvert(cv::Mat);
 	cv::Mat rgb2luv(cv::Mat);
 	cv::Mat rgb2hsv(cv::Mat);
