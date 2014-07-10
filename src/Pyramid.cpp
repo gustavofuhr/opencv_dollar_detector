@@ -201,7 +201,6 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 
 	cv::imshow("image after color space conversion, before convolution", result.image);
 	cv::waitKey();				
-	cv::destroyAllWindows();
 
 	result.image = pChns.pColor.convolution(result.image, pChns.pColor.smooth, 1, CONV_TRI);
 

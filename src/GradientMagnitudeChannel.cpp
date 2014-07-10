@@ -26,7 +26,11 @@ std::vector<cv::Mat> GradientMagnitudeChannel::mGradMag(cv::Mat I, int channel)
     cv::Mat floatMat;
     I.convertTo(floatMat, CV_32FC1, 1.0/255.0);
     float* If;
-    If = (float*)floatMat.data;
+    //If = (float*)floatMat.data;
+    If = (float*)I.data;
+
+    cv::Mat test(I.rows, I.cols, I.type());
+    test.data = (uchar*)If;
 
 		if (channel>0 && channel<=I.dims)
 		{
@@ -37,9 +41,20 @@ std::vector<cv::Mat> GradientMagnitudeChannel::mGradMag(cv::Mat I, int channel)
 		/*if (nl>=2)
 			Mat pl; //pl[0] = mxCreateMatrix3(h,w,1,mxSINGLE_CLASS,0,(void**)&M);*/
 
+    cv::destroyAllWindows();
+    cv::imshow("input image inside mGradMag", I);
+    cv::imshow("float image inside mGradMag", floatMat);
+    cv::imshow("test image inside mGradMag", test);
+    cv::waitKey();
+    cv::destroyAllWindows();
+
+    std::cout << "inside mGradMag, before gradMag" << std::endl;
+
 		//call to the actual function: 
 		//void gradMag(float*, float*, float*, int, int, int, bool);
 		gradMag(If, M, O, I.rows, I.cols, I.dims, full>0 );
+
+     std::cout << "inside mGradMag, after gradMag" << std::endl;
 
 		//next, we assign the values of M and O to the matrix thats going to be returned
     cv::Mat matM;
@@ -107,12 +122,15 @@ void GradientMagnitudeChannel::gradMag( float *I, float *M, float *O, int h, int
     }
     // compute gradient mangitude (M) and normalize Gx
     for( y=0; y<h4/4; y++ ) {
-		_m = MMIN( RCPSQRT(_M2[y]), SET(1e10f) );
+		  _m = MMIN( RCPSQRT(_M2[y]), SET(1e10f) );
       _M2[y] = RCP(_m);
       if(O) _Gx[y] = MUL( MUL(_Gx[y],_m), SET(acMult) );
       if(O) _Gx[y] = XOR( _Gx[y], AND(_Gy[y], SET(-0.f)) );
     };
+    // segmentation fault happens here
+    std::cout << "inside gradMag, before memcopy" << std::endl;
     memcpy( M+x*h, M2, h*sizeof(float) );
+    std::cout << "inside gradMag, after memcopy" << std::endl;
     // compute and store gradient orientation (O) via table lookup
     if( O!=0 ) for( y=0; y<h; y++ ) O[x*h+y] = acost[(int)Gx[y]];
     if( O!=0 && full ) {

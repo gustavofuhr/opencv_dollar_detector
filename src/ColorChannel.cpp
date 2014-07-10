@@ -57,10 +57,12 @@ cv::Mat ColorChannel::convolution(cv::Mat source, int radius, int s, int flag)
 	std::cout << "value 100,0 = " << result.at<double>(100,0) << std::endl;
 	std::cout << "value 10,10 = " << result.at<double>(10,10) << std::endl;
 	std::cout << "value 100,100 = " << result.at<double>(100,100) << std::endl;
+	std::cout << "value 300,300 = " << result.at<double>(300,300) << std::endl;
+	std::cout << "value 570,710 = " << result.at<double>(570,710) << std::endl;
 	std::cout << "inside convolution, before printing result" << std::endl;
+	cv::imshow("inside convolution, printing floatMat (input)", floatMat);
 	cv::imshow("inside convolution, image after conversion from float *O", result);
 	cv::waitKey();				
-	cv::destroyAllWindows();
 	//end of debug section
 
 	return result;
