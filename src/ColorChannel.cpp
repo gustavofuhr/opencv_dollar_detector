@@ -29,7 +29,9 @@ cv::Mat ColorChannel::convolution(cv::Mat source, int radius, int s, int flag)
 	float* O = (float*)malloc(source.rows/s*source.cols/s*3*sizeof(float));
 
 	cv::Mat floatMat;
-	source.convertTo(floatMat, CV_32FC1, 1.0/255.0);
+	source.convertTo(floatMat, CV_32FC3, 1.0/255.0);
+
+	std::cout << "inside convolution, floatMat.type() = " << floatMat.type() << std::endl;
 
 	float* I;
 	I = (float*)floatMat.data;
@@ -37,19 +39,41 @@ cv::Mat ColorChannel::convolution(cv::Mat source, int radius, int s, int flag)
 	switch(flag)
 	{
 		case CONV_TRI: 	
-					triangleFilterConvolution(I, O, source.rows, source.cols, source.dims, radius, s);
+					//passing a 3 as argument because there are three color channels
+					triangleFilterConvolution(I, O, source.rows, source.cols, 3, radius, s);
 					break;
 		case CONV_TRI1: 
 					int p = 12/radius/(radius+2)-2;
-					convTri1(I, O, source.rows, source.cols, source.dims, p, s);
+					convTri1(I, O, source.rows, source.cols, 3, p, s);
 					break;
 	}
 
+	//the problem is not that the channels are all mixed up in one
 	cv::Mat result(floatMat.rows, floatMat.cols, floatMat.type());
 	result.data = (uchar*)O;
 
+	//splitting the channels keeps the same weird behaviour as the full image
+	std::vector<cv::Mat> channels(3);
+	cv::split(result, channels);
+
+	float *O0, *O1, *O2;
+	O0 = (float*)malloc(source.rows/s*source.cols/s*sizeof(float));
+	O1 = (float*)malloc(source.rows/s*source.cols/s*sizeof(float));
+	O2 = (float*)malloc(source.rows/s*source.cols/s*sizeof(float));
+
+	int index;
+	for (int z = 0; z < source.rows/s*source.cols/s*3; z++)
+	{
+		if (z % 3 == 0)
+			O0[index] = O[z];
+		if (z % 3 == 1)
+			O1[index] = O[z];
+		if (z % 3 == 2)
+			O2[index++] = O[z];
+	}
+
 	//prints for debug
-	std::cout << "result: rows = "<< result.rows << ", cols = " << result.cols << ", dims = " << result.dims << std::endl;
+	std::cout << "result: rows = " << result.rows << ", cols = " << result.cols << ", dims = " << result.dims << std::endl;
 	std::cout << "value 0,0 = " << result.at<double>(0,0) << std::endl;
 	std::cout << "value 0,100 = " << result.at<double>(0,100) << std::endl;
 	std::cout << "value 0,719 = " << result.at<double>(0,719) << std::endl;
@@ -59,9 +83,11 @@ cv::Mat ColorChannel::convolution(cv::Mat source, int radius, int s, int flag)
 	std::cout << "value 100,100 = " << result.at<double>(100,100) << std::endl;
 	std::cout << "value 300,300 = " << result.at<double>(300,300) << std::endl;
 	std::cout << "value 570,710 = " << result.at<double>(570,710) << std::endl;
-	std::cout << "inside convolution, before printing result" << std::endl;
+	std::cout << "inside convolution, before printing result, floatMat.type() = " << floatMat.type() << ", result.type() = " << result.type() << std::endl;
+	cv::destroyAllWindows();
 	cv::imshow("inside convolution, printing floatMat (input)", floatMat);
 	cv::imshow("inside convolution, image after conversion from float *O", result);
+	cv::imshow("inside convolution, first channel of result", channels[0]);
 	cv::waitKey();				
 	//end of debug section
 
