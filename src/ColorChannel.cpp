@@ -53,15 +53,16 @@ cv::Mat ColorChannel::convolution(cv::Mat source, int radius, int s, int flag)
 	result.data = (uchar*)O;
 
 	//splitting the channels keeps the same weird behaviour as the full image
-	std::vector<cv::Mat> channels(3);
-	cv::split(result, channels);
+	std::vector<cv::Mat> channels;
+	//cv::split(result, channels);
 
 	float *O0, *O1, *O2;
 	O0 = (float*)malloc(source.rows/s*source.cols/s*sizeof(float));
 	O1 = (float*)malloc(source.rows/s*source.cols/s*sizeof(float));
 	O2 = (float*)malloc(source.rows/s*source.cols/s*sizeof(float));
 
-	int index;
+	//this is an attempt to see if the problem is the way the color channels are split in the result array
+	int index = 0;
 	for (int z = 0; z < source.rows/s*source.cols/s*3; z++)
 	{
 		if (z % 3 == 0)
@@ -71,6 +72,23 @@ cv::Mat ColorChannel::convolution(cv::Mat source, int radius, int s, int flag)
 		if (z % 3 == 2)
 			O2[index++] = O[z];
 	}
+
+	channels.push_back(cv::Mat(source.rows, source.cols, floatMat.type()));
+	std::cout << "inside convolution, before showing channels" << std::endl;
+	channels[0].data = (uchar*)O0;
+	cv::imshow("inside convolution, printing individual channels0", channels[0]);
+	channels.push_back(cv::Mat(source.rows, source.cols, floatMat.type()));
+	channels[1].data = (uchar*)O1;
+	cv::imshow("inside convolution, printing individual channels1", channels[1]);
+	channels.push_back(cv::Mat(source.rows, source.cols, floatMat.type()));
+	channels[2].data = (uchar*)O2;
+	cv::imshow("inside convolution, printing individual channels2", channels[2]);
+	cv::waitKey();
+
+	//any attempt to merge is useless since the channels are wrong
+	/*cv::Mat test;
+	source.convertTo(test, CV_32FC3, 1.0/255.0);
+	cv::merge(channels, test);*/
 
 	//prints for debug
 	std::cout << "result: rows = " << result.rows << ", cols = " << result.cols << ", dims = " << result.dims << std::endl;
@@ -87,7 +105,6 @@ cv::Mat ColorChannel::convolution(cv::Mat source, int radius, int s, int flag)
 	cv::destroyAllWindows();
 	cv::imshow("inside convolution, printing floatMat (input)", floatMat);
 	cv::imshow("inside convolution, image after conversion from float *O", result);
-	cv::imshow("inside convolution, first channel of result", channels[0]);
 	cv::waitKey();				
 	//end of debug section
 
