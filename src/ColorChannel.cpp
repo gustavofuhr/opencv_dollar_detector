@@ -48,18 +48,16 @@ cv::Mat ColorChannel::convolution(cv::Mat source, int radius, int s, int flag)
 					break;
 	}
 
-	//the problem is not that the channels are all mixed up in one
 	cv::Mat result(floatMat.rows, floatMat.cols, floatMat.type());
 	result.data = (uchar*)O;
 
-	//splitting the channels keeps the same weird behaviour as the full image
-	std::vector<cv::Mat> channels;
-	//cv::split(result, channels);
-
-	float *O0, *O1, *O2;
+	float *O0, *O1, *O2, *O3, *O4, *O5;
 	O0 = (float*)malloc(source.rows/s*source.cols/s*sizeof(float));
 	O1 = (float*)malloc(source.rows/s*source.cols/s*sizeof(float));
 	O2 = (float*)malloc(source.rows/s*source.cols/s*sizeof(float));
+	O3 = (float*)malloc(source.rows/s*source.cols/s*sizeof(float));
+	O4 = (float*)malloc(source.rows/s*source.cols/s*sizeof(float));
+	O5 = (float*)malloc(source.rows/s*source.cols/s*sizeof(float));
 
 	//this is an attempt to see if the problem is the way the color channels are split in the result array
 	int index = 0;
@@ -73,22 +71,63 @@ cv::Mat ColorChannel::convolution(cv::Mat source, int radius, int s, int flag)
 			O2[index++] = O[z];
 	}
 
-	channels.push_back(cv::Mat(source.rows, source.cols, floatMat.type()));
-	std::cout << "inside convolution, before showing channels" << std::endl;
-	channels[0].data = (uchar*)O0;
-	cv::imshow("inside convolution, printing individual channels0", channels[0]);
-	channels.push_back(cv::Mat(source.rows, source.cols, floatMat.type()));
-	channels[1].data = (uchar*)O1;
-	cv::imshow("inside convolution, printing individual channels1", channels[1]);
-	channels.push_back(cv::Mat(source.rows, source.cols, floatMat.type()));
-	channels[2].data = (uchar*)O2;
-	cv::imshow("inside convolution, printing individual channels2", channels[2]);
+	index = 0;
+	for (int z = 0; z < source.rows/s*source.cols/s*3; z++)
+	{
+		if (z < source.rows/s*source.cols/s)
+			O3[index++] = O[z];
+		else
+		{
+			if (z == source.rows/s*source.cols/s || z == source.rows/s*source.cols/s*2)
+				index = 0;
+			if (z < source.rows/s*source.cols/s*2)
+				O4[index++] = O[z];
+			else
+				O5[index++] = O[z];
+		}
+	}
+
+	//splitting the channels keeps the same weird behaviour as the full image
+	std::vector<cv::Mat> channels1;
+	std::vector<cv::Mat> channels2;
+	std::vector<cv::Mat> channels3;
+	cv::split(result, channels3);
+
+	channels1.push_back(cv::Mat(source.rows, source.cols, floatMat.type()));
+	std::cout << "inside convolution, before showing channels1" << std::endl;
+	channels1[0].data = (uchar*)O0;
+	cv::imshow("inside convolution, printing channels1[0]", channels1[0]);
+	channels1.push_back(cv::Mat(source.rows, source.cols, floatMat.type()));
+	channels1[1].data = (uchar*)O1;
+	cv::imshow("inside convolution, printing channels1[1]", channels1[1]);
+	channels1.push_back(cv::Mat(source.rows, source.cols, floatMat.type()));
+	channels1[2].data = (uchar*)O2;
+	cv::imshow("inside convolution, printing channels1[2]", channels1[2]);
 	cv::waitKey();
 
-	//any attempt to merge is useless since the channels are wrong
-	/*cv::Mat test;
-	source.convertTo(test, CV_32FC3, 1.0/255.0);
-	cv::merge(channels, test);*/
+	channels2.push_back(cv::Mat(source.rows, source.cols, floatMat.type()));
+	std::cout << "inside convolution, before showing channels2" << std::endl;
+	channels2[0].data = (uchar*)O3;
+	cv::imshow("inside convolution, printing channels2[0]", channels2[0]);
+	channels2.push_back(cv::Mat(source.rows, source.cols, floatMat.type()));
+	channels2[1].data = (uchar*)O4;
+	cv::imshow("inside convolution, printing channels2[1]", channels2[1]);
+	channels2.push_back(cv::Mat(source.rows, source.cols, floatMat.type()));
+	channels2[2].data = (uchar*)O5;
+	cv::imshow("inside convolution, printing channels2[2]", channels2[2]);
+	cv::waitKey();
+
+	channels3.push_back(cv::Mat(source.rows, source.cols, floatMat.type()));
+	std::cout << "inside convolution, before showing channels3" << std::endl;
+	channels3[0].data = (uchar*)O3;
+	cv::imshow("inside convolution, printing channels3[0]", channels3[0]);
+	channels3.push_back(cv::Mat(source.rows, source.cols, floatMat.type()));
+	channels3[1].data = (uchar*)O4;
+	cv::imshow("inside convolution, printing channels3[1]", channels3[1]);
+	channels3.push_back(cv::Mat(source.rows, source.cols, floatMat.type()));
+	channels3[2].data = (uchar*)O5;
+	cv::imshow("inside convolution, printing channels3[2]", channels3[2]);
+	cv::waitKey();
 
 	//prints for debug
 	std::cout << "result: rows = " << result.rows << ", cols = " << result.cols << ", dims = " << result.dims << std::endl;
