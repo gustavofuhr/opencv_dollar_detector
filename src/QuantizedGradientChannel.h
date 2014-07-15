@@ -9,15 +9,15 @@
 class QuantizedGradientChannel
 {
 public:
-   int enabled; //if true enable gradient histogram channels
-   int binSize; //spatial bin size (defaults to shrink)
-   int orientationChannels; //number of orientation channels
-   int useSoftBinning; //if true use "soft" bilinear spatial binning
-   int useHogNormalization; //if true perform 4-way hog normalization/clipping
+	int enabled; //if true enable gradient histogram channels
+	int binSize; //spatial bin size (defaults to shrink)
+	int orientationChannels; //number of orientation channels
+	int useSoftBinning; //if true use "soft" bilinear spatial binning
+	int useHogNormalization; //if true perform 4-way hog normalization/clipping
 	double clipHog; //value at which to clip hog histogram bins
 	int nChannels;
 	cv::String padWith;
-	
+
 	void readGradientHistogram(cv::FileNode);
 	//comes from gradientMex.cpp, the return still needs a type
 	cv::Mat mGradHist(cv::Mat, cv::Mat, int);

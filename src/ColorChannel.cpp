@@ -39,7 +39,7 @@ cv::Mat ColorChannel::convolution(cv::Mat source, int radius, int s, int flag)
 	switch(flag)
 	{
 		case CONV_TRI: 	
-					//passing a 3 as argument because there are three color channels
+					//passing a literal '3' as argument because there are three color channels
 					triangleFilterConvolution(I, O, source.rows, source.cols, 3, radius, s);
 					break;
 		case CONV_TRI1: 
@@ -320,5 +320,7 @@ cv::Mat ColorChannel::rgbConvert(cv::Mat I)
         else
             if (this->colorSpaceType == "gray")
                 cvtColor(I, result, CV_BGR2GRAY);
+            else
+            	return I;
     return result;
 }

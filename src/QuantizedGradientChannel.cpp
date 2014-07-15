@@ -7,6 +7,7 @@ void QuantizedGradientChannel::readGradientHistogram(cv::FileNode histNode)
 	useSoftBinning = histNode["softBin"];
 	useHogNormalization = histNode["useHog"];
 	clipHog = histNode["clipHog"];
+  binSize = 8;
 }
 
 //Compute oriented gradient histograms
@@ -28,14 +29,19 @@ cv::Mat QuantizedGradientChannel::mGradHist(cv::Mat gradMag, cv::Mat gradOri, in
 	int h = gradMag.rows;
 	int w = gradMag.cols;
 
-	//next there's a bunch of tests to see which parameters were given and which are to be default, i won put that here for now at least
+	//next there's a bunch of tests to see which parameters were given and which are to be default, i wont put that here for now at least
+
+  std::cout << "inside mGradHist, before if" << std::endl;
 
 	if (orientationChannels == 0)
 		result.data = NULL;
 	else
 	{
 		if (useHogNormalization == 0)
+    {
+      std::cout << "inside mGradHist, before calling gradHist" << std::endl;
 			gradHist(M, O, H, h, w, binSize, orientationChannels, useSoftBinning, full);
+    }
 		else
 		{
 			if (useHogNormalization == 1)
@@ -53,6 +59,8 @@ cv::Mat QuantizedGradientChannel::mGradHist(cv::Mat gradMag, cv::Mat gradOri, in
 void QuantizedGradientChannel::gradHist( float *M, float *O, float *H, int h, int w,
   int bin, int nOrients, int softBin, int full)
 {
+  //bin is zero right now, which causes a crash
+  std::cout << "inside gradHist, bin = " << bin << std::endl;
   const int hb=h/bin, wb=w/bin, h0=hb*bin, w0=wb*bin, nb=wb*hb;
   const float s=(float)bin, sInv=1/s, sInv2=1/s/s;
   float *H0, *H1, *M0, *M1; int x, y; int *O0, *O1;

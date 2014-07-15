@@ -64,8 +64,12 @@ void Detector::acfDetect(cv::Mat image)
 
 	totalDetections = 0;
 
+	std::cout << "inside acfDetect, before chnsPyramid" << std::endl;
+
 	//compute feature pyramid
 	opts.pPyramid.computeMultiScaleChannelFeaturePyramid(image);
+
+	std::cout << "inside acfDetect, after chnsPyramid" << std::endl;
 
 	//this became a simple loop because we will apply just one detector here, 
 	//to apply multiple detector models you need to create multiple Detector objects. 

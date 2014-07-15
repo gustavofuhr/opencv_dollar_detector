@@ -19,13 +19,16 @@ int main(int argc, char** argv)
 	//BB_Array* bbs = (BB_Array*)malloc(100 * sizeof(BB_Array));
 
 	//bbs = d.acfDetect(image);
-	//d.acfDetect(image);
+	d.acfDetect(image);
 
-	result = d.opts.pPyramid.computeSingleScaleChannelFeatures(image);
+	//result = d.opts.pPyramid.computeSingleScaleChannelFeatures(image);
 
 	std::cout << "on main, after chnsCompute" << std::endl;
 
-	file << result.image;
+	cv::imshow("showing result.image", result.image);
+	cv::waitKey();
+
+	//file << result.image;
 	//file << result.gradientMagnitude;
 	//file << result.gradientHistogram;
 

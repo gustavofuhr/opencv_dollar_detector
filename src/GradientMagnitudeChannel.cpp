@@ -14,6 +14,7 @@ std::vector<cv::Mat> GradientMagnitudeChannel::mGradMag(cv::Mat I, int channel)
 {
   int c, d; 
 	float *M, *O=0;
+  M = (float*)calloc(I.rows*I.cols, 16);
 	std::vector<cv::Mat> resultMatrix;
 
 	//checkArgs procedure is called but it is not actually needed
@@ -102,9 +103,9 @@ void GradientMagnitudeChannel::gradMag( float *I, float *M, float *O, int h, int
   float *acost = acosTable(), acMult=10000.0f;
   // allocate memory for storing one column of output (padded so h4%4==0)
   h4=(h%4==0) ? h : h-(h%4)+4; s=d*h4*sizeof(float);
-  M2=(float*) malloc(s); _M2=(__m128*) M2;
-  Gx=(float*) malloc(s); _Gx=(__m128*) Gx;
-  Gy=(float*) malloc(s); _Gy=(__m128*) Gy;
+  M2=(float*) calloc(s,16); _M2=(__m128*) M2;
+  Gx=(float*) calloc(s,16); _Gx=(__m128*) Gx;
+  Gy=(float*) calloc(s,16); _Gy=(__m128*) Gy;
   // compute gradient magnitude and orientation for each column
   for( x=0; x<w; x++ ) {
     // compute gradients (Gx, Gy) with maximum squared magnitude (M2)
@@ -128,7 +129,7 @@ void GradientMagnitudeChannel::gradMag( float *I, float *M, float *O, int h, int
       if(O) _Gx[y] = XOR( _Gx[y], AND(_Gy[y], SET(-0.f)) );
     };
     // segmentation fault happens here
-    std::cout << "inside gradMag, before memcopy" << std::endl;
+    std::cout << "inside gradMag, before memcopy, x = " << x << ", h = "<< h << std::endl;
     memcpy( M+x*h, M2, h*sizeof(float) );
     std::cout << "inside gradMag, after memcopy" << std::endl;
     // compute and store gradient orientation (O) via table lookup

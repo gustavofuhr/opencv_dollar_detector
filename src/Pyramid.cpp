@@ -39,13 +39,19 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 	//if we are to allow incomplete Pyramids, we need to set some values to default.
 	//for now, it wont be implemented. (lines 115-128 of chnsPyramid.m)
 
+	std::cout << "inside chnsPyramid, before rgbConvert" << std::endl;
+
 	//convert I to appropriate color space (or simply normalize)
 	convertedImage = pChns.pColor.rgbConvert(I);
 	pChns.pColor.colorSpaceType = "orig";
 
+	std::cout << "inside chnsPyramid, before getScales" << std::endl;
+
 	// get scales at which to compute features and list of real/approx scales
 	// [scales,scaleshw]=getScales(nPerOct,nOctUp,minDs,shrink,sz);
 	getScales(convertedImage.rows, convertedImage.cols, pChns.shrink);
+
+	std::cout << "inside chnsPyramid, after getScales" << std::endl;
 
 	computedChannels = new Info[computedScales];
 	
@@ -63,6 +69,8 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 	cv::Mat I1;
 	int ccIndex=0;
 	int isN[computedScales];
+
+	std::cout << "inside chnsPyramid, before big loop" << std::endl;
 
 	for (int i=0; i < computedScales; i = i+approximatedScales+1)
 	{
@@ -82,6 +90,7 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 		if (scales[i] == 0.5 && (approximatedScales>0 || scalesPerOctave == 1))
 			convertedImage = I1; //is this correct?
 
+		std::cout << "inside chnsPyramid, before chnsCompute" << std::endl;
 		computedChannels[ccIndex] = computeSingleScaleChannelFeatures(I1);
 		ccIndex++;
 
@@ -196,20 +205,27 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 	// this initialization makes no difference
 	result.image = cv::Mat(I.rows, I.cols, I.type());
 
+	std::cout << "inside chnsCompute, before rgbConvert" << std::endl;
+
 	//compute color channels
 	result.image = pChns.pColor.rgbConvert(I);
 
-	cv::imshow("image after color space conversion, before convolution", result.image);
-	cv::waitKey();				
+	std::cout << "inside chnsCompute, after rgbConvert, before printing result.image" << std::endl;
 
-	result.image = pChns.pColor.convolution(result.image, pChns.pColor.smooth, 1, CONV_TRI);
+	cv::imshow("image after color space conversion, before convolution", result.image);
+	cv::waitKey();			
+
+	std::cout << "inside chnsCompute, after printing result.image" << std::endl;	
+
+	//i'll test without convolution for now
+	/*result.image = pChns.pColor.convolution(result.image, pChns.pColor.smooth, 1, CONV_TRI);
 
 	std::cout << "after convolution, before printing result" << std::endl;
 
 	//no more segmentation fault here, but result is wrong
 	cv::imshow("inside chnsCompute, image after convolution", result.image);
 	cv::waitKey();				
-	cv::destroyAllWindows();
+	cv::destroyAllWindows();*/
 
 	if (pChns.pColor.enabled)
 		result.colorCh = pChns.pColor;
@@ -230,14 +246,14 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 		std::cout << "after assignments" << std::endl;
 
 		//still need to understand this next part:
-		if (pChns.pGradMag.normalizationRadius != 0)
+		/*if (pChns.pGradMag.normalizationRadius != 0)
 		{
 			float *S = (float*)(pChns.pColor.convolution(result.gradientMagnitude, pChns.pGradMag.normalizationRadius, 1, CONV_TRI)).data;
 			float *M = (float*)result.gradientMagnitude.data;
 			int h = result.gradientMagnitude.rows;
 			int w = result.gradientMagnitude.cols;
 			result.gradientMagnitude = pChns.pGradMag.gradMagNorm(M, S, h, w); 
-		}
+		}*/
 	}		
 	else
 	{
@@ -256,6 +272,8 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 		}	
 	}
 	
+	std::cout << "inside chnsCompute, before mGradHist" << std::endl;
+
 	//compute gradient histogram channels
 	if (pChns.pGradHist.enabled)
 	{
