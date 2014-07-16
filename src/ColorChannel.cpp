@@ -93,7 +93,7 @@ cv::Mat ColorChannel::convolution(cv::Mat source, int radius, int s, int flag)
 	std::vector<cv::Mat> channels3;
 	cv::split(result, channels3);
 
-	channels1.push_back(cv::Mat(source.rows, source.cols, floatMat.type()));
+	/*channels1.push_back(cv::Mat(source.rows, source.cols, floatMat.type()));
 	std::cout << "inside convolution, before showing channels1" << std::endl;
 	channels1[0].data = (uchar*)O0;
 	cv::imshow("inside convolution, printing channels1[0]", channels1[0]);
@@ -127,10 +127,10 @@ cv::Mat ColorChannel::convolution(cv::Mat source, int radius, int s, int flag)
 	channels3.push_back(cv::Mat(source.rows, source.cols, floatMat.type()));
 	channels3[2].data = (uchar*)O5;
 	cv::imshow("inside convolution, printing channels3[2]", channels3[2]);
-	cv::waitKey();
+	cv::waitKey();*/
 
 	//prints for debug
-	std::cout << "result: rows = " << result.rows << ", cols = " << result.cols << ", dims = " << result.dims << std::endl;
+	/*std::cout << "result: rows = " << result.rows << ", cols = " << result.cols << ", dims = " << result.dims << std::endl;
 	std::cout << "value 0,0 = " << result.at<double>(0,0) << std::endl;
 	std::cout << "value 0,100 = " << result.at<double>(0,100) << std::endl;
 	std::cout << "value 0,719 = " << result.at<double>(0,719) << std::endl;
@@ -144,7 +144,7 @@ cv::Mat ColorChannel::convolution(cv::Mat source, int radius, int s, int flag)
 	cv::destroyAllWindows();
 	cv::imshow("inside convolution, printing floatMat (input)", floatMat);
 	cv::imshow("inside convolution, image after conversion from float *O", result);
-	cv::waitKey();				
+	cv::waitKey();		*/		
 	//end of debug section
 
 	return result;

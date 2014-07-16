@@ -198,9 +198,9 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 	int height = I.rows - (I.rows % pChns.shrink);
 	int width =  I.cols - (I.cols % pChns.shrink);
 
-	cv::imshow("image before conversion", I);
+	/*cv::imshow("image before conversion", I);
 	cv::waitKey();				
-	cv::destroyAllWindows();
+	cv::destroyAllWindows();*/
 
 	// this initialization makes no difference
 	result.image = cv::Mat(I.rows, I.cols, I.type());
@@ -212,8 +212,8 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 
 	std::cout << "inside chnsCompute, after rgbConvert, before printing result.image" << std::endl;
 
-	cv::imshow("image after color space conversion, before convolution", result.image);
-	cv::waitKey();			
+	/*cv::imshow("image after color space conversion, before convolution", result.image);
+	cv::waitKey();*/			
 
 	std::cout << "inside chnsCompute, after printing result.image" << std::endl;	
 
