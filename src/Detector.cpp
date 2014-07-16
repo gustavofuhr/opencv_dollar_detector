@@ -202,6 +202,7 @@ void Detector::acfDetect(cv::Mat image)
 				bb.score = hs1[j];
 				bbs.push_back(bb);
 				totalDetections++;
+				std::cout << "a boundingBox was added, totalDetections: " << totalDetections << std::endl;
 			}
 
 			bbs = bbNms(bbs, m);

@@ -12,8 +12,8 @@ public:
 	bool operator< (const BoundingBox &other) const 
 	{
 		//return score < other.score;
-  	return score > other.score;
-  }
+  		return score > other.score;
+ 	}
 };
 
 typedef std::vector<BoundingBox> BB_Array;

@@ -53,7 +53,7 @@ std::vector<cv::Mat> GradientMagnitudeChannel::mGradMag(cv::Mat I, int channel)
 
 		//call to the actual function: 
 		//void gradMag(float*, float*, float*, int, int, int, bool);
-		gradMag(If, M, O, I.rows, I.cols, I.dims, full>0 );
+    gradMag(If, M, O, I.rows, I.cols, 3, full>0 );
 
      std::cout << "inside mGradMag, after gradMag" << std::endl;
 
@@ -110,7 +110,9 @@ void GradientMagnitudeChannel::gradMag( float *I, float *M, float *O, int h, int
   for( x=0; x<w; x++ ) {
     // compute gradients (Gx, Gy) with maximum squared magnitude (M2)
     for(c=0; c<d; c++) {
+      std::cout << "inside gradMag, before grad1, s = " << s << std::endl;
       grad1( I+x*h+c*w*h, Gx+c*h4, Gy+c*h4, h, w, x );
+      std::cout << "inside gradMag, after grad1" << std::endl;
       for( y=0; y<h4/4; y++ ) {
         y1=h4/4*c+y;
         _M2[y1]=ADD(MUL(_Gx[y1],_Gx[y1]),MUL(_Gy[y1],_Gy[y1]));
@@ -128,7 +130,6 @@ void GradientMagnitudeChannel::gradMag( float *I, float *M, float *O, int h, int
       if(O) _Gx[y] = MUL( MUL(_Gx[y],_m), SET(acMult) );
       if(O) _Gx[y] = XOR( _Gx[y], AND(_Gy[y], SET(-0.f)) );
     };
-    // segmentation fault happens here
     std::cout << "inside gradMag, before memcopy, x = " << x << ", h = "<< h << std::endl;
     memcpy( M+x*h, M2, h*sizeof(float) );
     std::cout << "inside gradMag, after memcopy" << std::endl;
@@ -141,6 +142,7 @@ void GradientMagnitudeChannel::gradMag( float *I, float *M, float *O, int h, int
         ADD( LDu(O[y+x*h]), AND(CMPLT(LDu(Gy[y]),SET(0.f)),SET(PI)) ) );
       for( ; y<h; y++ ) O[y+x*h]+=(Gy[y]<0)*PI;
     }
+    std::cout << "inside gradMag, end of iteraction" << std::endl;
   }
 }
 
@@ -151,18 +153,28 @@ void GradientMagnitudeChannel::grad1( float *I, float *Gx, float *Gy, int h, int
   Ip=I-h; In=I+h; r=.5f;
   if(x==0) { r=1; Ip+=h; } else if(x==w-1) { r=1; In-=h; }
   if( h<4 || h%4>0 || (size_t(I)&15) || (size_t(Gx)&15) ) {
-    for( y=0; y<h; y++ ) *Gx++=(*In++-*Ip++)*r;
+    //std::cout << "inside grad1, inside if, before for, h aaaaaaaaaaaaaaaa= " << h << ", y = " << y << std::endl;
+    std::cout << "iaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa " << std::endl;
+    for( y=0; y<h; y++ ) 
+    {
+      std::cout << "inside grad1, inside for, y = " << y << std::endl;
+      *Gx++=(*In++-*Ip++)*r;
+    }
   } else {
+    std::cout << "inside grad1, inside if, before for, h = " << h << std::endl;
     _G=(__m128*) Gx; _Ip=(__m128*) Ip; _In=(__m128*) In; _r = SET(r);
     for(y=0; y<h; y+=4) *_G++=MUL(SUB(*_In++,*_Ip++),_r);
   }
+  std::cout << "inside grad1, before DEFINE GRADY" << std::endl;
   // compute column of Gy
   #define GRADY(r) *Gy++=(*In++-*Ip++)*r;
   Ip=I; In=Ip+1;
+  //the next line is also a comment in the source file
   // GRADY(1); Ip--; for(y=1; y<h-1; y++) GRADY(.5f); In--; GRADY(1);
   y1=((~((size_t) Gy) + 1) & 15)/4; if(y1==0) y1=4; if(y1>h-1) y1=h-1;
   GRADY(1); Ip--; for(y=1; y<y1; y++) GRADY(.5f);
   _r = SET(.5f); _G=(__m128*) Gy;
+  std::cout << "inside grad1, before for" << std::endl;
   for(; y+4<h-1; y+=4, Ip+=4, In+=4, Gy+=4)
     *_G++=MUL(SUB(LDu(*In),LDu(*Ip)),_r);
   for(; y<h-1; y++) GRADY(.5f); In--; GRADY(1);
