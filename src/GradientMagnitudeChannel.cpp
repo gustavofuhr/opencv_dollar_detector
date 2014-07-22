@@ -129,22 +129,27 @@ void GradientMagnitudeChannel::gradMag(float *I, float *M, float *O, int h, int 
     // compute gradients (Gx, Gy) with maximum squared magnitude (M2)
     for(c=0; c<d; c++) 
     {
-      cv::destroyAllWindows();
       std::cout << "inside gradMag, before assignment from I to test.data" << std::endl;
       cv::Mat test(h, w, 16);
       test.data = (uchar*)I;
       std::cout << "inside gradMag, before printing image to be passed to grad1" << std::endl;
       cv::imshow("image passed to grad1 from gradMag", test);
       cv::waitKey();
+      if (Gx+c*h4 == NULL)
+        std::cout << "passing NULL as argument Gx to grad1" << std::endl;
+      if (I+x*h+c*w*h == NULL)
+        std::cout << "passing NULL as argument I to grad1" << std::endl;
+      if (Gy+c*h4 == NULL)
+        std::cout << "passing NULL as argument Gy to grad1" << std::endl;
       //the last call before the crash is x = 0, c = 2, but it crashes at c =1 if i try to print the input image
-      std::cout << "inside gradMag, before calling grad1, x = " << x << ", c = " << c << std::endl;
+      std::cout << "inside gradMag, before calling grad1, x = " << x << ", c = " << c << ", h = " << h << ", w = " << w << std::endl;
       grad1( I+x*h+c*w*h, Gx+c*h4, Gy+c*h4, h, w, x );
       std::cout << "inside gradMag, after calling grad1" << std::endl;
       for( y=0; y<h4/4; y++ ) {
         y1=h4/4*c+y;
         _M2[y1]=ADD(MUL(_Gx[y1],_Gx[y1]),MUL(_Gy[y1],_Gy[y1]));
         if( c==0 ) continue; 
-    _m = CMPGT( _M2[y1], _M2[y] );
+        _m = CMPGT( _M2[y1], _M2[y] );
         _M2[y] = OR( AND(_m,_M2[y1]), ANDNOT(_m,_M2[y]) );
         _Gx[y] = OR( AND(_m,_Gx[y1]), ANDNOT(_m,_Gx[y]) );
         _Gy[y] = OR( AND(_m,_Gy[y1]), ANDNOT(_m,_Gy[y]) );
@@ -179,19 +184,77 @@ void GradientMagnitudeChannel::grad1( float *I, float *Gx, float *Gy, int h, int
   cv::imshow("testing grad1 input", test);
   cv::waitKey();
   std::cout << "inside grad1, after printing image" << std::endl;*/
-  int y, y1; float *Ip, *In, r; __m128 *_Ip, *_In, *_G, _r;
-  // compute column of Gx
-  Ip=I-h; In=I+h; r=.5f;
-  if(x==0) { r=1; Ip+=h; } else if(x==w-1) { r=1; In-=h; }
-  if( h<4 || h%4>0 || (size_t(I)&15) || (size_t(Gx)&15) ) {
+  std::cout << "inside grad1, h = " << h << ", w = " << w << ", x = " << x << std::endl;
+
+  if (I == NULL)
+    std::cout << "inside grad1, I is NULL" << std::endl;
+  if (Gx == NULL)
+    std::cout << "inside grad1, Gx is NULL" << std::endl;  
+  if (Gy == NULL)
+    std::cout << "inside grad1, Gy is NULL" << std::endl;
+
+  int y, y1; 
+  float *Ip, *In, r; 
+  __m128 *_Ip, *_In, *_G, _r;
+
+  r = 0.5;
+  if (x == 0)
+  {
+    r = 1;
+    Ip = I;
+  }
+  else
+    Ip = I-h;
+  if (x == w-1)
+  {
+    r = 1;
+    In = I;
+  }
+  else
+    In = I + h;
+
+  //for debug purposes, i took away the computations with __m128 types. The problem persists
+  for( y=0; y<h; y++ ) 
+  { 
+    if (Gx == NULL)
+      std::cout << "inside grad1, Gx is NULL" << std::endl;
+    if (y == 0)
+    {
+      if (In == NULL)
+        std::cout << "inside grad1, In is NULL" << std::endl;  
+      else
+        std::cout << "inside grad1, In is NOT NULL" << std::endl;  
+      if (Ip == NULL)
+        std::cout << "inside grad1, Ip is NULL" << std::endl;
+      else
+      std::cout << "inside grad1, Ip is NOT NULL" << std::endl;  
+      std::cout << "y = " << y << ", r = " << r << std::endl;
+      std::cout << "*Gx = " << *Gx << std::endl;
+      //printing *Ip or *In causes segmentation fault even tough the pointers are not NULL
+      std::cout << "*Ip = " << *Ip << std::endl;
+      std::cout << "*In = " << *In << std::endl;
+    }
+    *Gx++=(*In++-*Ip++)*r;
+  }
+  /*if( h<4 || h%4>0 || (size_t(I)&15) || (size_t(Gx)&15) ) {
     for( y=0; y<h; y++ ) *Gx++=(*In++-*Ip++)*r;
   } else {
     _G=(__m128*) Gx; _Ip=(__m128*) Ip; _In=(__m128*) In; _r = SET(r);
     std::cout << "inside grad1's else, before the for, h = " << h << ", w = " << w << ", x = " << x << std::endl;
     //if i dont try to imshow the input image in the beggining, the program crashes here
-    for(y=0; y<h; y+=4) *_G++=MUL(SUB(*_In++,*_Ip++),_r);
+    for(y=0; y<h; y+=4) 
+    {
+      std::cout << "inside grad1's for, h = " << h << ", w = " << w << ", y = " << y << std::endl;
+      if (_G == NULL)
+        std::cout << "inside grad1, _G is NULL" << std::endl;
+      if (_In == NULL)
+        std::cout << "inside grad1, _In is NULL" << std::endl;  
+      if (_Ip == NULL)
+        std::cout << "inside grad1, _Ip is NULL" << std::endl;
+      *_G++=MUL(SUB(*_In++,*_Ip++),_r);
+    }
     std::cout << "inside grad1's else, after the for" << std::endl;
-  }
+  }*/
   // compute column of Gy
   #define GRADY(r) *Gy++=(*In++-*Ip++)*r;
   Ip=I; In=Ip+1;
