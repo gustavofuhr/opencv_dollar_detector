@@ -9,6 +9,48 @@ void ColorChannel::readColorChannel(cv::FileNode colorNode)
 	padWith = (cv::String)colorNode["padWith"];
 }
 
+float* cvMatToFloatArray(cv::Mat source)
+{
+	float* result;
+	float* tempFloat;
+	cv::Mat tempMat;
+	int resultIndex=0;
+
+	result = (float*)malloc(source.rows*source.cols*3*sizeof(float));
+
+	//first, we need the type conversion
+	source.convertTo(tempMat, CV_32FC3, 1.0/255.0);
+	tempFloat = (float*)tempMat.data;
+
+	//cvMat is BGR, row then column
+	//i need result to be column then row, one channel after the other
+	//the next step is changing the way the rows, columns and channels are arranged
+	for (int column=0; column < source.cols; column++)
+		for (int row=0; row < source.rows; row++)
+			for (int channel=0; channel < 3; channel++)
+			{
+				result[resultIndex++] = tempFloat[column*3+row*source.cols+channel];
+			}
+
+	return result;
+}
+
+cv::Mat floatArrayToCvMat(float* source, int rows, int cols, int type)
+{
+	cv::Mat result(rows, cols, type);
+	float* tempFloat;
+	int tempIndex=0;
+
+	for (int channel=0; channel < 3; channel++)
+		for (int row=0; row < rows; row++)
+			for (int column=0; column < cols; column++)
+				tempFloat[tempIndex++] = source[channel*rows*cols+column*rows+row];
+
+	result.data = (uchar*)tempFloat;
+
+	return result;
+}
+
 //convolutions taken from the convConst.cpp file
 //I'm going to add just the ones that are actually called
 
@@ -28,13 +70,16 @@ cv::Mat ColorChannel::convolution(cv::Mat source, int radius, int s, int flag)
 	//B = (float*) mxMalloc(ms[0]*ms[1]*d*sizeof(float));
 	float* O = (float*)malloc(source.rows/s*source.cols/s*3*sizeof(float));
 
-	cv::Mat floatMat;
+	/*cv::Mat floatMat;
 	source.convertTo(floatMat, CV_32FC3, 1.0/255.0);
 
-	std::cout << "inside convolution, floatMat.type() = " << floatMat.type() << std::endl;
+	std::cout << "inside convolution, floatMat.type() = " << floatMat.type() << std::endl;*/
 
 	float* I;
-	I = (float*)floatMat.data;
+	//I = (float*)floatMat.data;
+	std::cout << "inside convolution, before cvMatToFloatArray" << std::endl;
+	I = cvMatToFloatArray(source);
+	std::cout << "inside convolution, after cvMatToFloatArray" << std::endl;
 
 	switch(flag)
 	{
@@ -48,8 +93,16 @@ cv::Mat ColorChannel::convolution(cv::Mat source, int radius, int s, int flag)
 					break;
 	}
 
-	cv::Mat result(floatMat.rows, floatMat.cols, floatMat.type());
-	result.data = (uchar*)O;
+	//cv::Mat result(floatMat.rows, floatMat.cols, floatMat.type());
+	//result.data = (uchar*)O;
+
+	std::cout << "inside convolution, before floatArrayToCvMat" << std::endl;
+
+	cv::Mat result;
+	result = floatArrayToCvMat(O, source.rows, source.cols, CV_32FC3);
+
+	cv::imshow("convolution result", result);
+	cv::waitKey();
 
 	float *O0, *O1, *O2, *O3, *O4, *O5;
 	O0 = (float*)malloc(source.rows/s*source.cols/s*sizeof(float));

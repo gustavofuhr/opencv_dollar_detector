@@ -218,14 +218,14 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 	std::cout << "inside chnsCompute, after printing result.image" << std::endl;	
 
 	//i'll test without convolution for now
-	/*result.image = pChns.pColor.convolution(result.image, pChns.pColor.smooth, 1, CONV_TRI);
+	result.image = pChns.pColor.convolution(result.image, pChns.pColor.smooth, 1, CONV_TRI);
 
 	std::cout << "after convolution, before printing result" << std::endl;
 
 	//no more segmentation fault here, but result is wrong
 	cv::imshow("inside chnsCompute, image after convolution", result.image);
 	cv::waitKey();				
-	cv::destroyAllWindows();*/
+	cv::destroyAllWindows();
 
 	if (pChns.pColor.enabled)
 		result.colorCh = pChns.pColor;
