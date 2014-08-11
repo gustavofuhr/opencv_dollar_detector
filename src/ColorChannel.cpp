@@ -39,6 +39,7 @@ cv::Mat floatArrayToCvMat(float* source, int rows, int cols, int type)
 {
 	cv::Mat result(rows, cols, type);
 	float* tempFloat;
+	tempFloat = (float*)malloc(rows*cols*3*sizeof(float));
 	int tempIndex=0;
 
 	for (int channel=0; channel < 3; channel++)
