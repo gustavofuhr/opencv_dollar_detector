@@ -42,10 +42,17 @@ cv::Mat floatArrayToCvMat(float* source, int rows, int cols, int type)
 	tempFloat = (float*)malloc(rows*cols*3*sizeof(float));
 	int tempIndex=0;
 
-	for (int channel=0; channel < 3; channel++)
+	for (int column=0; column < cols; column++)
+		for (int row=0; row < rows; row++)
+			for (int channel=0; channel < 3; channel++)
+			{
+				tempFloat[column*3+row*cols+channel] = source[tempIndex++];
+			}
+
+	/*for (int channel=0; channel < 3; channel++)
 		for (int row=0; row < rows; row++)
 			for (int column=0; column < cols; column++)
-				tempFloat[tempIndex++] = source[channel*rows*cols+column*rows+row];
+				tempFloat[tempIndex++] = source[channel*rows*cols+column*rows+row];*/
 
 	result.data = (uchar*)tempFloat;
 
@@ -81,6 +88,12 @@ cv::Mat ColorChannel::convolution(cv::Mat source, int radius, int s, int flag)
 	std::cout << "inside convolution, before cvMatToFloatArray" << std::endl;
 	I = cvMatToFloatArray(source);
 	std::cout << "inside convolution, after cvMatToFloatArray" << std::endl;
+
+	cv::Mat testMat;
+	testMat = floatArrayToCvMat(I, source.rows, source.cols, CV_32FC3);
+
+	cv::imshow("testing conversion", testMat);
+	cv::waitKey();
 
 	switch(flag)
 	{
