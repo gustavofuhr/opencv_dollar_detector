@@ -11,23 +11,28 @@ void ColorChannel::readColorChannel(cv::FileNode colorNode)
 
 float* cvMat2floatArray(cv::Mat source)
 {
-	float* result;
+	float* result = (float*)malloc(source.rows*source.cols*3*sizeof(float));;
 	float* tempFloat;
 	cv::Mat tempMat;
 	int resultIndex=0;
-
-	result = (float*)malloc(source.rows*source.cols*3*sizeof(float));
 
 	//first, we need the type conversion
 	source.convertTo(tempMat, CV_32FC3, 1.0/255.0);
 	tempFloat = (float*)tempMat.data;
 
 	//the next step is changing the way the rows, columns and channels are arranged
-	for (int column=0; column < source.cols; column++)
-		for (int row=0; row < source.rows; row++)
-			for (int channel=0; channel < 3; channel++)
+	for (int channel=0; channel < 3; channel++)
+		for (int column=0; column < source.cols; column++)
+			for (int row=0; row < source.rows; row++)
 			{
-				result[resultIndex++] = tempFloat[column*3+row*source.cols*3+channel];
+				//teste1: 
+				result[resultIndex++] = 	tempFloat[column*3 				+row*source.cols*3 	+channel];
+				//teste2: 
+				//result[resultIndex++] = 	tempFloat[column*source.rows*3 	+row*3 				+channel];
+				//teste3: 
+				//result[resultIndex++] 	= 	tempFloat[column 				+row*source.cols	+channel*source.rows*source.cols];
+				//teste4: 
+				//result[resultIndex++] = 	tempFloat[column*source.rows	+row				+channel*source.rows*source.cols];
 			}
 
 	return result;
@@ -36,15 +41,21 @@ float* cvMat2floatArray(cv::Mat source)
 cv::Mat floatArray2cvMat(float* source, int rows, int cols, int type)
 {
 	cv::Mat result(rows, cols, type);
-	float* tempFloat;
-	tempFloat = (float*)malloc(rows*cols*3*sizeof(float));
+	float* tempFloat = (float*)malloc(rows*cols*3*sizeof(float));
 	int tempIndex=0;
 
-	for (int column=0; column < cols; column++)
-		for (int row=0; row < rows; row++)
-			for (int channel=0; channel < 3; channel++)
+	for (int channel=0; channel < 3; channel++)
+		for (int column=0; column < cols; column++)
+			for (int row=0; row < rows; row++)
 			{
-				tempFloat[column*3+row*cols*3+channel] = source[tempIndex++];
+				//teste1: 
+				tempFloat[column*3 		+row*cols*3 	+channel] 			= source[tempIndex++];
+				//teste2: 
+				//tempFloat[column*rows*3 	+row*3 			+channel] 			= source[tempIndex++];
+				//teste3: 
+				//tempFloat[column 			+row*cols 		+channel*rows*cols] = source[tempIndex++];
+				//teste4: 
+				//tempFloat[column*rows		+row			+channel*rows*cols] = source[tempIndex++];
 			}
 
 	result.data = (uchar*)tempFloat;
@@ -71,13 +82,7 @@ cv::Mat ColorChannel::convolution(cv::Mat source, int radius, int s, int flag)
 	//B = (float*) mxMalloc(ms[0]*ms[1]*d*sizeof(float));
 	float* O = (float*)malloc(source.rows/s*source.cols/s*3*sizeof(float));
 
-	/*cv::Mat floatMat;
-	source.convertTo(floatMat, CV_32FC3, 1.0/255.0);
-
-	std::cout << "inside convolution, floatMat.type() = " << floatMat.type() << std::endl;*/
-
 	float* I;
-	//I = (float*)floatMat.data;
 	std::cout << "inside convolution, before cvMatToFloatArray" << std::endl;
 	I = cvMat2floatArray(source);
 	std::cout << "inside convolution, after cvMatToFloatArray" << std::endl;
@@ -110,102 +115,6 @@ cv::Mat ColorChannel::convolution(cv::Mat source, int radius, int s, int flag)
 
 	cv::imshow("convolution result", result);
 	cv::waitKey();
-
-	float *O0, *O1, *O2, *O3, *O4, *O5;
-	O0 = (float*)malloc(source.rows/s*source.cols/s*sizeof(float));
-	O1 = (float*)malloc(source.rows/s*source.cols/s*sizeof(float));
-	O2 = (float*)malloc(source.rows/s*source.cols/s*sizeof(float));
-	O3 = (float*)malloc(source.rows/s*source.cols/s*sizeof(float));
-	O4 = (float*)malloc(source.rows/s*source.cols/s*sizeof(float));
-	O5 = (float*)malloc(source.rows/s*source.cols/s*sizeof(float));
-
-	//this is an attempt to see if the problem is the way the color channels are split in the result array
-	int index = 0;
-	for (int z = 0; z < source.rows/s*source.cols/s*3; z++)
-	{
-		if (z % 3 == 0)
-			O0[index] = O[z];
-		if (z % 3 == 1)
-			O1[index] = O[z];
-		if (z % 3 == 2)
-			O2[index++] = O[z];
-	}
-
-	index = 0;
-	for (int z = 0; z < source.rows/s*source.cols/s*3; z++)
-	{
-		if (z < source.rows/s*source.cols/s)
-			O3[index++] = O[z];
-		else
-		{
-			if (z == source.rows/s*source.cols/s || z == source.rows/s*source.cols/s*2)
-				index = 0;
-			if (z < source.rows/s*source.cols/s*2)
-				O4[index++] = O[z];
-			else
-				O5[index++] = O[z];
-		}
-	}
-
-	//splitting the channels keeps the same weird behaviour as the full image
-	std::vector<cv::Mat> channels1;
-	std::vector<cv::Mat> channels2;
-	std::vector<cv::Mat> channels3;
-	cv::split(result, channels3);
-
-	/*channels1.push_back(cv::Mat(source.rows, source.cols, floatMat.type()));
-	std::cout << "inside convolution, before showing channels1" << std::endl;
-	channels1[0].data = (uchar*)O0;
-	cv::imshow("inside convolution, printing channels1[0]", channels1[0]);
-	channels1.push_back(cv::Mat(source.rows, source.cols, floatMat.type()));
-	channels1[1].data = (uchar*)O1;
-	cv::imshow("inside convolution, printing channels1[1]", channels1[1]);
-	channels1.push_back(cv::Mat(source.rows, source.cols, floatMat.type()));
-	channels1[2].data = (uchar*)O2;
-	cv::imshow("inside convolution, printing channels1[2]", channels1[2]);
-	cv::waitKey();
-
-	channels2.push_back(cv::Mat(source.rows, source.cols, floatMat.type()));
-	std::cout << "inside convolution, before showing channels2" << std::endl;
-	channels2[0].data = (uchar*)O3;
-	cv::imshow("inside convolution, printing channels2[0]", channels2[0]);
-	channels2.push_back(cv::Mat(source.rows, source.cols, floatMat.type()));
-	channels2[1].data = (uchar*)O4;
-	cv::imshow("inside convolution, printing channels2[1]", channels2[1]);
-	channels2.push_back(cv::Mat(source.rows, source.cols, floatMat.type()));
-	channels2[2].data = (uchar*)O5;
-	cv::imshow("inside convolution, printing channels2[2]", channels2[2]);
-	cv::waitKey();
-
-	channels3.push_back(cv::Mat(source.rows, source.cols, floatMat.type()));
-	std::cout << "inside convolution, before showing channels3" << std::endl;
-	channels3[0].data = (uchar*)O3;
-	cv::imshow("inside convolution, printing channels3[0]", channels3[0]);
-	channels3.push_back(cv::Mat(source.rows, source.cols, floatMat.type()));
-	channels3[1].data = (uchar*)O4;
-	cv::imshow("inside convolution, printing channels3[1]", channels3[1]);
-	channels3.push_back(cv::Mat(source.rows, source.cols, floatMat.type()));
-	channels3[2].data = (uchar*)O5;
-	cv::imshow("inside convolution, printing channels3[2]", channels3[2]);
-	cv::waitKey();*/
-
-	//prints for debug
-	/*std::cout << "result: rows = " << result.rows << ", cols = " << result.cols << ", dims = " << result.dims << std::endl;
-	std::cout << "value 0,0 = " << result.at<double>(0,0) << std::endl;
-	std::cout << "value 0,100 = " << result.at<double>(0,100) << std::endl;
-	std::cout << "value 0,719 = " << result.at<double>(0,719) << std::endl;
-	std::cout << "value 1,0 = " << result.at<double>(1,0) << std::endl;
-	std::cout << "value 100,0 = " << result.at<double>(100,0) << std::endl;
-	std::cout << "value 10,10 = " << result.at<double>(10,10) << std::endl;
-	std::cout << "value 100,100 = " << result.at<double>(100,100) << std::endl;
-	std::cout << "value 300,300 = " << result.at<double>(300,300) << std::endl;
-	std::cout << "value 570,710 = " << result.at<double>(570,710) << std::endl;
-	std::cout << "inside convolution, before printing result, floatMat.type() = " << floatMat.type() << ", result.type() = " << result.type() << std::endl;
-	cv::destroyAllWindows();
-	cv::imshow("inside convolution, printing floatMat (input)", floatMat);
-	cv::imshow("inside convolution, image after conversion from float *O", result);
-	cv::waitKey();		*/		
-	//end of debug section
 
 	return result;
 }

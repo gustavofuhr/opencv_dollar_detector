@@ -38,7 +38,7 @@ std::vector<cv::Mat> GradientMagnitudeChannel::mGradMag(cv::Mat I, int channel)
 
 	if (I.rows>=2 && I.cols>=2)
 	{
-		//for now, the gradMag procedure will be unchanged so we put the raw data of the image in a float pointer to be used there 
+		//this is the same conversion we needed in convolution!
     cv::Mat floatMat;
     I.convertTo(floatMat, CV_32FC1, 1.0/255.0);
     float* If;
