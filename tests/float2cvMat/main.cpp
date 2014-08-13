@@ -1,5 +1,5 @@
-#include <cv.h>
-#include <highgui.h>
+#include "opencv.hpp"
+#include "highgui.hpp"
 
 float* cvMatToFloatArray(cv::Mat source)
 {
@@ -50,19 +50,22 @@ cv::Mat floatArrayToCvMat(float* source, int rows, int cols, int type)
 
 void print_array(float *v, int n) {
 	for (int i=0; i<n; ++i)
-		printf("%f ", v[i]);
-	printf("\n");
+		std::cout << v[i] << " ";
+		//printf("%f ", v[i]);
+	//printf("\n");
+	std::cout << std::endl;
 }
 
 
 int main() {
 
 	cv::Mat image = cv::imread("./simple.png");
-
-	/*
+	
+	cv::namedWindow("before");
+	cv::waitKey();
 	cv::imshow("before", image);
 	cv::waitKey();
-	*/
+	
 	cv::Mat fimage;
 	image.convertTo(fimage, CV_32FC3, 1/255.0);
 	print_array((float*)fimage.data, fimage.cols*fimage.rows*3);
@@ -77,10 +80,10 @@ int main() {
 	cv::Mat testMat;
 	testMat = floatArrayToCvMat(I, image.rows, image.cols, CV_32FC3);
 
-	/*
-	cv::imshow("testing conversion", testMat);
+	/*cv::namedWindow("testing conversion");
 	cv::waitKey();
-	*/
+	cv::imshow("testing conversion", image);
+	cv::waitKey();*/
 
 	return 0;
 

@@ -6,7 +6,7 @@ add_executable(mat_conversion
 				../../src/ColorChannel.h
 				main.cpp) 
 
-#include_directories("/usr/include/opencv2")
-#include_directories("/usr/include/opencv2/highgui")
+include_directories("/usr/include/opencv2")
+include_directories("/usr/include/opencv2/highgui")
 
 target_link_libraries( mat_conversion ${OpenCV_LIBS} )

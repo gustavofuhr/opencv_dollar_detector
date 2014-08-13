@@ -9,7 +9,7 @@ void ColorChannel::readColorChannel(cv::FileNode colorNode)
 	padWith = (cv::String)colorNode["padWith"];
 }
 
-float* cvMatToFloatArray(cv::Mat source)
+float* cvMat2floatArray(cv::Mat source)
 {
 	float* result;
 	float* tempFloat;
@@ -22,20 +22,18 @@ float* cvMatToFloatArray(cv::Mat source)
 	source.convertTo(tempMat, CV_32FC3, 1.0/255.0);
 	tempFloat = (float*)tempMat.data;
 
-	//cvMat is BGR, row then column
-	//i need result to be column then row, one channel after the other
 	//the next step is changing the way the rows, columns and channels are arranged
 	for (int column=0; column < source.cols; column++)
 		for (int row=0; row < source.rows; row++)
 			for (int channel=0; channel < 3; channel++)
 			{
-				result[resultIndex++] = tempFloat[column*3+row*source.cols+channel];
+				result[resultIndex++] = tempFloat[column*3+row*source.cols*3+channel];
 			}
 
 	return result;
 }
 
-cv::Mat floatArrayToCvMat(float* source, int rows, int cols, int type)
+cv::Mat floatArray2cvMat(float* source, int rows, int cols, int type)
 {
 	cv::Mat result(rows, cols, type);
 	float* tempFloat;
@@ -46,13 +44,8 @@ cv::Mat floatArrayToCvMat(float* source, int rows, int cols, int type)
 		for (int row=0; row < rows; row++)
 			for (int channel=0; channel < 3; channel++)
 			{
-				tempFloat[column*3+row*cols+channel] = source[tempIndex++];
+				tempFloat[column*3+row*cols*3+channel] = source[tempIndex++];
 			}
-
-	/*for (int channel=0; channel < 3; channel++)
-		for (int row=0; row < rows; row++)
-			for (int column=0; column < cols; column++)
-				tempFloat[tempIndex++] = source[channel*rows*cols+column*rows+row];*/
 
 	result.data = (uchar*)tempFloat;
 
@@ -86,11 +79,11 @@ cv::Mat ColorChannel::convolution(cv::Mat source, int radius, int s, int flag)
 	float* I;
 	//I = (float*)floatMat.data;
 	std::cout << "inside convolution, before cvMatToFloatArray" << std::endl;
-	I = cvMatToFloatArray(source);
+	I = cvMat2floatArray(source);
 	std::cout << "inside convolution, after cvMatToFloatArray" << std::endl;
 
 	cv::Mat testMat;
-	testMat = floatArrayToCvMat(I, source.rows, source.cols, CV_32FC3);
+	testMat = floatArray2cvMat(I, source.rows, source.cols, CV_32FC3);
 
 	cv::imshow("testing conversion", testMat);
 	cv::waitKey();
@@ -113,7 +106,7 @@ cv::Mat ColorChannel::convolution(cv::Mat source, int radius, int s, int flag)
 	std::cout << "inside convolution, before floatArrayToCvMat" << std::endl;
 
 	cv::Mat result;
-	result = floatArrayToCvMat(O, source.rows, source.cols, CV_32FC3);
+	result = floatArray2cvMat(O, source.rows, source.cols, CV_32FC3);
 
 	cv::imshow("convolution result", result);
 	cv::waitKey();
