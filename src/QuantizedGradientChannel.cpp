@@ -19,8 +19,8 @@ cv::Mat QuantizedGradientChannel::mGradHist(cv::Mat gradMag, cv::Mat gradOri, in
 	float *M, *O, *H;
 	
 	//for now, we will make this trasnformations to avoid having to rewrite the other procedures
-	M = (float*) gradMag.data;
-	O = (float*) gradOri.data;
+	M = cvMat2floatArray(gradMag);
+	O = cvMat2floatArray(gradOri);
 
 	//checkArgs procedure is called but it is not actually needed
 	//probably just need to test some of the parameters, if that
@@ -50,7 +50,7 @@ cv::Mat QuantizedGradientChannel::mGradHist(cv::Mat gradMag, cv::Mat gradOri, in
 				fhog(M, O, H, h, w, binSize, orientationChannels, useSoftBinning, clipHog );
 		}
 		//the resulting histogram matrix is our return value
-		result.data = (uchar*)H;
+		result = floatArray2cvMat(H, h, w, CV_32FC3);
 	}
 	return result;
 }

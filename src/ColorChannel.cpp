@@ -9,60 +9,6 @@ void ColorChannel::readColorChannel(cv::FileNode colorNode)
 	padWith = (cv::String)colorNode["padWith"];
 }
 
-float* cvMat2floatArray(cv::Mat source)
-{
-	float* result = (float*)malloc(source.rows*source.cols*3*sizeof(float));;
-	float* tempFloat;
-	cv::Mat tempMat;
-	int resultIndex=0;
-
-	//first, we need the type conversion
-	source.convertTo(tempMat, CV_32FC3, 1.0/255.0);
-	tempFloat = (float*)tempMat.data;
-
-	//the next step is changing the way the rows, columns and channels are arranged
-	for (int channel=0; channel < 3; channel++)
-		for (int column=0; column < source.cols; column++)
-			for (int row=0; row < source.rows; row++)
-			{
-				//teste1: 
-				result[resultIndex++] = 	tempFloat[column*3 				+row*source.cols*3 	+channel];
-				//teste2: 
-				//result[resultIndex++] = 	tempFloat[column*source.rows*3 	+row*3 				+channel];
-				//teste3: 
-				//result[resultIndex++] 	= 	tempFloat[column 				+row*source.cols	+channel*source.rows*source.cols];
-				//teste4: 
-				//result[resultIndex++] = 	tempFloat[column*source.rows	+row				+channel*source.rows*source.cols];
-			}
-
-	return result;
-}
-
-cv::Mat floatArray2cvMat(float* source, int rows, int cols, int type)
-{
-	cv::Mat result(rows, cols, type);
-	float* tempFloat = (float*)malloc(rows*cols*3*sizeof(float));
-	int tempIndex=0;
-
-	for (int channel=0; channel < 3; channel++)
-		for (int column=0; column < cols; column++)
-			for (int row=0; row < rows; row++)
-			{
-				//teste1: 
-				tempFloat[column*3 		+row*cols*3 	+channel] 			= source[tempIndex++];
-				//teste2: 
-				//tempFloat[column*rows*3 	+row*3 			+channel] 			= source[tempIndex++];
-				//teste3: 
-				//tempFloat[column 			+row*cols 		+channel*rows*cols] = source[tempIndex++];
-				//teste4: 
-				//tempFloat[column*rows		+row			+channel*rows*cols] = source[tempIndex++];
-			}
-
-	result.data = (uchar*)tempFloat;
-
-	return result;
-}
-
 //convolutions taken from the convConst.cpp file
 //I'm going to add just the ones that are actually called
 
@@ -83,9 +29,7 @@ cv::Mat ColorChannel::convolution(cv::Mat source, int radius, int s, int flag)
 	float* O = (float*)malloc(source.rows/s*source.cols/s*3*sizeof(float));
 
 	float* I;
-	std::cout << "inside convolution, before cvMatToFloatArray" << std::endl;
 	I = cvMat2floatArray(source);
-	std::cout << "inside convolution, after cvMatToFloatArray" << std::endl;
 
 	cv::Mat testMat;
 	testMat = floatArray2cvMat(I, source.rows, source.cols, CV_32FC3);
@@ -136,15 +80,15 @@ void ColorChannel::triangleFilterConvolution( float *I, float *O, int h, int w, 
 	} 
 	w0=(w/s)*s;
 	
-	//the function uses alMalloc, dont know if it makes a difference
-	//float *T=(float*) alMalloc(2*h1*sizeof(float),16), *U=T+h1;
-	float *T=(float*) calloc(2*h1*sizeof(float), 16), *U=T+h1;
+	float *T=(float*) alMalloc(2*h1*sizeof(float),16), *U=T+h1;
 
 	while(d-- > 0) 
 	{
 		// initialize T and U
 		for(j=0; j<h0; j+=4) 
+		{
 			STR(U[j], STR(T[j], LDu(I[j])));
+		}
 		for(i=1; i<r; i++) 
 			for(j=0; j<h0; j+=4) 
 				INC(U[j],INC(T[j],LDu(I[j+i*h])));
@@ -203,7 +147,7 @@ void ColorChannel::triangleFilterConvolution( float *I, float *O, int h, int w, 
 		I+=w*h;
 	}
 	//the function uses alFree, dont know if it makes a difference
-	free(T);
+	alFree(T);
 }
 
 // convolve one column of I by a 2rx1 triangle filter

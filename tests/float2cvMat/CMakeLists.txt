@@ -3,7 +3,7 @@ SET(CMAKE_CXX_COMPILER g++)
 project (mat_conversion)
 find_package( OpenCV REQUIRED )
 add_executable(mat_conversion 
-				../../src/ColorChannel.h
+				../../src/utils.h
 				main.cpp) 
 
 include_directories("/usr/include/opencv2")

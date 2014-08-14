@@ -1,5 +1,10 @@
-#include "opencv.hpp"
-#include "highgui.hpp"
+#include "utils.h"
+
+// wrapper functions if compiling from C/C++
+inline void wrError(const char *errormsg) { throw errormsg; }
+inline void* wrCalloc( size_t num, size_t size ) { return calloc(num,size); }
+inline void* wrMalloc( size_t size ) { return malloc(size); }
+inline void wrFree( void * ptr ) { free(ptr); }
 
 float* cvMat2floatArray(cv::Mat source)
 {
@@ -55,30 +60,17 @@ cv::Mat floatArray2cvMat(float* source, int rows, int cols, int type)
 	return result;
 }
 
-void print_array(float *v, int n) {
-	std::cout << "print_array" << std::endl;
-	for (int i=0; i<n; ++i)
-		std::cout << v[i];
-	std::cout << std::endl;
+// platform independent aligned memory allocation (see also alFree)
+void* alMalloc( size_t size, int alignment ) {
+  const size_t pSize = sizeof(void*), a = alignment-1;
+  void *raw = wrMalloc(size + a + pSize);
+  void *aligned = (void*) (((size_t) raw + pSize + a) & ~a);
+  *(void**) ((size_t) aligned-pSize) = raw;
+  return aligned;
 }
 
-
-int main() {
-
-	cv::Mat image = cv::imread("./simple.png");
-	
-	cv::Mat fimage;
-	image.convertTo(fimage, CV_32FC3, 1/255.0);
-	print_array((float*)fimage.data, fimage.cols*fimage.rows*3);
-
-	float* I;
-	I = cvMat2floatArray(image);
-
-	print_array(I, image.cols*image.rows*3);
-
-	cv::Mat testMat;
-	testMat = floatArray2cvMat(I, image.rows, image.cols, CV_32FC3);
-
-	return 0;
-
+// platform independent alignned memory de-allocation (see also alMalloc)
+void alFree(void* aligned) {
+  void* raw = *(void**)((char*)aligned-sizeof(void*));
+  wrFree(raw);
 }

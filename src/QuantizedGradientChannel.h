@@ -3,6 +3,7 @@
 
 #include "opencv.hpp"
 #include "sse.hpp"
+#include "utils.h"
 
 #define PI 3.14159265f
 

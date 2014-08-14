@@ -12,7 +12,9 @@ add_executable(opencv_dollar_detector
 ./src/ChannelFeatures.cpp
 ./src/Options.cpp
 ./src/PNms.cpp
-./src/Clf.cpp)
+./src/Clf.cpp
+./src/utils.cpp)
 include_directories("/usr/include/opencv2")
 include_directories("/usr/include/opencv2/highgui")
 target_link_libraries( opencv_dollar_detector ${OpenCV_LIBS} )
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse -msse2 -msse3")
