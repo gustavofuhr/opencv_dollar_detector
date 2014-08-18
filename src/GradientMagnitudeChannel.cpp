@@ -10,35 +10,69 @@ void GradientMagnitudeChannel::readGradientMagnitude(cv::FileNode gradMagNode)
 }
 
 //this function needs major reworking!!
-// [M,O] = gradMag( I, channel, full ) - see gradientMag.m
+// M=gradientMex('gradientMag',I,channel,full); ou [M,O] = gradientMex('gradientMag',I,channel,full);
+// if(!strcmp(action,"gradientMag")) mGradMag(nl,pl,nr,pr);
 std::vector<cv::Mat> GradientMagnitudeChannel::mGradMag(cv::Mat I, int channel)
 {
-  int c, d; 
-	float *M, *O=0;
-  M = (float*)alMalloc(I.rows*I.cols, 16);
-	std::vector<cv::Mat> resultMatrix;
+  /*
+  int h, w, d, c, full; float *I, *M, *O=0;
+  checkArgs(nl,pl,nr,pr,1,2,3,3,&h,&w,&d,mxSINGLE_CLASS,(void**)&I);
+  */
 
-	//checkArgs procedure is called but it is not actually needed
-	//probably just need to test some of the parameters, if that
-	//checkArgs(nl,pl,nr,pr,1,2,3,3,&h,&w,&d,mxSINGLE_CLASS,(void**)&I);
+  /*
+  void checkArgs( int nl, mxArray *pl[], int nr, const mxArray *pr[], int nl0, int nl1, int nr0, int nr1, int *h, int *w, int *d, mxClassID id, void **I )
+  {
+    const int *dims; int nDims;
+    if( nl<nl0 || nl>nl1 ) mexErrMsghTxt("Incorrect number of outputs.");
+    if( nr<nr0 || nr>nr1 ) mexErrMsgTxt("Incorrect number of inputs.");
+    nDims = mxGetNumberOfDimensions(pr[0]); dims = mxGetDimensions(pr[0]);
+    *h=dims[0]; *w=dims[1]; *d=(nDims==2) ? 1 : dims[2]; *I = mxGetPr(pr[0]);
+    if( nDims!=2 && nDims!=3 ) mexErrMsgTxt("I must be a 2D or 3D array.");
+    if( mxGetClassID(pr[0])!=id ) mexErrMsgTxt("I has incorrect type.");
+  }
+  */
+
+  // h = I.rows, w = I.cols
+  // nDims =  mxGetNumberOfDimensions(pr[0]);
+  // dims = mxGetDimensions(pr[0]);
+  // if (nDims == 2) d = 1; else d = dims[2];
+  // c = pr[1];
+
+  int h = I.rows, w = I.cols, c = channel, d = 3; 
+  float *M, *O=0;
+  M = (float*)alMalloc(I.rows*I.cols, 16);
+  std::vector<cv::Mat> resultMatrix;
+
+  /*
+  if(h<2 || w<2) mexErrMsgTxt("I must be at least 2x2.");
+  c = (int) mxGetScalar(pr[1]); full = (int) mxGetScalar(pr[2]);
+  */
+
 
 	if (I.rows>=2 && I.cols>=2)
 	{
-		//this is the same conversion we needed in convolution!
     float* If;
     If = cvMat2floatArray(I);
 
-		if (channel>0 && channel<=I.dims)
+    // if( c>0 && c<=d ) { I += h*w*(c-1); d=1; }
+		if (c>0 && c<=d)
 		{
-			If += I.rows*I.cols*(channel-1); 
-			d=1;  
+			If += h*w*(c-1); 
+      d=1;
 		}
-		//i dont think this next if statement will be necessary
-		/*if (nl>=2)
-			Mat pl; //pl[0] = mxCreateMatrix3(h,w,1,mxSINGLE_CLASS,0,(void**)&M);*/
 
+    // pl[0] = mxCreatH=gradientHist(M,O,binSize,p.nOrients,p.softBin,p.useHog,p.clipHog,full);
+    // H = gradientMex('gradientHist',M,O,varargin{:});
+    // if(!strcmp(action,"gradientHist")) mGradHist(nl,pl,nr,pr);
+    // pl[0] probably is the M result of this function
+    // M = mGradHist();
+
+    // eMatrix3(h,w,1,mxSINGLE_CLASS,0,(void**)&M);
+     
+    // if(nl>=2) pl[1] = mxCreateMatrix3(h,w,1,mxSINGLE_CLASS,0,(void**)&O);
+
+    // gradMag(I, M, O, h, w, d, full>0 );
     std::cout << "inside mGradMag, before gradMag" << std::endl;
-
 		//call to the actual function: gradMag(I, M, O, h, w, d, full>0 );
 		//void gradMag(float*, float*, float*, int, int, int, bool);
     gradMag(If, M, O, I.rows, I.cols, 3, full>0);

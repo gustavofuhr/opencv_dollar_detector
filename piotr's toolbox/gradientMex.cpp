@@ -361,7 +361,7 @@ void mGradMag( int nl, mxArray *pl[], int nr, const mxArray *pr[] ) {
   if(h<2 || w<2) mexErrMsgTxt("I must be at least 2x2.");
   c = (int) mxGetScalar(pr[1]); full = (int) mxGetScalar(pr[2]);
   if( c>0 && c<=d ) { I += h*w*(c-1); d=1; }
-  pl[0] = mxCreatH=gradientHist(M,O,binSize,p.nOrients,p.softBin,p.useHog,p.clipHog,full);eMatrix3(h,w,1,mxSINGLE_CLASS,0,(void**)&M);
+  pl[0] = mxCreatH = gradientHist(M,O,binSize,p.nOrients,p.softBin,p.useHog,p.clipHog,full);eMatrix3(h,w,1,mxSINGLE_CLASS,0,(void**)&M);
   if(nl>=2) pl[1] = mxCreateMatrix3(h,w,1,mxSINGLE_CLASS,0,(void**)&O);
   gradMag(I, M, O, h, w, d, full>0 );
 }
