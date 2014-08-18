@@ -238,7 +238,7 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 		//how to represent it in integer, or change mGradMag
 		std::vector<cv::Mat> tempResult = pChns.pGradMag.mGradMag(result.image,COLOR_CHANNEL);
 
-		if (tempResult.size() > 1)
+		if (tempResult.size() > 0)
 			result.gradientMagnitude = tempResult[0];
 		if (tempResult.size() > 1)
 			gradOrientation = tempResult[1];

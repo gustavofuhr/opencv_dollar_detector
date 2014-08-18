@@ -15,28 +15,59 @@ void QuantizedGradientChannel::readGradientHistogram(cv::FileNode histNode)
 //H=gradientHist(M,O,binSize,p.nOrients,p.softBin,p.useHog,p.clipHog,full);
 cv::Mat QuantizedGradientChannel::mGradHist(cv::Mat gradMag, cv::Mat gradOri, int full)
 {
-	cv::Mat result;
-	float *M, *O, *H;
-	
-	//for now, we will make this trasnformations to avoid having to rewrite the other procedures
-	M = cvMat2floatArray(gradMag);
-	O = cvMat2floatArray(gradOri);
+  /*
+    int h, w, d, hb, wb, nChns, binSize, nOrients, softBin, useHog;
+    bool full; float *M, *O, *H, clipHog;
+  */
+	int h = gradMag.rows, w = gradMag.cols, hb, wb;
 
-	//checkArgs procedure is called but it is not actually needed
-	//probably just need to test some of the parameters, if that
-	//checkArgs(nl,pl,nr,pr,1,3,2,8,&h,&w,&d,mxSINGLE_CLASS,(void**)&M);
 
-	int h = gradMag.rows;
-	int w = gradMag.cols;
+  /*
+    checkArgs(nl,pl,nr,pr,1,3,2,8,&h,&w,&d,mxSINGLE_CLASS,(void**)&M);
+    O = (float*) mxGetPr(pr[1]);
+  */
+  cv::Mat result;
+  float *M, *O, *H;
+  M = cvMat2floatArray(gradMag);
+  O = cvMat2floatArray(gradOri);
 
 	//next there's a bunch of tests to see which parameters were given and which are to be default, i wont put that here for now at least
+  /*
+    if( mxGetM(pr[1])!=h || mxGetN(pr[1])!=w || d!=1 ||
+      mxGetClassID(pr[1])!=mxSINGLE_CLASS ) mexErrMsgTxt("M or O is bad.");
+    binSize  = (nr>=3) ? (int)   mxGetScalar(pr[2])    : 8;
+    nOrients = (nr>=4) ? (int)   mxGetScalar(pr[3])    : 9;
+    softBin  = (nr>=5) ? (int)   mxGetScalar(pr[4])    : 1;
+    useHog   = (nr>=6) ? (int)   mxGetScalar(pr[5])    : 0;
+    clipHog  = (nr>=7) ? (float) mxGetScalar(pr[6])    : 0.2f;
+    full     = (nr>=8) ? (bool) (mxGetScalar(pr[7])>0) : false;
+  */
+
+  hb = h/binSize; wb = w/binSize;
+
+  //nChns = useHog== 0 ? nOrients : (useHog==1 ? nOrients*4 : nOrients*3+5);
+  int nChns;
+  switch (useHogNormalization)
+  {
+    case 0:   nChns = orientationChannels;
+              break;
+    case 1:   nChns = orientationChannels*4;
+              break;
+    default:  nChns = orientationChannels*3+5;
+  } 
+
+  //pl[0] = mxCreateMatrix3(hb,wb,nChns,mxSINGLE_CLASS,1,(void**)&H);
+  H = (float*)calloc(hb*wb*nChns, sizeof(float));
+
 
   std::cout << "inside mGradHist, before if" << std::endl;
 
+  // if( nOrients==0 ) return;
 	if (orientationChannels == 0)
 		result.data = NULL;
 	else
 	{
+    // if( useHog==0 ) { gradHist( M, O, H, h, w, binSize, nOrients, softBin, full ); }
 		if (useHogNormalization == 0)
     {
       std::cout << "inside mGradHist, before calling gradHist" << std::endl;
@@ -44,6 +75,8 @@ cv::Mat QuantizedGradientChannel::mGradHist(cv::Mat gradMag, cv::Mat gradOri, in
     }
 		else
 		{
+      // else if(useHog==1) { hog( M, O, H, h, w, binSize, nOrients, softBin, full, clipHog ); }
+      // else { fhog( M, O, H, h, w, binSize, nOrients, softBin, clipHog ); }
 			if (useHogNormalization == 1)
 				hog(M, O, H, h, w, binSize, orientationChannels, useSoftBinning, full, clipHog );
 			else
@@ -56,20 +89,21 @@ cv::Mat QuantizedGradientChannel::mGradHist(cv::Mat gradMag, cv::Mat gradOri, in
 }
 
 // compute nOrients gradient histograms per bin x bin block of pixels
-void QuantizedGradientChannel::gradHist( float *M, float *O, float *H, int h, int w,
-  int bin, int nOrients, int softBin, int full)
+void QuantizedGradientChannel::gradHist( float *M, float *O, float *H, int h, int w, int bin, int nOrients, int softBin, int full)
 {
-  //bin is zero right now, which causes a crash
   std::cout << "inside gradHist, bin = " << bin << std::endl;
   const int hb=h/bin, wb=w/bin, h0=hb*bin, w0=wb*bin, nb=wb*hb;
   const float s=(float)bin, sInv=1/s, sInv2=1/s/s;
   float *H0, *H1, *M0, *M1; int x, y; int *O0, *O1;
   O0=(int*)malloc(h*sizeof(int)); M0=(float*) malloc(h*sizeof(float));
   O1=(int*)malloc(h*sizeof(int)); M1=(float*) malloc(h*sizeof(float));
+  std::cout << "inside gradHist, before loop" << std::endl;
   // main loop
   for( x=0; x<w0; x++ ) {
+    std::cout << "inside gradHist, before gradQuantize" << std::endl;
     // compute target orientation bins for entire column - very fast
     gradQuantize(O+x*h,M+x*h,O0,O1,M0,M1,nb,h0,sInv2,nOrients,full,softBin>=0);
+    std::cout << "inside gradHist, after gradQuantize" << std::endl;
 
     if( softBin<0 && softBin%2==0 ) {
       // no interpolation w.r.t. either orienation or spatial bin

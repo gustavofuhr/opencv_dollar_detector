@@ -9,13 +9,13 @@ void GradientMagnitudeChannel::readGradientMagnitude(cv::FileNode gradMagNode)
 	full = gradMagNode["full"];
 }
 
-//this function needs major reworking!!
 // M=gradientMex('gradientMag',I,channel,full); ou [M,O] = gradientMex('gradientMag',I,channel,full);
 // if(!strcmp(action,"gradientMag")) mGradMag(nl,pl,nr,pr);
 std::vector<cv::Mat> GradientMagnitudeChannel::mGradMag(cv::Mat I, int channel)
 {
   /*
-  int h, w, d, c, full; float *I, *M, *O=0;
+  int h, w, d, c, full; 
+  float *I, *M, *O=0;
   checkArgs(nl,pl,nr,pr,1,2,3,3,&h,&w,&d,mxSINGLE_CLASS,(void**)&I);
   */
 
@@ -25,8 +25,11 @@ std::vector<cv::Mat> GradientMagnitudeChannel::mGradMag(cv::Mat I, int channel)
     const int *dims; int nDims;
     if( nl<nl0 || nl>nl1 ) mexErrMsghTxt("Incorrect number of outputs.");
     if( nr<nr0 || nr>nr1 ) mexErrMsgTxt("Incorrect number of inputs.");
-    nDims = mxGetNumberOfDimensions(pr[0]); dims = mxGetDimensions(pr[0]);
-    *h=dims[0]; *w=dims[1]; *d=(nDims==2) ? 1 : dims[2]; *I = mxGetPr(pr[0]);
+    nDims = mxGetNumberOfDimensions(pr[0]); 
+    dims = mxGetDimensions(pr[0]);
+    *h=dims[0]; *w=dims[1]; 
+    *d=(nDims==2) ? 1 : dims[2]; 
+    *I = mxGetPr(pr[0]); // I recebe o valor de pr[0] (que é o I dentro do Matlab)
     if( nDims!=2 && nDims!=3 ) mexErrMsgTxt("I must be a 2D or 3D array.");
     if( mxGetClassID(pr[0])!=id ) mexErrMsgTxt("I has incorrect type.");
   }
@@ -40,14 +43,13 @@ std::vector<cv::Mat> GradientMagnitudeChannel::mGradMag(cv::Mat I, int channel)
 
   int h = I.rows, w = I.cols, c = channel, d = 3; 
   float *M, *O=0;
-  M = (float*)alMalloc(I.rows*I.cols, 16);
   std::vector<cv::Mat> resultMatrix;
 
   /*
   if(h<2 || w<2) mexErrMsgTxt("I must be at least 2x2.");
-  c = (int) mxGetScalar(pr[1]); full = (int) mxGetScalar(pr[2]);
+  c = (int) mxGetScalar(pr[1]); 
+  full = (int) mxGetScalar(pr[2]);
   */
-
 
 	if (I.rows>=2 && I.cols>=2)
 	{
@@ -61,15 +63,11 @@ std::vector<cv::Mat> GradientMagnitudeChannel::mGradMag(cv::Mat I, int channel)
       d=1;
 		}
 
-    // pl[0] = mxCreatH=gradientHist(M,O,binSize,p.nOrients,p.softBin,p.useHog,p.clipHog,full);
-    // H = gradientMex('gradientHist',M,O,varargin{:});
-    // if(!strcmp(action,"gradientHist")) mGradHist(nl,pl,nr,pr);
-    // pl[0] probably is the M result of this function
-    // M = mGradHist();
+    // pl[0] = mxCreateMatrix3(h,w,1,mxSINGLE_CLASS,0,(void**)&M);
+    M = (float*)malloc(h*w*sizeof(float));
 
-    // eMatrix3(h,w,1,mxSINGLE_CLASS,0,(void**)&M);
-     
     // if(nl>=2) pl[1] = mxCreateMatrix3(h,w,1,mxSINGLE_CLASS,0,(void**)&O);
+    O = (float*)malloc(h*w*sizeof(float));
 
     // gradMag(I, M, O, h, w, d, full>0 );
     std::cout << "inside mGradMag, before gradMag" << std::endl;
@@ -82,11 +80,10 @@ std::vector<cv::Mat> GradientMagnitudeChannel::mGradMag(cv::Mat I, int channel)
 		//next, we assign the values of M and O to the matrix thats going to be returned
     cv::Mat matM;
     matM = floatArray2cvMat(M, I.rows, I.cols, CV_32FC3);
+    resultMatrix.push_back(matM);
     cv::Mat matO;
     matO = floatArray2cvMat(O, I.rows, I.cols, CV_32FC3);
-    resultMatrix.push_back(matM);
     resultMatrix.push_back(matO);
-    int f = resultMatrix[0].cols;
 	}
 	else
 	{
