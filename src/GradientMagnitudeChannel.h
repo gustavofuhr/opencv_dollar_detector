@@ -28,7 +28,7 @@ public:
 	void gradMag(float*, float*, float*, int, int, int, bool);
 	void grad1(float*, float*, float*, int, int, int);
 	float* acosTable();
-	cv::Mat gradMagNorm(float* M, float* S, int h, int w);
+	void gradMagNorm( float *M, float *S, int h, int w);
 };
 
 #endif

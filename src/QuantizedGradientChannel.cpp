@@ -72,6 +72,7 @@ cv::Mat QuantizedGradientChannel::mGradHist(cv::Mat gradMag, cv::Mat gradOri, in
     {
       std::cout << "inside mGradHist, before calling gradHist" << std::endl;
 			gradHist(M, O, H, h, w, binSize, orientationChannels, useSoftBinning, full);
+      std::cout << "inside mGradHist, after calling gradHist" << std::endl;
     }
 		else
 		{
@@ -82,8 +83,10 @@ cv::Mat QuantizedGradientChannel::mGradHist(cv::Mat gradMag, cv::Mat gradOri, in
 			else
 				fhog(M, O, H, h, w, binSize, orientationChannels, useSoftBinning, clipHog );
 		}
+    std::cout << "inside mGradHist, before result conversion" << std::endl;
 		//the resulting histogram matrix is our return value
-		result = floatArray2cvMat(H, h, w, CV_32FC3);
+		result = floatArray2cvMat(H, hb, wb, CV_32FC3);
+    std::cout << "inside mGradHist, after result conversion" << std::endl;
 	}
 	return result;
 }
@@ -91,19 +94,15 @@ cv::Mat QuantizedGradientChannel::mGradHist(cv::Mat gradMag, cv::Mat gradOri, in
 // compute nOrients gradient histograms per bin x bin block of pixels
 void QuantizedGradientChannel::gradHist( float *M, float *O, float *H, int h, int w, int bin, int nOrients, int softBin, int full)
 {
-  std::cout << "inside gradHist, bin = " << bin << std::endl;
   const int hb=h/bin, wb=w/bin, h0=hb*bin, w0=wb*bin, nb=wb*hb;
   const float s=(float)bin, sInv=1/s, sInv2=1/s/s;
   float *H0, *H1, *M0, *M1; int x, y; int *O0, *O1;
-  O0=(int*)malloc(h*sizeof(int)); M0=(float*) malloc(h*sizeof(float));
-  O1=(int*)malloc(h*sizeof(int)); M1=(float*) malloc(h*sizeof(float));
-  std::cout << "inside gradHist, before loop" << std::endl;
+  O0=(int*)alMalloc(h*sizeof(int),16); M0=(float*) alMalloc(h*sizeof(float),16);
+  O1=(int*)alMalloc(h*sizeof(int),16); M1=(float*) alMalloc(h*sizeof(float),16);
   // main loop
   for( x=0; x<w0; x++ ) {
-    std::cout << "inside gradHist, before gradQuantize" << std::endl;
     // compute target orientation bins for entire column - very fast
     gradQuantize(O+x*h,M+x*h,O0,O1,M0,M1,nb,h0,sInv2,nOrients,full,softBin>=0);
-    std::cout << "inside gradHist, after gradQuantize" << std::endl;
 
     if( softBin<0 && softBin%2==0 ) {
       // no interpolation w.r.t. either orienation or spatial bin
@@ -167,7 +166,7 @@ void QuantizedGradientChannel::gradHist( float *M, float *O, float *H, int h, in
       #undef GH
     }
   }
-  free(O0); free(O1); free(M0); free(M1);
+  alFree(O0); alFree(O1); alFree(M0); alFree(M1);
   // normalize boundary bins which only get 7/8 of weight of interior bins
   if( softBin%2!=0 ) for( int o=0; o<nOrients; o++ ) {
     x=0; for( y=0; y<hb; y++ ) H[o*nb+x*hb+y]*=8.f/7.f;

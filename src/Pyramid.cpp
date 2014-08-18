@@ -263,11 +263,12 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 
 			if (pChns.pGradMag.normalizationRadius != 0)
 			{
-				float *S = (float*)(pChns.pColor.convolution(result.gradientMagnitude, pChns.pGradMag.normalizationRadius, 1, CONV_TRI)).data;
-				float *M = (float*)result.gradientMagnitude.data;
+				float *S = cvMat2floatArray(pChns.pColor.convolution(result.gradientMagnitude, pChns.pGradMag.normalizationRadius, 1, CONV_TRI));
+				float *M = cvMat2floatArray(result.gradientMagnitude);
 				int h = result.gradientMagnitude.rows;
 				int w = result.gradientMagnitude.cols;
-				result.gradientMagnitude = pChns.pGradMag.gradMagNorm(M, S, h, w);
+				pChns.pGradMag.gradMagNorm(M, S, h, w);
+				result.gradientMagnitude = floatArray2cvMat(M, h, w, CV_32FC3);
 			}
 		}	
 	}

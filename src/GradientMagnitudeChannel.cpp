@@ -70,12 +70,9 @@ std::vector<cv::Mat> GradientMagnitudeChannel::mGradMag(cv::Mat I, int channel)
     O = (float*)malloc(h*w*sizeof(float));
 
     // gradMag(I, M, O, h, w, d, full>0 );
-    std::cout << "inside mGradMag, before gradMag" << std::endl;
 		//call to the actual function: gradMag(I, M, O, h, w, d, full>0 );
 		//void gradMag(float*, float*, float*, int, int, int, bool);
     gradMag(If, M, O, I.rows, I.cols, 3, full>0);
-
-    std::cout << "inside mGradMag, after gradMag" << std::endl;
 
 		//next, we assign the values of M and O to the matrix thats going to be returned
     cv::Mat matM;
@@ -96,26 +93,16 @@ std::vector<cv::Mat> GradientMagnitudeChannel::mGradMag(cv::Mat I, int channel)
 
 // gradMagNorm( M, S, norm ) - operates on M - see gradientMag.m
 //gradientMex('gradientMagNorm',M,S,normConst);
-// normalize gradient magnitude at each location (uses sse) 
-cv::Mat GradientMagnitudeChannel::gradMagNorm(float* M, float* S, int h, int w) {
-	cv::Mat resultingM;
-	__m128 *_M, *_S, _norm; 
-	int i=0, n=h*w, n4=n/4;
-  	_S = (__m128*) S; 
-	_M = (__m128*) M; 
-	_norm = SET(normalizationConstant);
-  	bool sse = !(size_t(M)&15) && !(size_t(S)&15);
-  	if(sse) 
-	{ 
-		for(; i<n4; i++) 
-			*_M++=MUL(*_M,RCP(ADD(*_S++,_norm))); 
-		i*=4; 
-	}
-  	for(; i<n; i++) 
-		M[i] /= (S[i] + normalizationConstant);
-	resultingM.data = (uchar*)M;
-	return resultingM;
+// normalize gradient magnitude at each location (uses sse)
+void GradientMagnitudeChannel::gradMagNorm( float *M, float *S, int h, int w) {
+  float norm = normalizationConstant;
+  __m128 *_M, *_S, _norm; int i=0, n=h*w, n4=n/4;
+  _S = (__m128*) S; _M = (__m128*) M; _norm = SET(norm);
+  bool sse = !(size_t(M)&15) && !(size_t(S)&15);
+  if(sse) { for(; i<n4; i++) *_M++=MUL(*_M,RCP(ADD(*_S++,_norm))); i*=4; }
+  for(; i<n; i++) M[i] /= (S[i] + norm);
 }
+
 
 // compute gradient magnitude and orientation at each location
 // gradMag(I, M, O, h, w, d, full>0 );
@@ -149,10 +136,7 @@ void GradientMagnitudeChannel::gradMag(float *I, float *M, float *O, int h, int 
       if(O) _Gx[y] = MUL( MUL(_Gx[y],_m), SET(acMult) );
       if(O) _Gx[y] = XOR( _Gx[y], AND(_Gy[y], SET(-0.f)) );
     };
-    //segmentation fault happening here, at x=238 or x=236, or x=237
-    std::cout << "inside gradMag, before memcpy, x = " << x << std::endl;
     memcpy( M+x*h, M2, h*sizeof(float) );
-    std::cout << "inside gradMag, after memcpy, x = " << x << std::endl;
     // compute and store gradient orientation (O) via table lookup
     if( O!=0 ) for( y=0; y<h; y++ ) O[x*h+y] = acost[(int)Gx[y]];
     if( O!=0 && full ) {

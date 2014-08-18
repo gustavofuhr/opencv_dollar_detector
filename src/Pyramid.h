@@ -1,5 +1,6 @@
 #include "ChannelFeatures.h"
 #include "Info.h"
+#include "utils.h"
 
 //#include "opencv.hpp"
 //#include "highgui.hpp"
