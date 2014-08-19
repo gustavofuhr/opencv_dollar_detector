@@ -1,0 +1,44 @@
+Detector.cpp:
+	acfDetect:
+		line 063: decide if comment or type checking is necessary
+		line 088: check if memcpy works in this situation
+		line 101: check if direct conversion actually works
+		line 105: check if the three assignments are correct
+	nmsMax:
+		line 254: do what the comment says (sort bounding boxes)
+		line 258: add test for greedines
+		line 261: test if result[j] was discarded
+		line 296: discard the bounding box
+		line 301: adjust result
+
+ColorChannel.cpp:
+	OK!
+
+GradientMagnitudeChannel.cpp:
+	mGradMag:
+		line 087: add error message
+	
+QuantizedGradientChannel.cpp:
+	OK!		
+
+Pyramid.cpp:
+	computeMultiScaleChannelFeaturePyramid:
+		line 039: possibly add default values for parameters
+		line 082: delete after adding imResampleMex substitute
+		line 088: entry point for resampling of images
+		line 099: possibly delete this part
+		line 110: check comment
+		line 133: write a substitution for is=is(2:3)
+		line 161: compute lambdas
+		line 166: check what is the use for imResampleMex there
+		line 183: check if convolution can be used here as is
+	computeSingleScaleChannelFeatures:
+		line 223: needs to be added
+		line 257: possibly add computation of custom channels
+	getScales:
+		line 339: suppress scales that are not different
+		line 351: add error message
+
+pNms.cpp:
+	check if it is necessary!
+

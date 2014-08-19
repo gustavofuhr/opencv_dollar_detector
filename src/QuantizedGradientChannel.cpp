@@ -59,9 +59,6 @@ cv::Mat QuantizedGradientChannel::mGradHist(cv::Mat gradMag, cv::Mat gradOri, in
   //pl[0] = mxCreateMatrix3(hb,wb,nChns,mxSINGLE_CLASS,1,(void**)&H);
   H = (float*)calloc(hb*wb*nChns, sizeof(float));
 
-
-  std::cout << "inside mGradHist, before if" << std::endl;
-
   // if( nOrients==0 ) return;
 	if (orientationChannels == 0)
 		result.data = NULL;
@@ -70,9 +67,7 @@ cv::Mat QuantizedGradientChannel::mGradHist(cv::Mat gradMag, cv::Mat gradOri, in
     // if( useHog==0 ) { gradHist( M, O, H, h, w, binSize, nOrients, softBin, full ); }
 		if (useHogNormalization == 0)
     {
-      std::cout << "inside mGradHist, before calling gradHist" << std::endl;
 			gradHist(M, O, H, h, w, binSize, orientationChannels, useSoftBinning, full);
-      std::cout << "inside mGradHist, after calling gradHist" << std::endl;
     }
 		else
 		{
@@ -83,10 +78,8 @@ cv::Mat QuantizedGradientChannel::mGradHist(cv::Mat gradMag, cv::Mat gradOri, in
 			else
 				fhog(M, O, H, h, w, binSize, orientationChannels, useSoftBinning, clipHog );
 		}
-    std::cout << "inside mGradHist, before result conversion" << std::endl;
 		//the resulting histogram matrix is our return value
 		result = floatArray2cvMat(H, hb, wb, CV_32FC3);
-    std::cout << "inside mGradHist, after result conversion" << std::endl;
 	}
 	return result;
 }

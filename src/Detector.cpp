@@ -51,9 +51,9 @@ void Detector::importDetectorModel(cv::String fileName)
 //this procedure was just copied verbatim
 void Detector::getChild( float *chns1, uint32_t *cids, uint32_t *fids, float *thrs, uint32_t offset, uint32_t &k0, uint32_t &k )
 {
-  float ftr = chns1[cids[fids[k]]];
-  k = (ftr<thrs[k]) ? 1 : 2;
-  k0=k+=k0*2;
+  	float ftr = chns1[cids[fids[k]]];
+  	k = (ftr<thrs[k]) ? 1 : 2;
+  	k0=k+=k0*2;
 	k+=offset;
 }
 
@@ -77,17 +77,18 @@ void Detector::acfDetect(cv::Mat image)
 	{
 		// mxGetData(P.data{i});
 		float* chns;
-		float* ch1 = (float*)opts.pPyramid.computedChannels[i].image.data;
-		int ch1Size = opts.pPyramid.computedChannels[i].image.rows * 
-		opts.pPyramid.computedChannels[i].image.cols;
-		float* ch2 = (float*)opts.pPyramid.computedChannels[i].gradientMagnitude.data;
+		float* ch1 = cvMat2floatArray(opts.pPyramid.computedChannels[i].image);
+		int ch1Size = opts.pPyramid.computedChannels[i].image.rows * opts.pPyramid.computedChannels[i].image.cols;
+		float* ch2 = cvMat2floatArray(opts.pPyramid.computedChannels[i].gradientMagnitude);
 		int ch2Size = opts.pPyramid.computedChannels[i].gradientMagnitude.rows * opts.pPyramid.computedChannels[i].gradientMagnitude.cols;
-		float* ch3 = (float*)opts.pPyramid.computedChannels[i].gradientHistogram.data;
+		float* ch3 = cvMat2floatArray(opts.pPyramid.computedChannels[i].gradientHistogram);
 		int ch3Size = opts.pPyramid.computedChannels[i].gradientHistogram.rows * opts.pPyramid.computedChannels[i].gradientHistogram.cols;
 		chns = (float*) malloc(ch1Size+ch2Size+ch3Size);
-		memcpy(chns, ch1, ch1Size) ;
+		std::cout << "inside acfDetect, before memcpys" << std::endl;
+		memcpy(chns, ch1, ch1Size);
 		memcpy(&chns[ch1Size], ch2, ch2Size);
 		memcpy(&chns[ch1Size+ch2Size], ch3, ch3Size);
+		std::cout << "inside acfDetect, after memcpys" << std::endl;
 
 		const int shrink = opts.pPyramid.pChns.shrink;
 		const int modelHt = opts.modelDsPad[0];
@@ -95,13 +96,13 @@ void Detector::acfDetect(cv::Mat image)
 		const int stride = opts.stride;
 		const float cascThr = opts.cascadeThreshold;
 
-		float *thrs = (float*) clf.thrs.data;
-		float *hs = (float*) clf.hs.data;
+		float *thrs = cvMat2floatArray(clf.thrs);
+		float *hs = cvMat2floatArray(clf.hs);
 		uint32_t *fids = (uint32_t*) clf.fids.data;
 		uint32_t *child = (uint32_t*) clf.child.data;
 		const int treeDepth = clf.treeDepth;
 
-		// int the original file: *chnsSize = mxGetDimensions(P.data{i});
+		// in the original file: *chnsSize = mxGetDimensions(P.data{i});
 		// still need to check these values properly
 		const int height = opts.pPyramid.computedScales;
 		// second dimension of chns
@@ -222,7 +223,6 @@ BB_Array Detector::bbNms(BB_Array bbs, int size)
 		if (bbs[i].score > opts.pNms.threshold)
 		{
 			result.push_back(bbs[i]);
-			//result[j] = bbs[i];
 			j++;
 		}
 	}

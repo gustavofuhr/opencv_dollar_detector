@@ -33,7 +33,4 @@ public:
 	Info computeSingleScaleChannelFeatures(cv::Mat);
 	cv::Mat TriangleFilterConvolution(cv::Mat, int, int, int);
 	void getScales(int, int , int);
-
-
-	void debugWindow (cv::String, double);
 };

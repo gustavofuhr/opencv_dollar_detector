@@ -9,33 +9,12 @@ void ColorChannel::readColorChannel(cv::FileNode colorNode)
 	padWith = (cv::String)colorNode["padWith"];
 }
 
-//convolutions taken from the convConst.cpp file
-//I'm going to add just the ones that are actually called
-
-//Probably need to change all of this or refactor some things
-
-//this is the wrapper function that call the appropriate one
-//this one could go away, if we refactor the other ones to
-//operate on cvMat structures rather than just float*
 cv::Mat ColorChannel::convolution(cv::Mat source, int radius, int s, int flag)
 {
-	//J = convConst('convTri',I,r,s);
-	//nDims = mxGetNumberOfDimensions(prhs[1]);
-	//ns = (int*) mxGetDimensions(prhs[1]);
-	//d = (nDims == 3) ? ns[2] : 1;
-	//s = (int) mxGetScalar(prhs[3]);
-	//ms[0]=ns[0]/s; ms[1]=ns[1]/s; ms[2]=d;
-	//B = (float*) mxMalloc(ms[0]*ms[1]*d*sizeof(float));
 	float* O = (float*)malloc(source.rows/s*source.cols/s*3*sizeof(float));
 
 	float* I;
 	I = cvMat2floatArray(source);
-
-	cv::Mat testMat;
-	testMat = floatArray2cvMat(I, source.rows, source.cols, CV_32FC3);
-
-	cv::imshow("testing conversion", testMat);
-	cv::waitKey();
 
 	switch(flag)
 	{
@@ -49,16 +28,8 @@ cv::Mat ColorChannel::convolution(cv::Mat source, int radius, int s, int flag)
 					break;
 	}
 
-	//cv::Mat result(floatMat.rows, floatMat.cols, floatMat.type());
-	//result.data = (uchar*)O;
-
-	std::cout << "inside convolution, before floatArrayToCvMat" << std::endl;
-
 	cv::Mat result;
 	result = floatArray2cvMat(O, source.rows, source.cols, CV_32FC3);
-
-	cv::imshow("convolution result", result);
-	cv::waitKey();
 
 	return result;
 }
@@ -146,7 +117,6 @@ void ColorChannel::triangleFilterConvolution( float *I, float *O, int h, int w, 
 		}
 		I+=w*h;
 	}
-	//the function uses alFree, dont know if it makes a difference
 	alFree(T);
 }
 
@@ -171,33 +141,33 @@ void ColorChannel::convTriY( float *I, float *O, int h, int r, int s ) {
 // convolve one column of I by [1 p 1] filter (uses SSE)
 void ColorChannel::convTri1Y( float *I, float *O, int h, float p, int s ) {
 	#define C4(m,o) ADD(ADD(LDu(I[m*j-1+o]),MUL(p,LDu(I[m*j+o]))),LDu(I[m*j+1+o]))
-  int j=0, k=((~((size_t) O) + 1) & 15)/4, h2=(h-1)/2;
-  if( s==2 ) 
-  {
-    for( ; j<k; j++ ) 
-    	O[j]=I[2*j]+p*I[2*j+1]+I[2*j+2];
-    for( ; j<h2-4; j+=4 ) 
-    	STR(O[j],_mm_shuffle_ps(C4(2,1),C4(2,5),136));
-    for( ; j<h2; j++ ) 
-    	O[j]=I[2*j]+p*I[2*j+1]+I[2*j+2];
-    if( h%2==0 ) 
-    	O[j]=I[2*j]+(1+p)*I[2*j+1];
-  } 
-  else 
-  {
-    O[j]=(1+p)*I[j]+I[j+1]; 
-    j++; 
-    if(k==0) 
-    	k=(h<=4) ? h-1 : 4;
-    for( ; j<k; j++ ) 
-    	O[j]=I[j-1]+p*I[j]+I[j+1];
-    for( ; j<h-4; j+=4 ) 
-    	STR(O[j],C4(1,0));
-    for( ; j<h-1; j++ ) 
-    	O[j]=I[j-1]+p*I[j]+I[j+1];
-    O[j]=I[j-1]+(1+p)*I[j];
-  }
-  #undef C4
+	int j=0, k=((~((size_t) O) + 1) & 15)/4, h2=(h-1)/2;
+	if( s==2 ) 
+	{
+		for( ; j<k; j++ ) 
+			O[j]=I[2*j]+p*I[2*j+1]+I[2*j+2];
+		for( ; j<h2-4; j+=4 ) 
+			STR(O[j],_mm_shuffle_ps(C4(2,1),C4(2,5),136));
+		for( ; j<h2; j++ ) 
+			O[j]=I[2*j]+p*I[2*j+1]+I[2*j+2];
+		if( h%2==0 ) 
+			O[j]=I[2*j]+(1+p)*I[2*j+1];
+	} 
+	else 
+	{
+		O[j]=(1+p)*I[j]+I[j+1]; 
+		j++; 
+		if(k==0) 
+			k=(h<=4) ? h-1 : 4;
+		for( ; j<k; j++ ) 
+			O[j]=I[j-1]+p*I[j]+I[j+1];
+		for( ; j<h-4; j+=4 ) 
+			STR(O[j],C4(1,0));
+		for( ; j<h-1; j++ ) 
+			O[j]=I[j-1]+p*I[j]+I[j+1];
+		O[j]=I[j-1]+(1+p)*I[j];
+	}
+	#undef C4
 }
 
 // convTri1( A, B, ns[0], ns[1], d, p, s );
@@ -226,7 +196,7 @@ cv::Mat ColorChannel::rgbConvert(cv::Mat I)
 {
     cv::Mat result;
     if (this->colorSpaceType == "luv")
-				cvtColor(I, result, CV_BGR2Luv);
+		cvtColor(I, result, CV_BGR2Luv);
     else
         if (this->colorSpaceType == "hsv")
            cvtColor(I, result, CV_BGR2HSV);

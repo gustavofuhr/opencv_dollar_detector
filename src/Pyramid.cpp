@@ -1,16 +1,5 @@
 #include "Pyramid.h"
 
-void Pyramid::debugWindow (cv::String name, double value)
-{
-	cv::Mat debugImg = cv::imread("../opencv_dollar_detector/frame0254.png");
-	char str[200];
-	sprintf(str,"%f",value);
-	putText(debugImg, str, cv::Point2f(100,100), cv::FONT_HERSHEY_PLAIN, 2,  cv::Scalar(0,0,255,255));
-	cv::imshow(name,debugImg);
-	cv::waitKey();
-	cv::destroyWindow(name);
-}
-
 void Pyramid::readPyramid(cv::FileNode pyramidNode)
 {
 	pChns.readChannelFeatures(pyramidNode["pChns"]);
@@ -39,19 +28,13 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 	//if we are to allow incomplete Pyramids, we need to set some values to default.
 	//for now, it wont be implemented. (lines 115-128 of chnsPyramid.m)
 
-	std::cout << "inside chnsPyramid, before rgbConvert" << std::endl;
-
 	//convert I to appropriate color space (or simply normalize)
 	convertedImage = pChns.pColor.rgbConvert(I);
 	pChns.pColor.colorSpaceType = "orig";
 
-	std::cout << "inside chnsPyramid, before getScales" << std::endl;
-
 	// get scales at which to compute features and list of real/approx scales
 	// [scales,scaleshw]=getScales(nPerOct,nOctUp,minDs,shrink,sz);
 	getScales(convertedImage.rows, convertedImage.cols, pChns.shrink);
-
-	std::cout << "inside chnsPyramid, after getScales" << std::endl;
 
 	computedChannels = new Info[computedScales];
 	
@@ -69,8 +52,6 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 	cv::Mat I1;
 	int ccIndex=0;
 	int isN[computedScales];
-
-	std::cout << "inside chnsPyramid, before big loop" << std::endl;
 
 	for (int i=0; i < computedScales; i = i+approximatedScales+1)
 	{
@@ -90,15 +71,12 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 		if (scales[i] == 0.5 && (approximatedScales>0 || scalesPerOctave == 1))
 			convertedImage = I1; //is this correct?
 
-		std::cout << "inside chnsPyramid, before chnsCompute" << std::endl;
 		computedChannels[ccIndex] = computeSingleScaleChannelFeatures(I1);
 		ccIndex++;
-
 		//why is this here?
 		//couldn't it be outside the for?
 		//or is it really needed now that computedChannels=data?
 		//if(i==isR(1)), nTypes=chns.nTypes; data=cell(nScales,nTypes); end
-
 	}
 		
 	int is[computedScales/approximatedScales+1]; //needs a better name
@@ -132,7 +110,7 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 
 		//channelTypes is the substitute for the nTypes value
 		double *f0 = (double*)memset(f0,0,channelTypes*sizeof(double));		
-		double *f1 = (double*)memset(f1, 0, channelTypes*sizeof(double));;
+		double *f1 = (double*)memset(f1, 0, channelTypes*sizeof(double));
 
 		// only two of the channel types seem to be considered here
 		// since chnsCompute computes the histogram channel after
@@ -170,11 +148,15 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 		
 		double ratio[3];
 		int iR = isN[i];
+		// segmentation fault when i=7, because scales[iR] is zero!
+		std::cout << "inside chnsPyramid, inside for, i = " << i << ", computedScales = " << computedScales << ", scales[iR] = " << scales[iR] << std::endl;
 		ratio[0] = pow(scales[i]/scales[iR],-lambdas[0]);
 		ratio[1] = pow(scales[i]/scales[iR],-lambdas[1]);
 		ratio[2] = pow(scales[i]/scales[iR],-lambdas[2]);
-		
+		std::cout << "inside chnsPyramid, after for, i = " << i << ", computedScales = " << computedScales << std::endl;
 	}
+
+	std::cout << "inside chnsPyramid, after for" << std::endl;
 	
 	//smooth channels, optionally pad and concatenate channels
 	for (int i=0; i < computedScales; i++)
@@ -186,6 +168,7 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 		computedChannels[i].gradientHistogram = convTri(computedChannels[i].gradientHistogram, smooth);*/
 	}
 
+	std::cout << "end of chnsPyramid" << std::endl;
 }
 
 //translation of the chnsCompute.m file
@@ -198,52 +181,25 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 	int height = I.rows - (I.rows % pChns.shrink);
 	int width =  I.cols - (I.cols % pChns.shrink);
 
-	/*cv::imshow("image before conversion", I);
-	cv::waitKey();				
-	cv::destroyAllWindows();*/
-
 	// this initialization makes no difference
 	result.image = cv::Mat(I.rows, I.cols, I.type());
-
-	std::cout << "inside chnsCompute, before rgbConvert" << std::endl;
 
 	//compute color channels
 	result.image = pChns.pColor.rgbConvert(I);
 
-	std::cout << "inside chnsCompute, after rgbConvert, before printing result.image" << std::endl;
-
-	/*cv::imshow("image after color space conversion, before convolution", result.image);
-	cv::waitKey();*/			
-
-	std::cout << "inside chnsCompute, after printing result.image" << std::endl;	
-
-	//i'll test without convolution for now
 	result.image = pChns.pColor.convolution(result.image, pChns.pColor.smooth, 1, CONV_TRI);
-
-	std::cout << "after convolution, before printing result" << std::endl;
-
-	//no more segmentation fault here, but result is wrong
-	cv::imshow("inside chnsCompute, image after convolution", result.image);
-	cv::waitKey();				
-	cv::destroyAllWindows();
 
 	if (pChns.pColor.enabled)
 		result.colorCh = pChns.pColor;
 
 	if (pChns.pGradHist.enabled)
 	{
-		std::cout << "before mGradMag" << std::endl;
-
-		//i need to identify which is the color channel to know
-		//how to represent it in integer, or change mGradMag
 		std::vector<cv::Mat> tempResult = pChns.pGradMag.mGradMag(result.image,COLOR_CHANNEL);
 
 		if (tempResult.size() > 0)
 			result.gradientMagnitude = tempResult[0];
 		if (tempResult.size() > 1)
 			gradOrientation = tempResult[1];
-
-		std::cout << "after assignments" << std::endl;
 
 		//still need to understand this next part:
 		/*if (pChns.pGradMag.normalizationRadius != 0)
@@ -272,8 +228,6 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 			}
 		}	
 	}
-	
-	std::cout << "inside chnsCompute, before mGradHist" << std::endl;
 
 	//compute gradient histogram channels
 	if (pChns.pGradHist.enabled)
@@ -282,10 +236,6 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 	}	
 
 	//for now, i wont add computation of custom channels
-	
-	std::cout << "end of chnsCompute" << std::endl;
-	cv::waitKey();				
-	cv::destroyAllWindows();	
 
 	return result;
 }

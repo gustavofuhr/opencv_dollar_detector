@@ -87,12 +87,11 @@ std::vector<cv::Mat> GradientMagnitudeChannel::mGradMag(cv::Mat I, int channel)
 		//error: matrix I must be at least 2x2
 	}
 
-
 	return resultMatrix;
 }
 
 // gradMagNorm( M, S, norm ) - operates on M - see gradientMag.m
-//gradientMex('gradientMagNorm',M,S,normConst);
+// gradientMex('gradientMagNorm',M,S,normConst);
 // normalize gradient magnitude at each location (uses sse)
 void GradientMagnitudeChannel::gradMagNorm( float *M, float *S, int h, int w) {
   float norm = normalizationConstant;
@@ -131,7 +130,7 @@ void GradientMagnitudeChannel::gradMag(float *I, float *M, float *O, int h, int 
     }
     // compute gradient mangitude (M) and normalize Gx
     for( y=0; y<h4/4; y++ ) {
-      _m = MIN( RCPSQRT(_M2[y]), SET(1e10f) );
+      _m = MMIN( RCPSQRT(_M2[y]), SET(1e10f) );
       _M2[y] = RCP(_m);
       if(O) _Gx[y] = MUL( MUL(_Gx[y],_m), SET(acMult) );
       if(O) _Gx[y] = XOR( _Gx[y], AND(_Gy[y], SET(-0.f)) );

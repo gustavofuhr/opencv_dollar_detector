@@ -6,6 +6,7 @@
 #include "Clf.h"
 #include "Info.h"
 #include "BoundingBox.h"
+#include "utils.h"
 
 class Detector
 {
