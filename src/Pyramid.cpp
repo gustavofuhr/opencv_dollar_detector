@@ -59,20 +59,19 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 			isN[i+j] = i;
 		h1 = round(I.rows*scales[i]/pChns.shrink)*pChns.shrink;
 		w1 = round(I.cols*scales[i]/pChns.shrink)*pChns.shrink;
+		std::cout << "scales[i]=" << scales[i] << ", shrink=" << pChns.shrink << std::endl;
 
-		//debug, while we dont have imResampleMex
-		I1 = I;
-
-		if(h1 == I.rows && w1 == I.cols)
+		if (h1 == I.rows && w1 == I.cols)
 			I1 = I;
-		else //need to implement the imResampleMex functions
-			//I1 = imResampleMex(I.data,h1,w1,1);
-			;
+		else 
+			I1 = pChns.pColor.resample(I,h1,w1,1);
+
 		if (scales[i] == 0.5 && (approximatedScales>0 || scalesPerOctave == 1))
 			convertedImage = I1; //is this correct?
 
 		computedChannels[ccIndex] = computeSingleScaleChannelFeatures(I1);
 		ccIndex++;
+
 		//why is this here?
 		//couldn't it be outside the for?
 		//or is it really needed now that computedChannels=data?

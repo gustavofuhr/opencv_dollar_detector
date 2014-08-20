@@ -5,6 +5,7 @@
 #include "sse.hpp"
 #include <stdio.h>
 #include "utils.h"
+#include <typeinfo>
 
 enum method { CONV_BOX, CONV_TRI, CONV_11, CONV_TRI1, CONV_MAX};
 
@@ -24,8 +25,6 @@ public:
 	void convTri1Y(float*, float*, int, float, int);
 	void convTri1(float*, float*, int, int, int, float, int);
 	cv::Mat rgbConvert(cv::Mat);
-	cv::Mat rgb2luv(cv::Mat);
-	cv::Mat rgb2hsv(cv::Mat);
-	cv::Mat rgb2gray(cv::Mat);
+	cv::Mat resample(cv::Mat source, int h, int w, int nrm);
 };
 #endif

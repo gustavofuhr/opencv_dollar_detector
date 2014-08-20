@@ -24,8 +24,7 @@ QuantizedGradientChannel.cpp:
 Pyramid.cpp:
 	computeMultiScaleChannelFeaturePyramid:
 		line 039: possibly add default values for parameters
-		line 082: delete after adding imResampleMex substitute
-		line 088: entry point for resampling of images
+		line 069: check this part
 		line 099: possibly delete this part
 		line 110: check comment
 		line 133: write a substitution for is=is(2:3)
@@ -36,6 +35,7 @@ Pyramid.cpp:
 		line 223: needs to be added
 		line 257: possibly add computation of custom channels
 	getScales:
+		line 244: review entire function
 		line 339: suppress scales that are not different
 		line 351: add error message
 
