@@ -60,16 +60,10 @@ void Detector::getChild( float *chns1, uint32_t *cids, uint32_t *fids, float *th
 //bb = acfDetect1(P.data{i},Ds{j}.clf,shrink,modelDsPad(1),modelDsPad(2),opts.stride,opts.cascThr);
 void Detector::acfDetect(cv::Mat image)
 {
-	//teste para ver se o conteudo da imagem eh char, se for aplica a funcao imreadf 
-
 	totalDetections = 0;
-
-	std::cout << "inside acfDetect, before chnsPyramid" << std::endl;
 
 	//compute feature pyramid
 	opts.pPyramid.computeMultiScaleChannelFeaturePyramid(image);
-
-	std::cout << "inside acfDetect, after chnsPyramid" << std::endl;
 
 	//this became a simple loop because we will apply just one detector here, 
 	//to apply multiple detector models you need to create multiple Detector objects. 
@@ -84,11 +78,10 @@ void Detector::acfDetect(cv::Mat image)
 		float* ch3 = cvMat2floatArray(opts.pPyramid.computedChannels[i].gradientHistogram);
 		int ch3Size = opts.pPyramid.computedChannels[i].gradientHistogram.rows * opts.pPyramid.computedChannels[i].gradientHistogram.cols;
 		chns = (float*) malloc(ch1Size+ch2Size+ch3Size);
-		std::cout << "inside acfDetect, before memcpys" << std::endl;
+
 		memcpy(chns, ch1, ch1Size);
 		memcpy(&chns[ch1Size], ch2, ch2Size);
 		memcpy(&chns[ch1Size+ch2Size], ch3, ch3Size);
-		std::cout << "inside acfDetect, after memcpys" << std::endl;
 
 		const int shrink = opts.pPyramid.pChns.shrink;
 		const int modelHt = opts.modelDsPad[0];
@@ -127,7 +120,7 @@ void Detector::acfDetect(cv::Mat image)
 			for (int c = 0; c<modelWd / shrink; c++)
 				for (int r = 0; r<modelHt / shrink; r++)
 					cids[m++] = z*width*height + c*height + r;
-	
+
 		// apply classifier to each patch
 		std::vector<int> rs, cs; std::vector<float> hs1;
 		int c, r;
@@ -302,42 +295,3 @@ BB_Array Detector::nmsMax(BB_Array source, int size, bool greedy)
 
 	return result;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

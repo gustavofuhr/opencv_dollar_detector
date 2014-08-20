@@ -3,7 +3,7 @@
 void ColorChannel::readColorChannel(cv::FileNode colorNode)
 {
 	enabled = colorNode["enabled"];
-	smooth = colorNode["smooth"];
+	smoothingRadius = colorNode["smooth"];
 	colorSpaceType = (cv::String)colorNode["colorSpace"];
 	nChannels = colorNode["nChns"];
 	padWith = (cv::String)colorNode["padWith"];

@@ -84,8 +84,7 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 
 	//if lambdas not specified compute image specific lambdas
 	//chnsPyramid.m, line 154
-	//computedScales is the substitute for nScales, might need to 	
-	//set it in the computeSingleScaleChannelFeatures function
+	//computedScales is the substitute for nScales
 	if (computedScales>0 && approximatedScales>0 && !providedLambdas)
 	{
 		for (int j=1+upsampledOctaves*scalesPerOctave; j < computedScales; j = j+approximatedScales+1)
@@ -147,7 +146,6 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 		
 		double ratio[3];
 		int iR = isN[i];
-		// segmentation fault when i=7, because scales[iR] is zero!
 		std::cout << "inside chnsPyramid, inside for, i = " << i << ", computedScales = " << computedScales << ", scales[iR] = " << scales[iR] << std::endl;
 		ratio[0] = pow(scales[i]/scales[iR],-lambdas[0]);
 		ratio[1] = pow(scales[i]/scales[iR],-lambdas[1]);
@@ -160,11 +158,11 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 	//smooth channels, optionally pad and concatenate channels
 	for (int i=0; i < computedScales; i++)
 	{
-		// this is kinda of what needs to happen
-		// but the actual convolution needs to be reworked
+		// maybe i need to add this convolution to all channels, but the other two don't have a smoothingRadius...
 		/*computedChannels[i].image = convTri(computedChannels[i].image, smooth);
 		computedChannels[i].gradientMagnitude = convTri(computedChannels[i].gradientMagnitude, smooth);
 		computedChannels[i].gradientHistogram = convTri(computedChannels[i].gradientHistogram, smooth);*/
+		computedChannels[i].image = pChns.pColor.convolution(computedChannels[i].image,  pChns.pColor.smoothingRadius, 1, CONV_TRI);
 	}
 
 	std::cout << "end of chnsPyramid" << std::endl;
@@ -186,7 +184,7 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 	//compute color channels
 	result.image = pChns.pColor.rgbConvert(I);
 
-	result.image = pChns.pColor.convolution(result.image, pChns.pColor.smooth, 1, CONV_TRI);
+	result.image = pChns.pColor.convolution(result.image, pChns.pColor.smoothingRadius, 1, CONV_TRI);
 
 	if (pChns.pColor.enabled)
 		result.colorCh = pChns.pColor;
@@ -246,6 +244,7 @@ void Pyramid::getScales(int h, int w, int shrink)
 {
 	int minSize, bgDim, smDim;
 	double minSizeRatio;
+	double *tempScales;
 
 	
 	if (h!=0 && w!=0)
@@ -268,15 +267,19 @@ void Pyramid::getScales(int h, int w, int shrink)
 		int s0, s1;
 		double epsilon = std::numeric_limits<double>::epsilon();	
 
-		scales = (double*)malloc(computedScales * sizeof(double));
+		//scales = (double*)malloc(computedScales * sizeof(double));
+		tempScales = (double*)malloc(computedScales * sizeof(double));
 
 		//this next for statement will substitute the following:
 		//scales = 2.^(-(0:nScales-1)/nPerOct+nOctUp);
 		for (int i=0; i < computedScales; i++)
 		{
-			scales[i]=pow(-(i/scalesPerOctave+upsampledOctaves),2);
-			s0=(round(smDim*scales[i]/shrink)*shrink-.25*shrink)/smDim;
-			s1=(round(smDim*scales[i]/shrink)*shrink+.25*shrink)/smDim;
+			//scales[i]=pow(-(i/scalesPerOctave+upsampledOctaves),2);
+			//s0=(round(smDim*scales[i]/shrink)*shrink-.25*shrink)/smDim;
+			//s1=(round(smDim*scales[i]/shrink)*shrink+.25*shrink)/smDim;
+			tempScales[i]=pow(-(i/scalesPerOctave+upsampledOctaves),2);
+			s0=(round(smDim*tempScales[i]/shrink)*shrink-.25*shrink)/smDim;
+			s1=(round(smDim*tempScales[i]/shrink)*shrink+.25*shrink)/smDim;
 
 			//what follows will substitute ss=(0:.01:1-epsilon())*(s1-s0)+s0;
 			double ss[(int)round((1-epsilon)/0.01)], es0[(int)round((1-epsilon)/0.01)], es1[(int)round((1-epsilon)/0.01)];		
@@ -313,12 +316,23 @@ void Pyramid::getScales(int h, int w, int shrink)
 				}
 			
 			//scales(i)=ss(x);
-			scales[i] = ss[minScaleIndex];	
+			//scales[i] = ss[minScaleIndex];
+			tempScales[i] = ss[minScaleIndex];	
 		}
 		
-		//in here, we would have a text to just keep the values of 
-		//scales[i] which are different from their neighbours
-		//for now, this will be suppressed
+		//just keep the values of scales[i] which are different from their neighbours
+		scales = (double*)malloc(computedScales*sizeof(double));
+		scales[0] = tempScales[0];
+		std::cout << "scales[0]=" << tempScales[0] << std::endl;
+		int scalesIndex=1;
+		for (int i=1; i < computedScales; i++)
+			if(tempScales[i] != tempScales[i-1])
+			{
+				std::cout << "scales[" << scalesIndex << "]=" << tempScales[i] << std::endl;
+				scales[scalesIndex++] = tempScales[i];
+			}
+
+		computedScales = scalesIndex;
 		
 		scaleshw = (cv::Point*)malloc(computedScales * sizeof(cv::Point));
 
@@ -329,7 +343,7 @@ void Pyramid::getScales(int h, int w, int shrink)
 		}
 	}
 	else //error, height or width of the image are wrong
-		;
+		std::cout << " # getScales error: both height and width need to be greater than 0!";
 }
 
 

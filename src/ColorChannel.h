@@ -13,7 +13,7 @@ class ColorChannel
 {
 public:
 	int enabled;
-	int smooth;
+	int smoothingRadius;
 	cv::String colorSpaceType;
 	int nChannels;
 	cv::String padWith;

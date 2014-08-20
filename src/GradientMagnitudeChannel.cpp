@@ -85,6 +85,7 @@ std::vector<cv::Mat> GradientMagnitudeChannel::mGradMag(cv::Mat I, int channel)
 	else
 	{
 		//error: matrix I must be at least 2x2
+    std::cout << " # mGradMag error: provided matrix should have two dimensions!" << std::endl;
 	}
 
 	return resultMatrix;
