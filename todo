@@ -1,14 +1,16 @@
+Current Total: 16
+
 Detector.cpp:
 	acfDetect:
 		line 082: check if memcpy works in this situation
 		line 094: check if direct conversion actually works
 		line 098: check if the three assignments are correct
 	nmsMax:
-		line 247: do what the comment says (sort bounding boxes)
-		line 251: add test for greediness
-		line 254: test if result[j] was discarded
-		line 289: discard the bounding box
-		line 294: adjust result
+		line 248: do what the comment says (sort bounding boxes)
+		line 253: add test for greediness
+		line 256: test if result[j] was discarded
+		line 291: discard the bounding box
+		line 296: adjust result
 
 ColorChannel.cpp:
 	OK!
@@ -21,18 +23,16 @@ QuantizedGradientChannel.cpp:
 
 Pyramid.cpp:
 	computeMultiScaleChannelFeaturePyramid:
-		line 029: possibly add default values for parameters
+		line 028: possibly add default values for parameters
 		line 041: check this part
-		line 075: possibly delete this part
-		line 103: write a substitution for is=is(2:3)
-		line 133: compute lambdas
-		line 152: check what is the use for imResampleMex there
-		line 158: check if convolution needs to be applied to other channels
+		line 076: possibly delete this part
+		line 108: write a substitution for is=is(2:3)
+		line 134: compute lambdas
+		line 170: check if convolution needs to be applied to other channels
 	computeSingleScaleChannelFeatures:
-		line 201: needs to be added (normalizationRadius if)
-		line 235: possibly add computation of custom channels
+		line 247: possibly add computation of custom channels
 	getScales:
-		line 244: check why so few results are obtained
+		line 252: check why so few results are obtained
 
 pNms.cpp:
 	check if it is necessary!

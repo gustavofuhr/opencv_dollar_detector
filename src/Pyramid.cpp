@@ -56,7 +56,8 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 	for (int i=0; i < computedScales; i = i+approximatedScales+1)
 	{
 		for (int j = 0; j < approximatedScales; j++)
-			isN[i+j] = i;
+			isN[j] = j + i + 1;
+
 		h1 = round(I.rows*scales[i]/pChns.shrink)*pChns.shrink;
 		w1 = round(I.cols*scales[i]/pChns.shrink)*pChns.shrink;
 		std::cout << "scales[i]=" << scales[i] << ", shrink=" << pChns.shrink << std::endl;
@@ -64,7 +65,7 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 		if (h1 == I.rows && w1 == I.cols)
 			I1 = I;
 		else 
-			I1 = pChns.pColor.resample(I,h1,w1,1);
+			I1 = resample(I,h1,w1,1.0);
 
 		if (scales[i] == 0.5 && (approximatedScales>0 || scalesPerOctave == 1))
 			convertedImage = I1; //is this correct?
@@ -135,22 +136,33 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 		//this will be revisited at a later time
 	}
 	
-	//compute image pyramid [approximated scales]
-	//the next for statement is controlled by the isA array
-	//h1, w1 and I1 were declared earlier
-	//this will use imResampleMex too, so it will be erased for now
-	for (int i=0; i<computedScales; i++)
+	/*
+	% compute image pyramid [approximated scales]
+	for i=isA
+	  iR=isN(i); sz1=round(sz*scales(i)/shrink);
+	  for j=1:nTypes, 
+	  	ratio=(scales(i)/scales(iR)).^-lambdas(j);
+	    data{i,j}=imResampleMex(data{iR,j},sz1(1),sz1(2),ratio); 
+	   end
+	end
+	*/
+	for (int i=0; i<approximatedScales; i++)
 	{
 		h1 = round(I.rows*scales[i]/pChns.shrink);
 		w1 = round(I.cols*scales[i]/pChns.shrink);
 		
 		double ratio[3];
 		int iR = isN[i];
-		std::cout << "inside chnsPyramid, inside for, i = " << i << ", computedScales = " << computedScales << ", scales[iR] = " << scales[iR] << std::endl;
+
+		// cannot test this before getScales is fixed
+		std::cout << "inside chnsPyramid, inside for, i = " << i << ", approximatedScales = " << approximatedScales << ", scales[iR] = " << scales[iR] << std::endl;
 		ratio[0] = pow(scales[i]/scales[iR],-lambdas[0]);
+		computedChannels[i].image = resample(computedChannels[iR].image, h1, w1, ratio[0]);
 		ratio[1] = pow(scales[i]/scales[iR],-lambdas[1]);
+		computedChannels[i].gradientMagnitude = resample(computedChannels[iR].gradientMagnitude, h1, w1, ratio[1]);
 		ratio[2] = pow(scales[i]/scales[iR],-lambdas[2]);
-		std::cout << "inside chnsPyramid, after for, i = " << i << ", computedScales = " << computedScales << std::endl;
+		computedChannels[i].gradientHistogram = resample(computedChannels[iR].gradientHistogram, h1, w1, ratio[2]);
+		std::cout << "inside chnsPyramid, after for, i = " << i << ", approximatedScales = " << approximatedScales << std::endl;
 	}
 
 	std::cout << "inside chnsPyramid, after for" << std::endl;
@@ -162,7 +174,7 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 		/*computedChannels[i].image = convTri(computedChannels[i].image, smooth);
 		computedChannels[i].gradientMagnitude = convTri(computedChannels[i].gradientMagnitude, smooth);
 		computedChannels[i].gradientHistogram = convTri(computedChannels[i].gradientHistogram, smooth);*/
-		computedChannels[i].image = pChns.pColor.convolution(computedChannels[i].image,  pChns.pColor.smoothingRadius, 1, CONV_TRI);
+		computedChannels[i].image = convolution(computedChannels[i].image,  pChns.pColor.smoothingRadius, 1, CONV_TRI);
 	}
 
 	std::cout << "end of chnsPyramid" << std::endl;
@@ -184,7 +196,7 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 	//compute color channels
 	result.image = pChns.pColor.rgbConvert(I);
 
-	result.image = pChns.pColor.convolution(result.image, pChns.pColor.smoothingRadius, 1, CONV_TRI);
+	result.image = convolution(result.image, pChns.pColor.smoothingRadius, 1, CONV_TRI);
 
 	if (pChns.pColor.enabled)
 		result.colorCh = pChns.pColor;
@@ -198,15 +210,15 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 		if (tempResult.size() > 1)
 			gradOrientation = tempResult[1];
 
-		//still need to understand this next part:
-		/*if (pChns.pGradMag.normalizationRadius != 0)
+		if (pChns.pGradMag.normalizationRadius != 0)
 		{
-			float *S = (float*)(pChns.pColor.convolution(result.gradientMagnitude, pChns.pGradMag.normalizationRadius, 1, CONV_TRI)).data;
-			float *M = (float*)result.gradientMagnitude.data;
+			float *S = cvMat2floatArray(convolution(result.gradientMagnitude, pChns.pGradMag.normalizationRadius, 1, CONV_TRI));
+			float *M = cvMat2floatArray(result.gradientMagnitude);
 			int h = result.gradientMagnitude.rows;
 			int w = result.gradientMagnitude.cols;
-			result.gradientMagnitude = pChns.pGradMag.gradMagNorm(M, S, h, w); 
-		}*/
+			pChns.pGradMag.gradMagNorm(M, S, h, w);
+			result.gradientMagnitude = floatArray2cvMat(M, h, w, CV_32FC3); 
+		}
 	}		
 	else
 	{
@@ -216,7 +228,7 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 
 			if (pChns.pGradMag.normalizationRadius != 0)
 			{
-				float *S = cvMat2floatArray(pChns.pColor.convolution(result.gradientMagnitude, pChns.pGradMag.normalizationRadius, 1, CONV_TRI));
+				float *S = cvMat2floatArray(convolution(result.gradientMagnitude, pChns.pGradMag.normalizationRadius, 1, CONV_TRI));
 				float *M = cvMat2floatArray(result.gradientMagnitude);
 				int h = result.gradientMagnitude.rows;
 				int w = result.gradientMagnitude.cols;

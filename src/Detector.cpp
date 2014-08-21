@@ -243,8 +243,10 @@ BB_Array Detector::bbNms(BB_Array bbs, int size)
 BB_Array Detector::nmsMax(BB_Array source, int size, bool greedy)
 {
 	BB_Array result;
+	BB_Array temp = source;
 	
 	// sort the result array by score
+	// std::sort(std::begin(temp), std::end(temp));
 	
 	for (int i = 0; i < size; i++)
 	{
@@ -277,7 +279,7 @@ BB_Array Detector::nmsMax(BB_Array source, int size, bool greedy)
 				double o = iw * ih;
 				double u;
 				if (opts.pNms.ovrDnm == "union")
-						u = source[i].height*source[i].width + source[j].height*source[j].width-o;
+					u = source[i].height*source[i].width + source[j].height*source[j].width-o;
 				else if (opts.pNms.ovrDnm == "min")
 				{
 					u = source[i].height*source[i].width;
