@@ -31,8 +31,6 @@ Pyramid.cpp:
 		line 170: check if convolution needs to be applied to other channels
 	computeSingleScaleChannelFeatures:
 		line 247: possibly add computation of custom channels
-	getScales:
-		line 252: check why so few results are obtained
 
 pNms.cpp:
 	check if it is necessary!

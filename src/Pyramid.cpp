@@ -32,6 +32,15 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 	convertedImage = pChns.pColor.rgbConvert(I);
 	pChns.pColor.colorSpaceType = "orig";
 
+	std::cout << "nPerOct = " << scalesPerOctave << ", nOctUp = " << upsampledOctaves << ", minDs = (" << minImgSize[0] << "," << minImgSize[1] << 
+	"), shrink = " << pChns.shrink << ", sz = (" << convertedImage.rows << "," << convertedImage.cols << ")" <<std::endl;
+
+	/*
+	nPerOct = 8, nOctUp = 0, minDs = (100,41), shrink = 4, sz = (576,720)
+	scales[0]=0
+	scales[1]=3
+	*/
+
 	// get scales at which to compute features and list of real/approx scales
 	// [scales,scaleshw]=getScales(nPerOct,nOctUp,minDs,shrink,sz);
 	getScales(convertedImage.rows, convertedImage.cols, pChns.shrink);
@@ -258,40 +267,61 @@ void Pyramid::getScales(int h, int w, int shrink)
 	double minSizeRatio;
 	double *tempScales;
 
+	/*
+	nPerOct = 8, nOctUp = 0, minDs = (100,41), shrink = 4, sz = (576,720)
+	scales[0]=0
+	scales[1]=3
+	*/
 	
 	if (h!=0 && w!=0)
 	{
-		if (h <= w)
-		{
-			bgDim = w;
-			smDim = h;
-			minSizeRatio = h / minImgSize[0];
-		}
+		if (h/minImgSize[0] < w/minImgSize[1])
+			minSizeRatio = float(h) / minImgSize[0];
 		else
-		{
-			bgDim = h;
-			smDim = w;
-			minSizeRatio = w / minImgSize[1];
-		}
+			minSizeRatio = float(w) / minImgSize[1];
 
 		//nScales = floor(nPerOct*(nOctUp+log2(min(sz./minDs)))+1);
+		// nScales = floor(8*(0+log2(min(576/100, 720/41)))+1);
+		// in the current tests, returns 21 inside MATLAB. In here, returns 21 too
 		computedScales = floor(scalesPerOctave*(upsampledOctaves+log2(minSizeRatio))+1);
-		int s0, s1;
+
+		// prints for testing computedScales
+		// std::cout << "computedScales = " << computedScales << std::endl;
+		// std::cout << "h = " << h << ", w = " << w << ", minImgSize[0] = " << minImgSize[0] << ", minImgSize[1] = " << minImgSize[1] << ", minSizeRatio = " << minSizeRatio  << std::endl;
+		
+
+		double s0, s1;
 		double epsilon = std::numeric_limits<double>::epsilon();	
 
 		//scales = (double*)malloc(computedScales * sizeof(double));
 		tempScales = (double*)malloc(computedScales * sizeof(double));
 
-		//this next for statement will substitute the following:
-		//scales = 2.^(-(0:nScales-1)/nPerOct+nOctUp);
+		// if(sz(1)<sz(2)), d0=sz(1); d1=sz(2); else d0=sz(2); d1=sz(1); end
+		// d0 is the small dimension and d1 is the big dimension
+		if (h < w)
+		{
+			bgDim = w;
+			smDim = h;
+		}
+		else
+		{
+			bgDim = h;
+			smDim = w;
+		}
+
 		for (int i=0; i < computedScales; i++)
 		{
-			//scales[i]=pow(-(i/scalesPerOctave+upsampledOctaves),2);
-			//s0=(round(smDim*scales[i]/shrink)*shrink-.25*shrink)/smDim;
-			//s1=(round(smDim*scales[i]/shrink)*shrink+.25*shrink)/smDim;
-			tempScales[i]=pow(-(i/scalesPerOctave+upsampledOctaves),2);
+			// scales = 2.^(-(0:nScales-1)/nPerOct+nOctUp);
+			tempScales[i]=pow(2, -(float(i)/scalesPerOctave+upsampledOctaves));
+			// this print is now returning the correct values!
+			// std::cout << "tempScales[" << i << "] = " << tempScales[i] << std::endl;
+
+			// s0=(round(d0*s/shrink)*shrink-.25*shrink)./d0;
+			// s1=(round(d0*s/shrink)*shrink+.25*shrink)./d0;
 			s0=(round(smDim*tempScales[i]/shrink)*shrink-.25*shrink)/smDim;
 			s1=(round(smDim*tempScales[i]/shrink)*shrink+.25*shrink)/smDim;
+			// prints for testing s0 and s1 now returning correct values
+			// std::cout << "s0 = " << s0 << ", s1 = " << s1 << std::endl;
 
 			//what follows will substitute ss=(0:.01:1-epsilon())*(s1-s0)+s0;
 			double ss[(int)round((1-epsilon)/0.01)], es0[(int)round((1-epsilon)/0.01)], es1[(int)round((1-epsilon)/0.01)];		
@@ -335,12 +365,10 @@ void Pyramid::getScales(int h, int w, int shrink)
 		//just keep the values of scales[i] which are different from their neighbours
 		scales = (double*)malloc(computedScales*sizeof(double));
 		scales[0] = tempScales[0];
-		std::cout << "scales[0]=" << tempScales[0] << std::endl;
 		int scalesIndex=1;
 		for (int i=1; i < computedScales; i++)
 			if(tempScales[i] != tempScales[i-1])
 			{
-				std::cout << "scales[" << scalesIndex << "]=" << tempScales[i] << std::endl;
 				scales[scalesIndex++] = tempScales[i];
 			}
 
