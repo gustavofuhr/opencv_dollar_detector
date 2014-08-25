@@ -69,17 +69,35 @@ std::vector<cv::Mat> GradientMagnitudeChannel::mGradMag(cv::Mat I, int channel)
     // if(nl>=2) pl[1] = mxCreateMatrix3(h,w,1,mxSINGLE_CLASS,0,(void**)&O);
     O = (float*)malloc(h*w*sizeof(float));
 
+    // debug 
+    std::cout << "inside mGradMag, before gradMag" << std::endl;
+
     // gradMag(I, M, O, h, w, d, full>0 );
 		//call to the actual function: gradMag(I, M, O, h, w, d, full>0 );
 		//void gradMag(float*, float*, float*, int, int, int, bool);
     gradMag(If, M, O, I.rows, I.cols, 3, full>0);
 
+    // debug 
+    std::cout << "inside mGradMag, after gradMag" << std::endl;
+
 		//next, we assign the values of M and O to the matrix thats going to be returned
     cv::Mat matM;
-    matM = floatArray2cvMat(M, I.rows, I.cols, CV_32FC3);
+
+    // debug 
+    std::cout << "inside mGradMag, before first conversion" << std::endl;
+
+    matM = floatArray2cvMat(M, I.rows, I.cols);
+
+    // debug 
+    std::cout << "inside mGradMag, after first conversion" << std::endl;
+
     resultMatrix.push_back(matM);
     cv::Mat matO;
-    matO = floatArray2cvMat(O, I.rows, I.cols, CV_32FC3);
+    matO = floatArray2cvMat(O, I.rows, I.cols);
+
+    // debug 
+    std::cout << "inside mGradMag, after second conversion" << std::endl;
+
     resultMatrix.push_back(matO);
 	}
 	else

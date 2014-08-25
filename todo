@@ -35,3 +35,7 @@ Pyramid.cpp:
 pNms.cpp:
 	check if it is necessary!
 
+utils.cpp:
+	imResample
+		line 396: fix segmentation fault
+

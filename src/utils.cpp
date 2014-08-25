@@ -54,9 +54,9 @@ float* cvMat2floatArray(cv::Mat source)
 	return result;
 }
 
-cv::Mat floatArray2cvMat(float* source, int rows, int cols, int type)
+cv::Mat floatArray2cvMat(float* source, int rows, int cols)
 {
-	cv::Mat result(rows, cols, type);
+	cv::Mat result(rows, cols, CV_32FC3);
 	float* tempFloat = (float*)malloc(rows*cols*3*sizeof(float));
 	int tempIndex=0;
 
@@ -256,7 +256,7 @@ cv::Mat convolution(cv::Mat source, int radius, int s, int flag)
 	}
 
 	cv::Mat result;
-	result = floatArray2cvMat(O, source.rows, source.cols, CV_32FC3);
+	result = floatArray2cvMat(O, source.rows, source.cols);
 
 	return result;
 }
@@ -264,20 +264,19 @@ cv::Mat convolution(cv::Mat source, int radius, int s, int flag)
 /************************************************************************************************************/
 // image resampling functions
 
-// compute interpolation values for single column for resapling
-template<class T> void resampleCoef( int ha, int hb, int &n, int *&yas,
-  int *&ybs, T *&wts, int bd[2], int pad=0 )
+// compute interpolation values for single column for resampling
+void resampleCoef( int ha, int hb, int &n, int *&yas, int *&ybs, float *&wts, int bd[2], int pad=0 )
 {
-  const T s = T(hb)/T(ha), sInv = 1/s; T wt, wt0=T(1e-3)*s;
+  const float s = float(hb)/float(ha), sInv = 1/s; float wt, wt0=float(1e-3)*s;
   bool ds=ha>hb; int nMax; bd[0]=bd[1]=0;
   if(ds) { n=0; nMax=ha+(pad>2 ? pad : 2)*hb; } else { n=nMax=hb; }
   // initialize memory
-  wts = (T*)alMalloc(nMax*sizeof(T),16);
+  wts = (float*)alMalloc(nMax*sizeof(float),16);
   yas = (int*)alMalloc(nMax*sizeof(int),16);
   ybs = (int*)alMalloc(nMax*sizeof(int),16);
   if( ds ) for( int yb=0; yb<hb; yb++ ) {
     // create coefficients for downsampling
-    T ya0f=yb*sInv, ya1f=ya0f+sInv, W=0;
+    float ya0f=yb*sInv, ya1f=ya0f+sInv, W=0;
     int ya0=int(ceil(ya0f)), ya1=int(ya1f), n1=0;
     for( int ya=ya0-1; ya<ya1+1; ya++ ) {
       wt=s; if(ya==ya0-1) wt=(ya0-ya0f)*s; else if(ya==ya1) wt=(ya1f-ya1)*s;
@@ -288,7 +287,7 @@ template<class T> void resampleCoef( int ha, int hb, int &n, int *&yas,
     while( n1<pad ) { ybs[n]=yb; yas[n]=yas[n-1]; wts[n]=0; n++; n1++; }
   } else for( int yb=0; yb<hb; yb++ ) {
     // create coefficients for upsampling
-    T yaf = (T(.5)+yb)*sInv-T(.5); int ya=(int) floor(yaf);
+    float yaf = (float(.5)+yb)*sInv-float(.5); int ya=(int) floor(yaf);
     wt=1; if(ya>=0 && ya<ha-1) wt=1-(yaf-ya);
     if(ya<0) { ya=0; bd[0]++; } if(ya>=ha-1) { ya=ha-1; bd[1]++; }
     ybs[yb]=yb; yas[yb]=ya; wts[yb]=wt;
@@ -296,17 +295,17 @@ template<class T> void resampleCoef( int ha, int hb, int &n, int *&yas,
 }
 
 // resample A using bilinear interpolation and and store result in B
-template<class T>
-void imResample( T *A, T *B, int ha, int hb, int wa, int wb, int d, T r ) {
-  int hn, wn, x, x1, y, z, xa, xb, ya; T *A0, *A1, *A2, *A3, *B0, wt, wt1;
-  T *C = (T*) alMalloc((ha+4)*sizeof(T),16); for(y=ha; y<ha+4; y++) C[y]=0;
-  bool sse = (typeid(T)==typeid(float)) && !(size_t(A)&15) && !(size_t(B)&15);
+void imResample(float *A, float *B, int ha, int hb, int wa, int wb, int d, float r ) {
+  int hn, wn, x, x1, y, z, xa, xb, ya; float *A0, *A1, *A2, *A3, *B0, wt, wt1;
+  float *C = (float*) alMalloc((ha+4)*sizeof(float),16); 
+  for(y=ha; y<ha+4; y++) C[y]=0;
+  bool sse = !(size_t(A)&15) && !(size_t(B)&15);
   // get coefficients for resampling along w and h
-  int *xas, *xbs, *yas, *ybs; T *xwts, *ywts; int xbd[2], ybd[2];
-  resampleCoef<T>( wa, wb, wn, xas, xbs, xwts, xbd, 0 );
-  resampleCoef<T>( ha, hb, hn, yas, ybs, ywts, ybd, 4 );
+  int *xas, *xbs, *yas, *ybs; float *xwts, *ywts; int xbd[2], ybd[2];
+  resampleCoef( wa, wb, wn, xas, xbs, xwts, xbd, 0 );
+  resampleCoef( ha, hb, hn, yas, ybs, ywts, ybd, 4 );
   if( wa==2*wb ) r/=2; if( wa==3*wb ) r/=3; if( wa==4*wb ) r/=4;
-  r/=T(1+1e-6); for( y=0; y<hn; y++ ) ywts[y] *= r;
+  r/=float(1+1e-6); for( y=0; y<hn; y++ ) ywts[y] *= r;
   // resample each channel in turn
   for( z=0; z<d; z++ ) for( x=0; x<wb; x++ ) {
     if(x==0) x1=0; xa=xas[x1]; xb=xbs[x1]; wt=xwts[x1]; wt1=1-wt; y=0;
@@ -346,7 +345,7 @@ void imResample( T *A, T *B, int ha, int hb, int wa, int wb, int d, T r ) {
       x1+=m;
     } else {
       bool xBd = x<xbd[0] || x>=wb-xbd[1]; x1++;
-      if(xBd) memcpy(C,A0,ha*sizeof(T));
+      if(xBd) memcpy(C,A0,ha*sizeof(float));
       if(!xBd) FORs(ADD(MUL(LDu(Af0[y]),SET(wtf)),MUL(LDu(Af1[y]),SET(wt1f))));
       if(!xBd) FORr( A0[y]*wt + A1[y]*wt1 );
     }
@@ -354,11 +353,12 @@ void imResample( T *A, T *B, int ha, int hb, int wa, int wb, int d, T r ) {
     #undef FORr
     // resample along y direction (B -> C)
     if( ha==hb*2 ) {
-      T r2 = r/2; int k=((~((size_t) B0) + 1) & 15)/4; y=0;
-      for( ; y<k; y++ )  B0[y]=(C[2*y]+C[2*y+1])*r2;
-      if(sse) for(; y<hb-4; y+=4) STR(Bf0[y],MUL((float)r2,_mm_shuffle_ps(ADD(
-        LDu(Cf[2*y]),LDu(Cf[2*y+1])),ADD(LDu(Cf[2*y+4]),LDu(Cf[2*y+5])),136)));
-      for( ; y<hb; y++ ) B0[y]=(C[2*y]+C[2*y+1])*r2;
+		float r2 = r/2; int k=((~((size_t) B0) + 1) & 15)/4; y=0;
+		for( ; y<k; y++ )  B0[y]=(C[2*y]+C[2*y+1])*r2;
+		if(sse) for(; y<hb-4; y+=4) STR(Bf0[y],MUL((float)r2,_mm_shuffle_ps(ADD(
+			LDu(Cf[2*y]),LDu(Cf[2*y+1])),ADD(LDu(Cf[2*y+4]),LDu(Cf[2*y+5])),136)));
+		for( ; y<hb; y++ ) 
+			B0[y]=(C[2*y]+C[2*y+1])*r2;
     } else if( ha==hb*3 ) {
       for(y=0; y<hb; y++) B0[y]=(C[3*y]+C[3*y+1]+C[3*y+2])*(r/3);
     } else if( ha==hb*4 ) {
@@ -383,17 +383,33 @@ void imResample( T *A, T *B, int ha, int hb, int wa, int wb, int d, T r ) {
   alFree(yas); alFree(ybs); alFree(ywts);
 }
 
+// I1=imResampleMex(I,sz1(1),sz1(2),1);
 cv::Mat resample(cv::Mat source, int h, int w, float nrm)
 {
 	cv::Mat result;
 	float *I = cvMat2floatArray(source);
-	float *O = (float*)malloc(h*w*sizeof(float));
+	float *O = (float*)malloc(h*w*3*sizeof(float));
 
-	std::cout << "before imResample, source.rows = " << source.rows << ", h = " << h << ", source.cols = " << source.cols << ", w = " << w << std::endl;
+	/* //debug
+	cv::Mat testMat = floatArray2cvMat(I, source.rows, source.cols);
+	cv::imshow("resample input", source);
+	cv::imshow("resample input2", testMat);
+	cv::waitKey();
+	*/
+
+	// debug
+	//std::cout << "before imResample, source.rows = " << source.rows << ", h = " << h << ", source.cols = " << source.cols << ", w = " << w << std::endl;
+
 	// resample((float*)A, (float*)B, ns[0], ms[0], ns[1], ms[1], nCh, nrm);
+	// ns = (int*) mxGetDimensions(prhs[0]);
+	// nCh=(nDims==2) ? 1 : ns[2];
+	// nrm=(double)mxGetScalar(prhs[3]);
+	// ms[0]=(int)mxGetScalar(prhs[1]); ms[1]=(int)mxGetScalar(prhs[2]); ms[2]=nCh;
 	imResample(I, O, source.rows, h, source.cols, w, 3, nrm);
-	std::cout << "inside resample, after imResample" << std::endl;
 
-	result = floatArray2cvMat(O, h, w, source.type());
+	// debug
+	//std::cout << "inside resample, after imResample" << std::endl;
+
+	result = floatArray2cvMat(O, h, w);
 	return result;
 }

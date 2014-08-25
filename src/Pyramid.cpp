@@ -67,20 +67,24 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 		for (int j = 0; j < approximatedScales; j++)
 			isN[j] = j + i + 1;
 
+		// sz=[size(I,1) size(I,2)];
+		// sz1=round(sz*s/shrink)*shrink;
 		h1 = round(I.rows*scales[i]/pChns.shrink)*pChns.shrink;
 		w1 = round(I.cols*scales[i]/pChns.shrink)*pChns.shrink;
-		std::cout << "scales[i]=" << scales[i] << ", shrink=" << pChns.shrink << std::endl;
+		std::cout << std::endl << "now computing scales[" << i << "] = " << scales[i] << ", shrink=" << pChns.shrink << std::endl;
 
 		if (h1 == I.rows && w1 == I.cols)
 			I1 = I;
-		else 
+		else // I1=imResampleMex(I,sz1(1),sz1(2),1);
 			I1 = resample(I,h1,w1,1.0);
 
 		if (scales[i] == 0.5 && (approximatedScales>0 || scalesPerOctave == 1))
 			convertedImage = I1; //is this correct?
 
+		std::cout << "inside chnsPyramid, before chnsCompute" << std::endl;
 		computedChannels[ccIndex] = computeSingleScaleChannelFeatures(I1);
 		ccIndex++;
+		std::cout << "inside chnsPyramid, after chnsCompute" << std::endl;
 
 		//why is this here?
 		//couldn't it be outside the for?
@@ -212,7 +216,13 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 
 	if (pChns.pGradHist.enabled)
 	{
+		// debug
+		std::cout << "inside chnsCompute, before mGradMag" << std::endl;
+
 		std::vector<cv::Mat> tempResult = pChns.pGradMag.mGradMag(result.image,COLOR_CHANNEL);
+
+		// debug
+		std::cout << "inside chnsCompute, after mGradMag" << std::endl;
 
 		if (tempResult.size() > 0)
 			result.gradientMagnitude = tempResult[0];
@@ -226,7 +236,7 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 			int h = result.gradientMagnitude.rows;
 			int w = result.gradientMagnitude.cols;
 			pChns.pGradMag.gradMagNorm(M, S, h, w);
-			result.gradientMagnitude = floatArray2cvMat(M, h, w, CV_32FC3); 
+			result.gradientMagnitude = floatArray2cvMat(M, h, w); 
 		}
 	}		
 	else
@@ -242,7 +252,7 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 				int h = result.gradientMagnitude.rows;
 				int w = result.gradientMagnitude.cols;
 				pChns.pGradMag.gradMagNorm(M, S, h, w);
-				result.gradientMagnitude = floatArray2cvMat(M, h, w, CV_32FC3);
+				result.gradientMagnitude = floatArray2cvMat(M, h, w);
 			}
 		}	
 	}

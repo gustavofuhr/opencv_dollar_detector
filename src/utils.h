@@ -9,7 +9,7 @@
 enum method { CONV_BOX, CONV_TRI, CONV_11, CONV_TRI1, CONV_MAX};
 
 float* cvMat2floatArray(cv::Mat source);
-cv::Mat floatArray2cvMat(float* source, int rows, int cols, int type);
+cv::Mat floatArray2cvMat(float* source, int rows, int cols);
 void* alMalloc( size_t size, int alignment );
 void alFree(void* aligned);
 cv::Mat convolution(cv::Mat source, int radius, int s, int flag);
