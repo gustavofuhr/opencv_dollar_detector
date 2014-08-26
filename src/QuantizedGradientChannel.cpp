@@ -28,8 +28,8 @@ cv::Mat QuantizedGradientChannel::mGradHist(cv::Mat gradMag, cv::Mat gradOri, in
   */
   cv::Mat result;
   float *M, *O, *H;
-  M = cvMat2floatArray(gradMag);
-  O = cvMat2floatArray(gradOri);
+  M = cvMat2floatArray(gradMag, 1);
+  O = cvMat2floatArray(gradOri, 1);
 
 	//next there's a bunch of tests to see which parameters were given and which are to be default, i wont put that here for now at least
   /*
@@ -78,8 +78,9 @@ cv::Mat QuantizedGradientChannel::mGradHist(cv::Mat gradMag, cv::Mat gradOri, in
 			else
 				fhog(M, O, H, h, w, binSize, orientationChannels, useSoftBinning, clipHog );
 		}
+
 		//the resulting histogram matrix is our return value
-		result = floatArray2cvMat(H, hb, wb); // has nChns channels
+		result = floatArray2cvMat(H, hb, wb, nChns); // has nChns channels, needs to be checked
 	}
 	return result;
 }

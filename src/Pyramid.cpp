@@ -78,7 +78,7 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 		else // I1=imResampleMex(I,sz1(1),sz1(2),1);
 		{
 			std::cout << "inside chnsPyramid, before resample" << std::endl;
-			I1 = resample(I,h1,w1,1.0);
+			I1 = resample(I,h1,w1,1.0, 3);
 			std::cout << "inside chnsPyramid, after resample" << std::endl;
 		}
 
@@ -153,6 +153,7 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 		//this will be revisited at a later time
 	}
 	
+	// this is not working properly!!!
 	/*
 	% compute image pyramid [approximated scales]
 	for i=isA
@@ -171,18 +172,17 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 		double ratio[3];
 		int iR = isN[i];
 
-		// cannot test this before getScales is fixed
-		std::cout << "inside chnsPyramid, inside for, i = " << i << ", approximatedScales = " << approximatedScales << ", scales[iR] = " << scales[iR] << std::endl;
+		std::cout << "inside approximated for, i = " << i << ", scales[iR] = " << scales[iR] << ", iR = " << iR << ", h1 = " << h1 << ", w1 = " << w1 << std::endl;
 		ratio[0] = pow(scales[i]/scales[iR],-lambdas[0]);
-		computedChannels[i].image = resample(computedChannels[iR].image, h1, w1, ratio[0]);
+		computedChannels[i].image = resample(computedChannels[iR].image, h1, w1, ratio[0], 3);
+		std::cout << "after image resample" << std::endl;
 		ratio[1] = pow(scales[i]/scales[iR],-lambdas[1]);
-		computedChannels[i].gradientMagnitude = resample(computedChannels[iR].gradientMagnitude, h1, w1, ratio[1]);
+		computedChannels[i].gradientMagnitude = resample(computedChannels[iR].gradientMagnitude, h1, w1, ratio[1], 1);
+		std::cout << "after magnitude resample" << std::endl;
 		ratio[2] = pow(scales[i]/scales[iR],-lambdas[2]);
-		computedChannels[i].gradientHistogram = resample(computedChannels[iR].gradientHistogram, h1, w1, ratio[2]);
+		computedChannels[i].gradientHistogram = resample(computedChannels[iR].gradientHistogram, h1, w1, ratio[2], 1);
 		std::cout << "inside chnsPyramid, after for, i = " << i << ", approximatedScales = " << approximatedScales << std::endl;
 	}
-
-	std::cout << "inside chnsPyramid, after for" << std::endl;
 	
 	//smooth channels, optionally pad and concatenate channels
 	for (int i=0; i < computedScales; i++)
@@ -245,12 +245,12 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 			// debug
 			std::cout << "inside chnsCompute, after convolution" << std::endl;
 
-			float *S = cvMat2floatArray(convRes);
+			float *S = cvMat2floatArray(convRes, 1);
 
 			// debug
 			std::cout << "inside chnsCompute, after S conversion" << std::endl;
 
-			float *M = cvMat2floatArray(result.gradientMagnitude);
+			float *M = cvMat2floatArray(result.gradientMagnitude, 1);
 
 			// debug
 			std::cout << "inside chnsCompute, after M conversion" << std::endl;
@@ -270,7 +270,7 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 			// debug
 			std::cout << "inside chnsCompute, before conversion 0" << std::endl;
 
-			result.gradientMagnitude = floatArray2cvMat(M, h, w); // only one channel
+			result.gradientMagnitude = floatArray2cvMat(M, h, w, 1); // only one channel
 
 			// debug
 			std::cout << "inside chnsCompute, after conversion 0" << std::endl;
@@ -284,12 +284,12 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 
 			if (pChns.pGradMag.normalizationRadius != 0)
 			{
-				float *S = cvMat2floatArray(convolution(result.gradientMagnitude, 1, pChns.pGradMag.normalizationRadius, 1, CONV_TRI));
-				float *M = cvMat2floatArray(result.gradientMagnitude);
+				float *S = cvMat2floatArray(convolution(result.gradientMagnitude, 1, pChns.pGradMag.normalizationRadius, 1, CONV_TRI), 1);
+				float *M = cvMat2floatArray(result.gradientMagnitude, 1);
 				int h = result.gradientMagnitude.rows;
 				int w = result.gradientMagnitude.cols;
 				pChns.pGradMag.gradMagNorm(M, S, h, w);
-				result.gradientMagnitude = floatArray2cvMat(M, h, w); // only one channel
+				result.gradientMagnitude = floatArray2cvMat(M, h, w, 1); // only one channel
 			}
 		}	
 	}

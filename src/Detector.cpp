@@ -71,11 +71,11 @@ void Detector::acfDetect(cv::Mat image)
 	{
 		// mxGetData(P.data{i});
 		float* chns;
-		float* ch1 = cvMat2floatArray(opts.pPyramid.computedChannels[i].image);
+		float* ch1 = cvMat2floatArray(opts.pPyramid.computedChannels[i].image, 3);
 		int ch1Size = opts.pPyramid.computedChannels[i].image.rows * opts.pPyramid.computedChannels[i].image.cols;
-		float* ch2 = cvMat2floatArray(opts.pPyramid.computedChannels[i].gradientMagnitude);
+		float* ch2 = cvMat2floatArray(opts.pPyramid.computedChannels[i].gradientMagnitude, 1);
 		int ch2Size = opts.pPyramid.computedChannels[i].gradientMagnitude.rows * opts.pPyramid.computedChannels[i].gradientMagnitude.cols;
-		float* ch3 = cvMat2floatArray(opts.pPyramid.computedChannels[i].gradientHistogram);
+		float* ch3 = cvMat2floatArray(opts.pPyramid.computedChannels[i].gradientHistogram, 1);
 		int ch3Size = opts.pPyramid.computedChannels[i].gradientHistogram.rows * opts.pPyramid.computedChannels[i].gradientHistogram.cols;
 		chns = (float*) malloc(ch1Size+ch2Size+ch3Size);
 
@@ -89,8 +89,8 @@ void Detector::acfDetect(cv::Mat image)
 		const int stride = opts.stride;
 		const float cascThr = opts.cascadeThreshold;
 
-		float *thrs = cvMat2floatArray(clf.thrs);
-		float *hs = cvMat2floatArray(clf.hs);
+		float *thrs = cvMat2floatArray(clf.thrs, 1);
+		float *hs = cvMat2floatArray(clf.hs, 1);
 		uint32_t *fids = (uint32_t*) clf.fids.data;
 		uint32_t *child = (uint32_t*) clf.child.data;
 		const int treeDepth = clf.treeDepth;

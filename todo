@@ -1,4 +1,4 @@
-Current Total: 16
+Current Total: 17
 
 Detector.cpp:
 	acfDetect:
@@ -19,7 +19,8 @@ GradientMagnitudeChannel.cpp:
 	OK!
 	
 QuantizedGradientChannel.cpp:
-	OK!		
+	mGradHist:
+		line 083: figure out a way to make a conversion with other channels sizes	
 
 Pyramid.cpp:
 	computeMultiScaleChannelFeaturePyramid:
@@ -28,7 +29,7 @@ Pyramid.cpp:
 		line 076: possibly delete this part
 		line 108: write a substitution for is=is(2:3)
 		line 134: compute lambdas
-		line 170: check if convolution needs to be applied to other channels
+		line 156: rework the computation of approximated scales
 	computeSingleScaleChannelFeatures:
 		line 247: possibly add computation of custom channels
 
@@ -36,6 +37,4 @@ pNms.cpp:
 	check if it is necessary!
 
 utils.cpp:
-	imResample
-		line 396: fix segmentation fault
-
+	OK!

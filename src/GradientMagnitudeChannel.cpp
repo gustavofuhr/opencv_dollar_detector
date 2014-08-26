@@ -54,7 +54,7 @@ std::vector<cv::Mat> GradientMagnitudeChannel::mGradMag(cv::Mat I, int channel)
 	if (I.rows>=2 && I.cols>=2)
 	{
     float* If;
-    If = cvMat2floatArray(I);
+    If = cvMat2floatArray(I, 3);
 
     // if( c>0 && c<=d ) { I += h*w*(c-1); d=1; }
 		if (c>0 && c<=d)
@@ -76,10 +76,10 @@ std::vector<cv::Mat> GradientMagnitudeChannel::mGradMag(cv::Mat I, int channel)
 
 		//next, we assign the values of M and O to the matrix thats going to be returned
     cv::Mat matM;
-    matM = singleChannelFloatArray2cvMat(M, I.rows, I.cols); // only one channel
+    matM = floatArray2cvMat(M, I.rows, I.cols, 1); // only one channel
     resultMatrix.push_back(matM);
     cv::Mat matO;
-    matO = singleChannelFloatArray2cvMat(O, I.rows, I.cols); // only one channel
+    matO = floatArray2cvMat(O, I.rows, I.cols, 1); // only one channel
 
     resultMatrix.push_back(matO);
 	}
