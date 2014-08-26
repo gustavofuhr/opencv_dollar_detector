@@ -40,16 +40,7 @@ float* cvMat2floatArray(cv::Mat source)
 	for (int channel=0; channel < 3; channel++)
 		for (int column=0; column < source.cols; column++)
 			for (int row=0; row < source.rows; row++)
-			{
-				//teste1: 
-				result[resultIndex++] = 	tempFloat[column*3 				+row*source.cols*3 	+channel];
-				//teste2: 
-				//result[resultIndex++] = 	tempFloat[column*source.rows*3 	+row*3 				+channel];
-				//teste3: 
-				//result[resultIndex++] 	= 	tempFloat[column 				+row*source.cols	+channel*source.rows*source.cols];
-				//teste4: 
-				//result[resultIndex++] = 	tempFloat[column*source.rows	+row				+channel*source.rows*source.cols];
-			}
+				result[resultIndex++] = tempFloat[column*3 + row*source.cols*3 + channel];
 
 	return result;
 }
@@ -63,16 +54,47 @@ cv::Mat floatArray2cvMat(float* source, int rows, int cols)
 	for (int channel=0; channel < 3; channel++)
 		for (int column=0; column < cols; column++)
 			for (int row=0; row < rows; row++)
-			{
-				//teste1: 
-				tempFloat[column*3 		+row*cols*3 	+channel] 			= source[tempIndex++];
-				//teste2: 
-				//tempFloat[column*rows*3 	+row*3 			+channel] 			= source[tempIndex++];
-				//teste3: 
-				//tempFloat[column 			+row*cols 		+channel*rows*cols] = source[tempIndex++];
-				//teste4: 
-				//tempFloat[column*rows		+row			+channel*rows*cols] = source[tempIndex++];
-			}
+				tempFloat[column*3 + row*cols*3 +channel] = source[tempIndex++];
+
+	result.data = (uchar*)tempFloat;
+
+	return result;
+}
+
+float* singleChannelCvMat2floatArray(cv::Mat source)
+{
+	float* result = (float*)malloc(source.rows*source.cols*sizeof(float));;
+	float* tempFloat;
+	cv::Mat tempMat;
+	int resultIndex=0;
+
+	//first, we need the type conversion
+	source.convertTo(tempMat, CV_32FC1, 1.0/255.0);
+	tempFloat = (float*)tempMat.data;
+
+	// debug
+	std::cout << "inside single channel conversion, before loop" << std::endl;
+
+	//the next step is changing the way the rows and columns are arranged
+	for (int column=0; column < source.cols; column++)
+		for (int row=0; row < source.rows; row++)
+			result[resultIndex++] = tempFloat[column*3 + row*source.cols*3];
+
+	// debug
+	std::cout << "inside single channel conversion, after loop" << std::endl;
+
+	return result;
+}
+
+cv::Mat singleChannelFloatArray2cvMat(float* source, int rows, int cols)
+{
+	cv::Mat result(rows, cols, CV_32FC1);
+	float* tempFloat = (float*)malloc(rows*cols*3*sizeof(float));
+	int tempIndex=0;
+
+	for (int column=0; column < cols; column++)
+		for (int row=0; row < rows; row++)
+			tempFloat[column*3 + row*cols*3] = source[tempIndex++];
 
 	result.data = (uchar*)tempFloat;
 
@@ -236,18 +258,46 @@ void convTri1( float *I, float *O, int h, int w, int d, float p, int s )
 	free(T);
 }
 
-cv::Mat convolution(cv::Mat source, int radius, int s, int flag)
+cv::Mat convolution(cv::Mat source, int channels, int radius, int s, int flag)
 {
-	float* O = (float*)malloc(source.rows/s*source.cols/s*3*sizeof(float));
+
+	// debug
+	std::cout << "inside convolution" << std::endl;
+
+	float* O = (float*)malloc(source.rows/s*source.cols/s*channels*sizeof(float));
+
+	// debug
+	std::cout << "inside convolution, after first malloc" << std::endl;
 
 	float* I;
-	I = cvMat2floatArray(source);
+	if (channels == 1)
+	{
+		// debug
+		std::cout << "inside convolution, before single channel conversion" << std::endl;
+
+		I = singleChannelCvMat2floatArray(source);
+
+		// debug
+		std::cout << "inside convolution, after single channel conversion" << std::endl;
+	}
+	else
+		I = cvMat2floatArray(source);
+
+	// debug
+	std::cout << "inside convolution, after first conversion" << std::endl;
 
 	switch(flag)
 	{
 		case CONV_TRI: 	
-					//passing a literal '3' as argument because there are three color channels
-					triangleFilterConvolution(I, O, source.rows, source.cols, 3, radius, s);
+
+					// debug
+					std::cout << "inside convolution, before CONV_TRI" << std::endl;
+
+					triangleFilterConvolution(I, O, source.rows, source.cols, channels, radius, s);
+
+					// debug
+					std::cout << "inside convolution, after CONV_TRI" << std::endl;
+
 					break;
 		case CONV_TRI1: 
 					int p = 12/radius/(radius+2)-2;
@@ -255,8 +305,14 @@ cv::Mat convolution(cv::Mat source, int radius, int s, int flag)
 					break;
 	}
 
+	// debug
+	std::cout << "inside convolution, before last conversion" << std::endl;
+
 	cv::Mat result;
-	result = floatArray2cvMat(O, source.rows, source.cols);
+	result = floatArray2cvMat(O, source.rows, source.cols); // three channels
+
+	// debug
+	std::cout << "inside convolution, after last conversion" << std::endl;
 
 	return result;
 }
@@ -398,7 +454,7 @@ cv::Mat resample(cv::Mat source, int h, int w, float nrm)
 	*/
 
 	// debug
-	//std::cout << "before imResample, source.rows = " << source.rows << ", h = " << h << ", source.cols = " << source.cols << ", w = " << w << std::endl;
+	std::cout << "before imResample, source.rows = " << source.rows << ", h = " << h << ", source.cols = " << source.cols << ", w = " << w << std::endl;
 
 	// resample((float*)A, (float*)B, ns[0], ms[0], ns[1], ms[1], nCh, nrm);
 	// ns = (int*) mxGetDimensions(prhs[0]);
@@ -408,8 +464,8 @@ cv::Mat resample(cv::Mat source, int h, int w, float nrm)
 	imResample(I, O, source.rows, h, source.cols, w, 3, nrm);
 
 	// debug
-	//std::cout << "inside resample, after imResample" << std::endl;
+	std::cout << "inside resample, after imResample" << std::endl;
 
-	result = floatArray2cvMat(O, h, w);
+	result = floatArray2cvMat(O, h, w); // three channels
 	return result;
 }

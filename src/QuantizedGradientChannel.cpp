@@ -79,7 +79,7 @@ cv::Mat QuantizedGradientChannel::mGradHist(cv::Mat gradMag, cv::Mat gradOri, in
 				fhog(M, O, H, h, w, binSize, orientationChannels, useSoftBinning, clipHog );
 		}
 		//the resulting histogram matrix is our return value
-		result = floatArray2cvMat(H, hb, wb);
+		result = floatArray2cvMat(H, hb, wb); // has nChns channels
 	}
 	return result;
 }

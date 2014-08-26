@@ -76,7 +76,11 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 		if (h1 == I.rows && w1 == I.cols)
 			I1 = I;
 		else // I1=imResampleMex(I,sz1(1),sz1(2),1);
+		{
+			std::cout << "inside chnsPyramid, before resample" << std::endl;
 			I1 = resample(I,h1,w1,1.0);
+			std::cout << "inside chnsPyramid, after resample" << std::endl;
+		}
 
 		if (scales[i] == 0.5 && (approximatedScales>0 || scalesPerOctave == 1))
 			convertedImage = I1; //is this correct?
@@ -187,7 +191,7 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 		/*computedChannels[i].image = convTri(computedChannels[i].image, smooth);
 		computedChannels[i].gradientMagnitude = convTri(computedChannels[i].gradientMagnitude, smooth);
 		computedChannels[i].gradientHistogram = convTri(computedChannels[i].gradientHistogram, smooth);*/
-		computedChannels[i].image = convolution(computedChannels[i].image,  pChns.pColor.smoothingRadius, 1, CONV_TRI);
+		computedChannels[i].image = convolution(computedChannels[i].image,  3, pChns.pColor.smoothingRadius, 1, CONV_TRI);
 	}
 
 	std::cout << "end of chnsPyramid" << std::endl;
@@ -209,7 +213,7 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 	//compute color channels
 	result.image = pChns.pColor.rgbConvert(I);
 
-	result.image = convolution(result.image, pChns.pColor.smoothingRadius, 1, CONV_TRI);
+	result.image = convolution(result.image, 3, pChns.pColor.smoothingRadius, 1, CONV_TRI);
 
 	if (pChns.pColor.enabled)
 		result.colorCh = pChns.pColor;
@@ -231,12 +235,45 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 
 		if (pChns.pGradMag.normalizationRadius != 0)
 		{
-			float *S = cvMat2floatArray(convolution(result.gradientMagnitude, pChns.pGradMag.normalizationRadius, 1, CONV_TRI));
+
+			// debug
+			std::cout << "inside chnsCompute, inside normalization if" << std::endl;
+
+			// this convolution happens in a single channel matrix, causing a segmentation fault!
+			cv::Mat convRes = convolution(result.gradientMagnitude, 1, pChns.pGradMag.normalizationRadius, 1, CONV_TRI);
+
+			// debug
+			std::cout << "inside chnsCompute, after convolution" << std::endl;
+
+			float *S = cvMat2floatArray(convRes);
+
+			// debug
+			std::cout << "inside chnsCompute, after S conversion" << std::endl;
+
 			float *M = cvMat2floatArray(result.gradientMagnitude);
+
+			// debug
+			std::cout << "inside chnsCompute, after M conversion" << std::endl;
+
 			int h = result.gradientMagnitude.rows;
 			int w = result.gradientMagnitude.cols;
+
+			// debug
+			std::cout << "inside chnsCompute, before gradMagNorm" << std::endl;
+
 			pChns.pGradMag.gradMagNorm(M, S, h, w);
-			result.gradientMagnitude = floatArray2cvMat(M, h, w); 
+
+			// debug
+			std::cout << "inside chnsCompute, after gradMagNorm" << std::endl;
+
+
+			// debug
+			std::cout << "inside chnsCompute, before conversion 0" << std::endl;
+
+			result.gradientMagnitude = floatArray2cvMat(M, h, w); // only one channel
+
+			// debug
+			std::cout << "inside chnsCompute, after conversion 0" << std::endl;
 		}
 	}		
 	else
@@ -247,12 +284,12 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 
 			if (pChns.pGradMag.normalizationRadius != 0)
 			{
-				float *S = cvMat2floatArray(convolution(result.gradientMagnitude, pChns.pGradMag.normalizationRadius, 1, CONV_TRI));
+				float *S = cvMat2floatArray(convolution(result.gradientMagnitude, 1, pChns.pGradMag.normalizationRadius, 1, CONV_TRI));
 				float *M = cvMat2floatArray(result.gradientMagnitude);
 				int h = result.gradientMagnitude.rows;
 				int w = result.gradientMagnitude.cols;
 				pChns.pGradMag.gradMagNorm(M, S, h, w);
-				result.gradientMagnitude = floatArray2cvMat(M, h, w);
+				result.gradientMagnitude = floatArray2cvMat(M, h, w); // only one channel
 			}
 		}	
 	}
@@ -260,7 +297,14 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 	//compute gradient histogram channels
 	if (pChns.pGradHist.enabled)
 	{
+
+		// debug
+		std::cout << "inside chnsCompute, before mGradHist" << std::endl;
+
 		result.gradientHistogram = pChns.pGradHist.mGradHist(result.gradientMagnitude, gradOrientation, pChns.pGradMag.full);
+
+		// debug
+		std::cout << "inside chnsCompute, after mGradHist" << std::endl;
 	}	
 
 	//for now, i wont add computation of custom channels
