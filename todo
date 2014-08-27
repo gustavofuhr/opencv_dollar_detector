@@ -1,4 +1,4 @@
-Current Total: 17
+Current Total: 16
 
 Detector.cpp:
 	acfDetect:
@@ -20,16 +20,15 @@ GradientMagnitudeChannel.cpp:
 	
 QuantizedGradientChannel.cpp:
 	mGradHist:
-		line 083: figure out a way to make a conversion with other channels sizes	
+		line 083: figure out a way to make a conversion with other channels sizes
 
 Pyramid.cpp:
 	computeMultiScaleChannelFeaturePyramid:
 		line 028: possibly add default values for parameters
 		line 041: check this part
 		line 076: possibly delete this part
-		line 108: write a substitution for is=is(2:3)
+		line 108: write a substitution for is=is(2:3) or see if it is necessary
 		line 134: compute lambdas
-		line 156: rework the computation of approximated scales
 	computeSingleScaleChannelFeatures:
 		line 247: possibly add computation of custom channels
 

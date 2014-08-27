@@ -60,12 +60,14 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 	int h1, w1;
 	cv::Mat I1;
 	int ccIndex=0;
-	int isN[computedScales];
+	int numberOfRealScales;
+	int i;
 
-	for (int i=0; i < computedScales; i = i+approximatedScales+1)
+	// real scales are multiples of approximatedScales+1 !
+	// approximated scales are the others
+	// what are upsampled scales?
+	for (i=0; i < computedScales; i = i+approximatedScales+1)
 	{
-		for (int j = 0; j < approximatedScales; j++)
-			isN[j] = j + i + 1;
 
 		// sz=[size(I,1) size(I,2)];
 		// sz1=round(sz*s/shrink)*shrink;
@@ -95,6 +97,7 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 		//or is it really needed now that computedChannels=data?
 		//if(i==isR(1)), nTypes=chns.nTypes; data=cell(nScales,nTypes); end
 	}
+	numberOfRealScales = i;
 		
 	int is[computedScales/approximatedScales+1]; //needs a better name
 	int isIndex = 0;
@@ -153,7 +156,18 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 		//this will be revisited at a later time
 	}
 	
-	// this is not working properly!!!
+
+	// old style approximated calculations
+	// isR=isR:nApprox+1:nScales; 
+	// isR = 1, 9, 17 in Matlab, in here, it becomes isR = 0, 8, 16
+	// isA=1:nScales; isA(isR)=[];
+	// isA holds the indices that are not in isR
+	// isA = 1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14, 15, 17, 18, 19, 20
+	// j as the points at which we change the real scale used to approximate the current one
+	// j=[0 floor((isR(1:end-1)+isR(2:end))/2) nScales];
+	// j=[0,5,13,21] 
+	// isN holds the scales to be used as a basis for approximations
+	// isN=1:nScales; for i=1:length(isR), isN(j(i)+1:j(i+1))=isR(i); end
 	/*
 	% compute image pyramid [approximated scales]
 	for i=isA
@@ -164,34 +178,38 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 	   end
 	end
 	*/
-	for (int i=0; i<approximatedScales; i++)
+	for (int i=0; i<computedScales; i++)
 	{
-		h1 = round(I.rows*scales[i]/pChns.shrink);
-		w1 = round(I.cols*scales[i]/pChns.shrink);
-		
-		double ratio[3];
-		int iR = isN[i];
+		if (i % (approximatedScales+1) != 0)
+		{
+			h1 = round(I.rows*scales[i]/pChns.shrink);
+			w1 = round(I.cols*scales[i]/pChns.shrink);
+			
+			double ratio[3];
+			int iR = 0;
 
-		std::cout << "inside approximated for, i = " << i << ", scales[iR] = " << scales[iR] << ", iR = " << iR << ", h1 = " << h1 << ", w1 = " << w1 << std::endl;
-		ratio[0] = pow(scales[i]/scales[iR],-lambdas[0]);
-		computedChannels[i].image = resample(computedChannels[iR].image, h1, w1, ratio[0], 3);
-		std::cout << "after image resample" << std::endl;
-		ratio[1] = pow(scales[i]/scales[iR],-lambdas[1]);
-		computedChannels[i].gradientMagnitude = resample(computedChannels[iR].gradientMagnitude, h1, w1, ratio[1], 1);
-		std::cout << "after magnitude resample" << std::endl;
-		ratio[2] = pow(scales[i]/scales[iR],-lambdas[2]);
-		computedChannels[i].gradientHistogram = resample(computedChannels[iR].gradientHistogram, h1, w1, ratio[2], 1);
-		std::cout << "inside chnsPyramid, after for, i = " << i << ", approximatedScales = " << approximatedScales << std::endl;
+			for (int j=0; j < numberOfRealScales-1; j++)
+			{
+				if (i > floor((j*(approximatedScales+1)+(j+1)*(approximatedScales+1))/2))
+					iR = (j+1)*(approximatedScales+1);
+			}
+
+			std::cout << "approximating, i=" << i << ", scales[iR]=" << scales[iR] << ", iR=" << iR << ", h1=" << h1 << ", w1=" << w1 << std::endl;
+			ratio[0] = pow(scales[i]/scales[iR],-lambdas[0]);
+			computedChannels[i].image = resample(computedChannels[iR].image, h1, w1, ratio[0], 3);
+			ratio[1] = pow(scales[i]/scales[iR],-lambdas[1]);
+			computedChannels[i].gradientMagnitude = resample(computedChannels[iR].gradientMagnitude, h1, w1, ratio[1], 1);
+			ratio[2] = pow(scales[i]/scales[iR],-lambdas[2]);
+			computedChannels[i].gradientHistogram = resample(computedChannels[iR].gradientHistogram, h1, w1, ratio[2], 1);
+		}
 	}
-	
+
 	//smooth channels, optionally pad and concatenate channels
 	for (int i=0; i < computedScales; i++)
 	{
-		// maybe i need to add this convolution to all channels, but the other two don't have a smoothingRadius...
-		/*computedChannels[i].image = convTri(computedChannels[i].image, smooth);
-		computedChannels[i].gradientMagnitude = convTri(computedChannels[i].gradientMagnitude, smooth);
-		computedChannels[i].gradientHistogram = convTri(computedChannels[i].gradientHistogram, smooth);*/
-		computedChannels[i].image = convolution(computedChannels[i].image,  3, pChns.pColor.smoothingRadius, 1, CONV_TRI);
+		computedChannels[i].image = convolution(computedChannels[i].image, 3, pChns.pColor.smoothingRadius, 1, CONV_TRI);
+		computedChannels[i].gradientMagnitude = convolution(computedChannels[i].gradientMagnitude, 1, pChns.pColor.smoothingRadius, 1, CONV_TRI);
+		computedChannels[i].gradientHistogram = convolution(computedChannels[i].gradientHistogram, 1, pChns.pColor.smoothingRadius, 1, CONV_TRI);
 	}
 
 	std::cout << "end of chnsPyramid" << std::endl;

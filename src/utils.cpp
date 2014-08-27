@@ -228,48 +228,22 @@ void convTri1( float *I, float *O, int h, int w, int d, float p, int s )
 
 cv::Mat convolution(cv::Mat source, int channels, int radius, int s, int flag)
 {
-
-	// debug
-	std::cout << "inside convolution" << std::endl;
-
 	float* O = (float*)malloc(source.rows/s*source.cols/s*channels*sizeof(float));
-
-	// debug
-	std::cout << "inside convolution, after first malloc" << std::endl;
-
 	float* I;
 	I = cvMat2floatArray(source, channels);
-
-	// debug
-	std::cout << "inside convolution, after first conversion" << std::endl;
 
 	switch(flag)
 	{
 		case CONV_TRI: 	
-
-					// debug
-					std::cout << "inside convolution, before CONV_TRI" << std::endl;
-
 					triangleFilterConvolution(I, O, source.rows, source.cols, channels, radius, s);
-
-					// debug
-					std::cout << "inside convolution, after CONV_TRI" << std::endl;
-
 					break;
 		case CONV_TRI1: 
 					int p = 12/radius/(radius+2)-2;
 					convTri1(I, O, source.rows, source.cols, channels, p, s);
 					break;
 	}
-
-	// debug
-	std::cout << "inside convolution, before last conversion" << std::endl;
-
 	cv::Mat result;
 	result = floatArray2cvMat(O, source.rows, source.cols, channels); 
-
-	// debug
-	std::cout << "inside convolution, after last conversion" << std::endl;
 
 	return result;
 }
