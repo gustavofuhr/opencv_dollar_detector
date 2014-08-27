@@ -47,13 +47,6 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 
 	computedChannels = new Info[computedScales];
 	
-	//next, the values os isA, isR and isN need to be set
-	//isA has all the values from 1 to nScales that isR doesn't
-	//j has the averages of all adjacent values of isR,
-	//but starts with 0 and ends with nScales
-	//isN is the full size array that has just the approximated
-	//values, so each value in isR occupies nApprox cells in isN 
-	
 	//compute image pyramid, from chnsPyramid.m, line 144
 	//there is a for statement where the index i can only assume values of the array isR
 	//I guess isR might be useless, if we do it like this instead:
@@ -156,8 +149,6 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 		//this will be revisited at a later time
 	}
 	
-
-	// old style approximated calculations
 	// isR=isR:nApprox+1:nScales; 
 	// isR = 1, 9, 17 in Matlab, in here, it becomes isR = 0, 8, 16
 	// isA=1:nScales; isA(isR)=[];
@@ -231,6 +222,7 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 	//compute color channels
 	result.image = pChns.pColor.rgbConvert(I);
 
+	// convolution is breaking the image!!!!!!
 	result.image = convolution(result.image, 3, pChns.pColor.smoothingRadius, 1, CONV_TRI);
 
 	if (pChns.pColor.enabled)
@@ -239,12 +231,12 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 	if (pChns.pGradHist.enabled)
 	{
 		// debug
-		std::cout << "inside chnsCompute, before mGradMag" << std::endl;
+		std::cout << "before mGradMag, rows=" << result.image.rows << ", cols=" << result.image.cols << std::endl;
 
 		std::vector<cv::Mat> tempResult = pChns.pGradMag.mGradMag(result.image,COLOR_CHANNEL);
 
 		// debug
-		std::cout << "inside chnsCompute, after mGradMag" << std::endl;
+		std::cout << "chnsCompute, after mGradMag" << std::endl;
 
 		if (tempResult.size() > 0)
 			result.gradientMagnitude = tempResult[0];

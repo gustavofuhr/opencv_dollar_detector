@@ -27,7 +27,7 @@ void alFree(void* aligned) {
 
 float* cvMat2floatArray(cv::Mat source, int channels)
 {
-	float* result = (float*)malloc(source.rows*source.cols*channels*sizeof(float));;
+	float* result = (float*)malloc(source.rows*source.cols*channels*sizeof(float));
 	float* tempFloat;
 	cv::Mat tempMat;
 	int resultIndex=0;
@@ -51,11 +51,14 @@ float* cvMat2floatArray(cv::Mat source, int channels)
 
 cv::Mat floatArray2cvMat(float* source, int rows, int cols, int channels)
 {
-	cv::Mat result;
+	int type;	
 	if (channels == 1)
-		result.convertTo(result, CV_32FC1);
+		type = CV_32FC1;
 	else
-		result.convertTo(result, CV_32FC3);
+		type = CV_32FC3;
+
+	cv::Mat result(rows, cols, type);
+
 	float* tempFloat = (float*)malloc(rows*cols*channels*sizeof(float));
 	int tempIndex=0;
 

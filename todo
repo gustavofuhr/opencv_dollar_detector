@@ -1,4 +1,4 @@
-Current Total: 16
+Current Total: 15
 
 Detector.cpp:
 	acfDetect:
@@ -25,10 +25,9 @@ QuantizedGradientChannel.cpp:
 Pyramid.cpp:
 	computeMultiScaleChannelFeaturePyramid:
 		line 028: possibly add default values for parameters
-		line 041: check this part
-		line 076: possibly delete this part
-		line 108: write a substitution for is=is(2:3) or see if it is necessary
-		line 134: compute lambdas
+		line 088: possibly delete this part
+		line 104: the whole for statement need work, write a substitution for is=is(2:3) 
+		line 147: compute lambdas
 	computeSingleScaleChannelFeatures:
 		line 247: possibly add computation of custom channels
 
