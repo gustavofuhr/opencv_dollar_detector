@@ -28,7 +28,8 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 	//if we are to allow incomplete Pyramids, we need to set some values to default.
 	//for now, it wont be implemented. (lines 115-128 of chnsPyramid.m)
 
-	//convert I to appropriate color space (or simply normalize)
+	// convert I to appropriate color space (or simply normalize)
+	// I=rgbConvert(I,cs); pChns.pColor.colorSpace='orig';
 	convertedImage = pChns.pColor.rgbConvert(I);
 	pChns.pColor.colorSpaceType = "orig";
 
@@ -69,11 +70,11 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 		std::cout << std::endl << "now computing scales[" << i << "] = " << scales[i] << ", shrink=" << pChns.shrink << std::endl;
 
 		if (h1 == I.rows && w1 == I.cols)
-			I1 = I;
+			I1 = convertedImage;
 		else // I1=imResampleMex(I,sz1(1),sz1(2),1);
 		{
 			std::cout << "inside chnsPyramid, before resample" << std::endl;
-			I1 = resample(I,h1,w1,1.0, 3);
+			I1 = resample(convertedImage,h1,w1,1.0, 3);
 			std::cout << "inside chnsPyramid, after resample" << std::endl;
 		}
 
@@ -215,15 +216,31 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 	//crop I so it becomes divisible by shrink
 	int height = I.rows - (I.rows % pChns.shrink);
 	int width =  I.cols - (I.cols % pChns.shrink);
+	result.image = cv::Mat(height, width, I.type());
 
-	// this initialization makes no difference
-	result.image = cv::Mat(I.rows, I.cols, I.type());
+	cv::imshow("testing source image", I);
 
 	//compute color channels
 	result.image = pChns.pColor.rgbConvert(I);
 
-	// convolution is breaking the image!!!!!!
+	cv::imshow("testing rgbConvert", result.image);
+
+	// I = convTri(I,p.smooth);
+	// J = convConst('convTri',I,r,s);
+	// A = (float*) mxGetData(prhs[1]);
+	// p = (float) mxGetScalar(prhs[2]);
+ 	// r = (int) mxGetScalar(prhs[2]);
+  	// s = (int) mxGetScalar(prhs[3]);
+  	// ms[0]=ns[0]/s; ms[1]=ns[1]/s; ms[2]=d;
+  	// B = (float*) mxMalloc(ms[0]*ms[1]*d*sizeof(float));
+  	// nDims = mxGetNumberOfDimensions(prhs[1]);
+  	// ns = (int*) mxGetDimensions(prhs[1]);
+  	// d = (nDims == 3) ? ns[2] : 1;
+  	// convTri( A, B, ns[0], ns[1], d, r, s );
 	result.image = convolution(result.image, 3, pChns.pColor.smoothingRadius, 1, CONV_TRI);
+
+	cv::imshow("testing convolution", result.image);
+	cv::waitKey();
 
 	if (pChns.pColor.enabled)
 		result.colorCh = pChns.pColor;

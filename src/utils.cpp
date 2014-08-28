@@ -33,12 +33,16 @@ float* cvMat2floatArray(cv::Mat source, int channels)
 	int resultIndex=0;
 
 	//first, we need the type conversion
+	/*
 	if (channels == 1)
 		source.convertTo(tempMat, CV_32FC1, 1.0/255.0);
 	else
 		source.convertTo(tempMat, CV_32FC3, 1.0/255.0);
-
 	tempFloat = (float*)tempMat.data;
+	*/
+
+	//debug
+	tempFloat = (float*)source.data;
 
 	//the next step is changing the way the rows, columns and channels are arranged
 	for (int channel=0; channel < channels; channel++)
@@ -65,7 +69,7 @@ cv::Mat floatArray2cvMat(float* source, int rows, int cols, int channels)
 	for (int channel=0; channel < channels; channel++)
 		for (int column=0; column < cols; column++)
 			for (int row=0; row < rows; row++)
-				tempFloat[column*channels + row*cols*channels +channel] = source[tempIndex++];
+				tempFloat[column*channels + row*cols*channels + channel] = source[tempIndex++];
 
 	result.data = (uchar*)tempFloat;
 

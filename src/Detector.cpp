@@ -60,15 +60,23 @@ void Detector::getChild( float *chns1, uint32_t *cids, uint32_t *fids, float *th
 //bb = acfDetect1(P.data{i},Ds{j}.clf,shrink,modelDsPad(1),modelDsPad(2),opts.stride,opts.cascThr);
 void Detector::acfDetect(cv::Mat image)
 {
+	// this is necessary, so we don't apply this transformation multiple times which would break the image inside chnsPyramid
+	cv::Mat I;
+	image.convertTo(I, CV_32FC3, 1.0/255.0);
+
 	totalDetections = 0;
 
 	//compute feature pyramid
-	opts.pPyramid.computeMultiScaleChannelFeaturePyramid(image);
+	opts.pPyramid.computeMultiScaleChannelFeaturePyramid(I);
 
 	//this became a simple loop because we will apply just one detector here, 
 	//to apply multiple detector models you need to create multiple Detector objects. 
 	for (int i = 0; i < opts.pPyramid.computedScales; i++)
 	{
+
+		// debug
+		std::cout << "acfDetect, start of loop, i=" << i << ", computedScales=" << opts.pPyramid.computedScales << std::endl;
+
 		// mxGetData(P.data{i});
 		float* chns;
 		float* ch1 = cvMat2floatArray(opts.pPyramid.computedChannels[i].image, 3);
@@ -79,9 +87,23 @@ void Detector::acfDetect(cv::Mat image)
 		int ch3Size = opts.pPyramid.computedChannels[i].gradientHistogram.rows * opts.pPyramid.computedChannels[i].gradientHistogram.cols;
 		chns = (float*) malloc(ch1Size+ch2Size+ch3Size);
 
+		// debug
+		std::cout << "acfDetect, before memcpy, ch1Size=" << ch1Size << ", ch2Size=" << ch2Size << ", ch3Size=" << ch3Size << std::endl;
+
 		memcpy(chns, ch1, ch1Size);
+
+		// debug
+		std::cout << "acfDetect, after memcpy 1" << std::endl;
+
 		memcpy(&chns[ch1Size], ch2, ch2Size);
+
+		// debug
+		std::cout << "acfDetect, after memcpy 2" << std::endl;
+
 		memcpy(&chns[ch1Size+ch2Size], ch3, ch3Size);
+
+		// debug
+		std::cout << "acfDetect, after memcpy" << std::endl;
 
 		const int shrink = opts.pPyramid.pChns.shrink;
 		const int modelHt = opts.modelDsPad[0];
@@ -120,6 +142,9 @@ void Detector::acfDetect(cv::Mat image)
 			for (int c = 0; c<modelWd / shrink; c++)
 				for (int r = 0; r<modelHt / shrink; r++)
 					cids[m++] = z*width*height + c*height + r;
+
+		// debug
+		std::cout << "acfDetect, after cids" << std::endl;
 
 		// apply classifier to each patch
 		std::vector<int> rs, cs; std::vector<float> hs1;
@@ -179,6 +204,9 @@ void Detector::acfDetect(cv::Mat image)
 			delete [] cids;
 			m=cs.size();
 
+			// debug
+			std::cout << "acfDetect, after loop" << std::endl;
+
 			double shift[2];
 			shift[0] = (modelHt-opts.modelDs[0])/2-opts.pPyramid.pad[0];
 			shift[1] = (modelWd-opts.modelDs[1])/2-opts.pPyramid.pad[1];
@@ -202,6 +230,10 @@ void Detector::acfDetect(cv::Mat image)
 			bbs = bbNms(bbs, m);
 
 			detections.push_back(bbs);
+
+			// debug
+			std::cout << "acfDetect, end of loop, i=" << i << ", computedScales=" << opts.pPyramid.computedScales << std::endl;
+
 	}
 }
 
