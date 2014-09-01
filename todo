@@ -6,7 +6,7 @@ Detector.cpp:
 		line 094: check if direct conversion actually works
 		line 098: check if the three assignments are correct
 	nmsMax:
-		line 248: do what the comment says (sort bounding boxes)
+		line 248: sort bounding boxes
 		line 253: add test for greediness
 		line 256: test if result[j] was discarded
 		line 291: discard the bounding box
@@ -20,14 +20,14 @@ GradientMagnitudeChannel.cpp:
 	
 QuantizedGradientChannel.cpp:
 	mGradHist:
-		line 083: figure out a way to make a conversion with other channels sizes
+		line 088: test if conversion works and if there's a need to multiple cells by 1.0/255.0
 
 Pyramid.cpp:
 	computeMultiScaleChannelFeaturePyramid:
 		line 028: possibly add default values for parameters
 		line 088: possibly delete this part
-		line 104: the whole for statement need work, write a substitution for is=is(2:3) 
-		line 147: compute lambdas
+		line 113: the whole for statement needs work, write a substitution for is=is(2:3) 
+		line 140: compute lambdas
 	computeSingleScaleChannelFeatures:
 		line 247: possibly add computation of custom channels
 
@@ -35,4 +35,5 @@ pNms.cpp:
 	check if it is necessary!
 
 utils.cpp:
-	OK!
+	convolution:
+		line 285: Check if the resulting matrix in that case has correct values

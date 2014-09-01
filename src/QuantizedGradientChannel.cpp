@@ -26,10 +26,10 @@ cv::Mat QuantizedGradientChannel::mGradHist(cv::Mat gradMag, cv::Mat gradOri, in
     checkArgs(nl,pl,nr,pr,1,3,2,8,&h,&w,&d,mxSINGLE_CLASS,(void**)&M);
     O = (float*) mxGetPr(pr[1]);
   */
-  cv::Mat result;
   float *M, *O, *H;
-  M = cvMat2floatArray(gradMag, 1);
-  O = cvMat2floatArray(gradOri, 1);
+
+  M = cvImage2floatArray(gradMag, 1);
+  O = cvImage2floatArray(gradOri, 1);
 
 	//next there's a bunch of tests to see which parameters were given and which are to be default, i wont put that here for now at least
   /*
@@ -59,6 +59,9 @@ cv::Mat QuantizedGradientChannel::mGradHist(cv::Mat gradMag, cv::Mat gradOri, in
   //pl[0] = mxCreateMatrix3(hb,wb,nChns,mxSINGLE_CLASS,1,(void**)&H);
   H = (float*)calloc(hb*wb*nChns, sizeof(float));
 
+  int resSize[3] = {hb,wb,nChns};
+  cv::Mat result(3, resSize, CV_32F, cv::Scalar::all(0));
+
   // if( nOrients==0 ) return;
 	if (orientationChannels == 0)
 		result.data = NULL;
@@ -80,8 +83,15 @@ cv::Mat QuantizedGradientChannel::mGradHist(cv::Mat gradMag, cv::Mat gradOri, in
 		}
 
 		//the resulting histogram matrix is our return value
-		result = floatArray2cvMat(H, hb, wb, nChns); // has nChns channels, needs to be checked
+		//result = floatArray2cvMat(H, hb, wb, nChns); // has nChns channels, needs to be checked
+    //result = floatArray2cvImage(H, hb, wb, nChns); // has nChns channels, needs to be checked
+    result.data = (uchar*)H;
 	}
+
+  gradHist_hb = hb;
+  gradHist_wb = wb;
+  gradHist_nChns = nChns;
+
 	return result;
 }
 

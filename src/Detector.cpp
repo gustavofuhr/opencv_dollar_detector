@@ -75,16 +75,20 @@ void Detector::acfDetect(cv::Mat image)
 	{
 
 		// debug
-		std::cout << "acfDetect, start of loop, i=" << i << ", computedScales=" << opts.pPyramid.computedScales << std::endl;
+		std::cout << std::endl << "acfDetect, start of loop, i=" << i << ", computedScales=" << opts.pPyramid.computedScales << std::endl;
 
 		// mxGetData(P.data{i});
 		float* chns;
-		float* ch1 = cvMat2floatArray(opts.pPyramid.computedChannels[i].image, 3);
-		int ch1Size = opts.pPyramid.computedChannels[i].image.rows * opts.pPyramid.computedChannels[i].image.cols;
-		float* ch2 = cvMat2floatArray(opts.pPyramid.computedChannels[i].gradientMagnitude, 1);
+		float* ch1 = cvImage2floatArray(opts.pPyramid.computedChannels[i].image, 3);
+		int ch1Size = opts.pPyramid.computedChannels[i].image.rows * opts.pPyramid.computedChannels[i].image.cols * 3;
+		float* ch2 = cvImage2floatArray(opts.pPyramid.computedChannels[i].gradientMagnitude, 1);
 		int ch2Size = opts.pPyramid.computedChannels[i].gradientMagnitude.rows * opts.pPyramid.computedChannels[i].gradientMagnitude.cols;
-		float* ch3 = cvMat2floatArray(opts.pPyramid.computedChannels[i].gradientHistogram, 1);
-		int ch3Size = opts.pPyramid.computedChannels[i].gradientHistogram.rows * opts.pPyramid.computedChannels[i].gradientHistogram.cols;
+
+		// the new conversion im testing for gradHist channels is direct
+		// float* ch3 = cvMat2floatArray(opts.pPyramid.computedChannels[i].gradientHistogram, opts.pPyramid.pChns.pGradHist.gradHist_hb, opts.pPyramid.pChns.pGradHist.gradHist_wb, opts.pPyramid.pChns.pGradHist.gradHist_nChns);
+		float* ch3 = (float*)opts.pPyramid.computedChannels[i].gradientHistogram.data;
+		int ch3Size = opts.pPyramid.pChns.pGradHist.gradHist_hb * opts.pPyramid.pChns.pGradHist.gradHist_wb * opts.pPyramid.pChns.pGradHist.gradHist_nChns;
+
 		chns = (float*) malloc(ch1Size+ch2Size+ch3Size);
 
 		// debug
@@ -111,8 +115,8 @@ void Detector::acfDetect(cv::Mat image)
 		const int stride = opts.stride;
 		const float cascThr = opts.cascadeThreshold;
 
-		float *thrs = cvMat2floatArray(clf.thrs, 1);
-		float *hs = cvMat2floatArray(clf.hs, 1);
+		float *thrs = cvImage2floatArray(clf.thrs, 1);
+		float *hs = cvImage2floatArray(clf.hs, 1);
 		uint32_t *fids = (uint32_t*) clf.fids.data;
 		uint32_t *child = (uint32_t*) clf.child.data;
 		const int treeDepth = clf.treeDepth;

@@ -25,26 +25,13 @@ void alFree(void* aligned) {
 
 /************************************************************************************************************/
 
-float* cvMat2floatArray(cv::Mat source, int channels)
+// changes the way the rows, columns and channels are arranged to match the way piotr toolbox's procedures operate on
+float* cvImage2floatArray(cv::Mat source, int channels)
 {
 	float* result = (float*)malloc(source.rows*source.cols*channels*sizeof(float));
-	float* tempFloat;
-	cv::Mat tempMat;
+	float* tempFloat = (float*)source.data;
 	int resultIndex=0;
-
-	//first, we need the type conversion
-	/*
-	if (channels == 1)
-		source.convertTo(tempMat, CV_32FC1, 1.0/255.0);
-	else
-		source.convertTo(tempMat, CV_32FC3, 1.0/255.0);
-	tempFloat = (float*)tempMat.data;
-	*/
-
-	//debug
-	tempFloat = (float*)source.data;
-
-	//the next step is changing the way the rows, columns and channels are arranged
+	
 	for (int channel=0; channel < channels; channel++)
 		for (int column=0; column < source.cols; column++)
 			for (int row=0; row < source.rows; row++)
@@ -53,7 +40,7 @@ float* cvMat2floatArray(cv::Mat source, int channels)
 	return result;
 }
 
-cv::Mat floatArray2cvMat(float* source, int rows, int cols, int channels)
+cv::Mat floatArray2cvImage(float* source, int rows, int cols, int channels)
 {
 	int type;	
 	if (channels == 1)
@@ -75,6 +62,45 @@ cv::Mat floatArray2cvMat(float* source, int rows, int cols, int channels)
 
 	return result;
 }
+
+
+// this is experimental
+float* cvMat2floatArray(cv::Mat source, int length1, int length2, int length3)
+{
+	float* result = (float*)malloc(length1*length2*length3*sizeof(float));
+	float* tempFloat = (float*)source.data;
+	int resultIndex=0;
+
+	for (int i=0; i < length3; i++)
+		for (int j=0; j < length2; j++)
+			for (int k=0; k < length1; k++)
+				result[resultIndex++] = tempFloat[i*length2*length1 + j*length1 + k];
+
+	return result;
+}
+
+cv::Mat floatArray2cvMat(float* source, int length1, int length2, int length3)
+{
+	int size[3] = {length1, length2, length3};
+	cv::Mat result(3, size, CV_32F, cv::Scalar::all(0));
+
+	float* tempFloat = (float*)malloc(length1*length2*length3*sizeof(float));
+	int tempIndex=0;
+
+	for (int i=0; i < length3; i++)
+		for (int j=0; j < length2; j++)
+			for (int k=0; k < length1; k++)
+				tempFloat[i*length2*length1 + j*length1 + k] = source[tempIndex++];
+
+	result.data = (uchar*)tempFloat;
+
+	return result;
+}
+/*
+	// create a 100x100x100 8-bit array
+	int sz[] = {100, 100, 100};
+	Mat bigCube(3, sz, CV_8U, Scalar::all(0));
+*/
 
 /************************************************************************************************************/
 // Convolutions
@@ -237,7 +263,11 @@ cv::Mat convolution(cv::Mat source, int channels, int radius, int s, int flag)
 {
 	float* O = (float*)malloc(source.rows/s*source.cols/s*channels*sizeof(float));
 	float* I;
-	I = cvMat2floatArray(source, channels);
+
+	if (channels == 1 || channels == 3)
+		I = cvImage2floatArray(source, channels);
+	else
+		I = (float*)source.data;
 
 	switch(flag)
 	{
@@ -250,7 +280,10 @@ cv::Mat convolution(cv::Mat source, int channels, int radius, int s, int flag)
 					break;
 	}
 	cv::Mat result;
-	result = floatArray2cvMat(O, source.rows, source.cols, channels); 
+	if (channels == 1 || channels == 3)
+		result = floatArray2cvImage(O, source.rows, source.cols, channels); 
+	else // maybe i'll need to convert the result matrix to float type after the assignment
+		result.data = (uchar*)O;
 
 	return result;
 }
@@ -378,25 +411,30 @@ void imResample(float *A, float *B, int ha, int hb, int wa, int wb, int d, float
 }
 
 // I1=imResampleMex(I,sz1(1),sz1(2),1);
-cv::Mat resample(cv::Mat source, int h, int w, float nrm, int channels)
+cv::Mat resample(cv::Mat source, int ori_h, int ori_w, int new_h, int new_w, float nrm, int channels)
 {
 
 	// debug
 	//std::cout << "inside resample" << std::endl;
 
 	cv::Mat result;
+	float* I;
 
 	// debug
 	//std::cout << "inside resample, before conversion number one" << std::endl;
 
-	float *I = cvMat2floatArray(source, channels);
+	if (channels == 1 || channels == 3)
+		I = cvImage2floatArray(source, channels);
+	else
+		I = (float*)source.data;
 
 	// debug
 	//std::cout << "inside resample, after conversion number one" << std::endl;
 
-	float *O = (float*)malloc(h*w*channels*sizeof(float));
+	float *O = (float*)malloc(new_h*new_w*channels*sizeof(float));
 
-	/* //debug
+	/* 
+	//debug
 	cv::Mat testMat = floatArray2cvMat(I, source.rows, source.cols);
 	cv::imshow("resample input", source);
 	cv::imshow("resample input2", testMat);
@@ -404,18 +442,22 @@ cv::Mat resample(cv::Mat source, int h, int w, float nrm, int channels)
 	*/
 
 	// debug
-	//std::cout << "before imResample, source.rows = " << source.rows << ", h = " << h << ", source.cols = " << source.cols << ", w = " << w << std::endl;
+	std::cout << "before imResample, ori_h = " << ori_h << ", new_h = " << new_h << ", ori_w = " << ori_w << ", new_w = " << new_w << std::endl;
 
 	// resample((float*)A, (float*)B, ns[0], ms[0], ns[1], ms[1], nCh, nrm);
 	// ns = (int*) mxGetDimensions(prhs[0]);
 	// nCh=(nDims==2) ? 1 : ns[2];
 	// nrm=(double)mxGetScalar(prhs[3]);
 	// ms[0]=(int)mxGetScalar(prhs[1]); ms[1]=(int)mxGetScalar(prhs[2]); ms[2]=nCh;
-	imResample(I, O, source.rows, h, source.cols, w, channels, nrm);
+	imResample(I, O, ori_h, new_h, ori_w, new_w, channels, nrm);
 
 	// debug
-	//std::cout << "inside resample, after imResample" << std::endl;
+	std::cout << "inside resample, after imResample" << std::endl;
 
-	result = floatArray2cvMat(O, h, w, channels); // three channels
+	if (channels == 1 || channels == 3)
+		result = floatArray2cvImage(O, new_h, new_w, channels); // three channels
+	else
+		result.data = (uchar*)O;
+	
 	return result;
 }
