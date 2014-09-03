@@ -77,7 +77,7 @@ void Detector::acfDetect(cv::Mat image)
 		// debug
 		std::cout << std::endl << "acfDetect, start of loop, i=" << i << ", computedScales=" << opts.pPyramid.computedScales << std::endl;
 
-		// mxGetData(P.data{i});
+		// float *chns = (float*) mxGetData(prhs[0]);
 		float* chns;
 		float* ch1 = cvImage2floatArray(opts.pPyramid.computedChannels[i].image, 3);
 		int ch1Size = opts.pPyramid.computedChannels[i].image.rows * opts.pPyramid.computedChannels[i].image.cols * 3;
@@ -107,7 +107,7 @@ void Detector::acfDetect(cv::Mat image)
 		memcpy(&chns[ch1Size+ch2Size], ch3, ch3Size);
 
 		// debug
-		std::cout << "acfDetect, after memcpy" << std::endl;
+		std::cout << "acfDetect, after memcpys" << std::endl;
 
 		const int shrink = opts.pPyramid.pChns.shrink;
 		const int modelHt = opts.modelDsPad[0];
@@ -207,6 +207,13 @@ void Detector::acfDetect(cv::Mat image)
 			}
 			delete [] cids;
 			m=cs.size();
+
+			// test section: without it, we get seg fault at i = 2; with it, the seg fault happens at i = 8, in the same spot.
+			delete [] chns;
+			delete [] ch1;
+			delete [] ch2;
+			delete [] ch3;
+			// */
 
 			// debug
 			std::cout << "acfDetect, after loop" << std::endl;

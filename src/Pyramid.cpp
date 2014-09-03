@@ -30,8 +30,8 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 
 	// convert I to appropriate color space (or simply normalize)
 	// I=rgbConvert(I,cs); pChns.pColor.colorSpace='orig';
-	convertedImage = pChns.pColor.rgbConvert(I);
-	pChns.pColor.colorSpaceType = "orig";
+	convertedImage = rgbConvert(I, pChns.pColor.colorSpaceType);
+	pChns.pColor.colorSpaceType = ORIG;
 
 	std::cout << "nPerOct = " << scalesPerOctave << ", nOctUp = " << upsampledOctaves << ", minDs = (" << minImgSize[0] << "," << minImgSize[1] << 
 	"), shrink = " << pChns.shrink << ", sz = (" << convertedImage.rows << "," << convertedImage.cols << ")" <<std::endl;
@@ -212,10 +212,14 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 	int width =  I.cols - (I.cols % pChns.shrink);
 	result.image = cv::Mat(height, width, I.type());
 
-	cv::imshow("testing source image", I);
+	// cv::imshow("testing source image", I);
+
+	std::cout << "before rgbConvert" << std::endl;
 
 	//compute color channels
-	result.image = pChns.pColor.rgbConvert(I);
+	result.image = rgbConvert(I, pChns.pColor.colorSpaceType);
+
+	std::cout << "after rgbConvert" << std::endl;
 
 	cv::imshow("testing rgbConvert", result.image);
 
@@ -234,7 +238,6 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 	result.image = convolution(result.image, 3, pChns.pColor.smoothingRadius, 1, CONV_TRI);
 
 	cv::imshow("testing convolution", result.image);
-	cv::waitKey();
 
 	if (pChns.pColor.enabled)
 		result.colorCh = pChns.pColor;
@@ -253,6 +256,20 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 			result.gradientMagnitude = tempResult[0];
 		if (tempResult.size() > 1)
 			gradOrientation = tempResult[1];
+
+		/*
+		std::ofstream out("Orientation.txt");
+    	std::streambuf *coutbuf = std::cout.rdbuf(); //save old buf
+    	std::cout.rdbuf(out.rdbuf()); //redirect std::cout to out.txt!
+    	std::cout << "gradientOrientation = "<< std::endl << " "  << gradOrientation << std::endl << std::endl;
+    	std::cout.rdbuf(coutbuf); //reset to standard output again
+    	std::cout << "done writing matrix" << std::endl;
+    	*/
+
+    	cv::imshow("testing gradientMagnitude", result.gradientMagnitude);
+
+		cv::imshow("testing gradientOrientation", gradOrientation);
+		cv::waitKey();		
 
 		if (pChns.pGradMag.normalizationRadius != 0)
 		{
@@ -323,6 +340,8 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 		std::cout << "inside chnsCompute, before mGradHist" << std::endl;
 
 		result.gradientHistogram = pChns.pGradHist.mGradHist(result.gradientMagnitude, gradOrientation, pChns.pGradMag.full);
+
+		//std::cout << "gradientHistogram = "<< std::endl << " "  << result.gradientHistogram << std::endl << std::endl;
 
 		// debug
 		std::cout << "inside chnsCompute, after mGradHist" << std::endl;

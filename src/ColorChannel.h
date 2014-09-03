@@ -8,11 +8,10 @@ class ColorChannel
 public:
 	int enabled;
 	int smoothingRadius;
-	cv::String colorSpaceType;
+	int colorSpaceType;
 	int nChannels;
 	cv::String padWith;
 
 	void readColorChannel(cv::FileNode);
-	cv::Mat rgbConvert(cv::Mat);
 };
 #endif

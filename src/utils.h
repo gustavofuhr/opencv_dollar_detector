@@ -6,7 +6,11 @@
 #include <stdio.h>
 #include <typeinfo>
 
+#include <iostream>
+#include <fstream>
+
 enum method { CONV_BOX, CONV_TRI, CONV_11, CONV_TRI1, CONV_MAX};
+enum colorSpaceType {GRAY=0, RGB, LUV, HSV, ORIG};
 
 float* cvImage2floatArray(cv::Mat source, int channels);
 cv::Mat floatArray2cvImage(float* source, int rows, int cols, int channels);
@@ -16,5 +20,6 @@ void* alMalloc( size_t size, int alignment );
 void alFree(void* aligned);
 cv::Mat convolution(cv::Mat source, int channels, int radius, int s, int flag);
 cv::Mat resample(cv::Mat source, int ori_h, int ori_w, int new_h, int new_w, float nrm, int channels);
+cv::Mat rgbConvert(cv::Mat, int);
 
 #endif
