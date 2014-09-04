@@ -212,12 +212,17 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 	int width =  I.cols - (I.cols % pChns.shrink);
 	result.image = cv::Mat(height, width, I.type());
 
-	// cv::imshow("testing source image", I);
-
 	std::cout << "before rgbConvert" << std::endl;
 
-	//compute color channels
+	// compute color channels
 	result.image = rgbConvert(I, pChns.pColor.colorSpaceType);
+
+	/*
+	// test image converted in matlab
+	cv::Mat X = cv::imread("../opencv_dollar_detector/frame0254_luv_single.png");
+	X.convertTo(X, CV_32FC3, 1.0/255.0);
+	result.image = rgbConvert(X, pChns.pColor.colorSpaceType);
+	// */
 
 	std::cout << "after rgbConvert" << std::endl;
 
@@ -265,11 +270,6 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
     	std::cout.rdbuf(coutbuf); //reset to standard output again
     	std::cout << "done writing matrix" << std::endl;
     	*/
-
-    	cv::imshow("testing gradientMagnitude", result.gradientMagnitude);
-
-		cv::imshow("testing gradientOrientation", gradOrientation);
-		cv::waitKey();		
 
 		if (pChns.pGradMag.normalizationRadius != 0)
 		{
@@ -341,11 +341,18 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 
 		result.gradientHistogram = pChns.pGradHist.mGradHist(result.gradientMagnitude, gradOrientation, pChns.pGradMag.full);
 
-		//std::cout << "gradientHistogram = "<< std::endl << " "  << result.gradientHistogram << std::endl << std::endl;
+		// this prints the matrix
+		// std::cout << "gradientHistogram = "<< std::endl << " "  << result.gradientHistogram << std::endl << std::endl;
 
 		// debug
 		std::cout << "inside chnsCompute, after mGradHist" << std::endl;
 	}	
+
+
+	cv::imshow("testing gradientMagnitude", result.gradientMagnitude);
+
+	cv::imshow("testing gradientOrientation", gradOrientation);
+	cv::waitKey();		
 
 	//for now, i wont add computation of custom channels
 
@@ -374,20 +381,15 @@ void Pyramid::getScales(int h, int w, int shrink)
 		else
 			minSizeRatio = float(w) / minImgSize[1];
 
-		//nScales = floor(nPerOct*(nOctUp+log2(min(sz./minDs)))+1);
+		// nScales = floor(nPerOct*(nOctUp+log2(min(sz./minDs)))+1);
 		// nScales = floor(8*(0+log2(min(576/100, 720/41)))+1);
 		// in the current tests, returns 21 inside MATLAB. In here, returns 21 too
-		computedScales = floor(scalesPerOctave*(upsampledOctaves+log2(minSizeRatio))+1);
-
-		// prints for testing computedScales
-		// std::cout << "computedScales = " << computedScales << std::endl;
-		// std::cout << "h = " << h << ", w = " << w << ", minImgSize[0] = " << minImgSize[0] << ", minImgSize[1] = " << minImgSize[1] << ", minSizeRatio = " << minSizeRatio  << std::endl;
-		
+		computedScales = floor(scalesPerOctave*(upsampledOctaves+log2(minSizeRatio))+1);		
 
 		double s0, s1;
 		double epsilon = std::numeric_limits<double>::epsilon();	
 
-		//scales = (double*)malloc(computedScales * sizeof(double));
+		// scales = (double*)malloc(computedScales * sizeof(double));
 		tempScales = (double*)malloc(computedScales * sizeof(double));
 
 		// if(sz(1)<sz(2)), d0=sz(1); d1=sz(2); else d0=sz(2); d1=sz(1); end
@@ -407,15 +409,11 @@ void Pyramid::getScales(int h, int w, int shrink)
 		{
 			// scales = 2.^(-(0:nScales-1)/nPerOct+nOctUp);
 			tempScales[i]=pow(2, -(float(i)/scalesPerOctave+upsampledOctaves));
-			// this print is now returning the correct values!
-			// std::cout << "tempScales[" << i << "] = " << tempScales[i] << std::endl;
 
 			// s0=(round(d0*s/shrink)*shrink-.25*shrink)./d0;
 			// s1=(round(d0*s/shrink)*shrink+.25*shrink)./d0;
 			s0=(round(smDim*tempScales[i]/shrink)*shrink-.25*shrink)/smDim;
 			s1=(round(smDim*tempScales[i]/shrink)*shrink+.25*shrink)/smDim;
-			// prints for testing s0 and s1 now returning correct values
-			// std::cout << "s0 = " << s0 << ", s1 = " << s1 << std::endl;
 
 			//what follows will substitute ss=(0:.01:1-epsilon())*(s1-s0)+s0;
 			double ss[(int)round((1-epsilon)/0.01)], es0[(int)round((1-epsilon)/0.01)], es1[(int)round((1-epsilon)/0.01)];		
@@ -430,18 +428,16 @@ void Pyramid::getScales(int h, int w, int shrink)
 				ssIndex++;
 			}
 
-			// should tempMaxScale be the size of ssIndex or is it 
-			// related to computedScales, or both?
 			double tempMaxScale[ssIndex];				
 		
-			//this is the max part of [~,x]=min(max(es0,es1)); 
+			// this is the max part of [~,x]=min(max(es0,es1)); 
 			for (int k=0; k < ssIndex; k++)
 				if (es0[k] > es1[k])
 					tempMaxScale[k] = es0[k];
 				else
 					tempMaxScale[k] = es1[k];
 
-			//this is the min part of [~,x]=min(max(es0,es1));
+			// this is the min part of [~,x]=min(max(es0,es1));
 			double minScaleValue = tempMaxScale[0];
 			int minScaleIndex = 0; 
 			for (int j=1; j < ssIndex; j++)
@@ -451,12 +447,12 @@ void Pyramid::getScales(int h, int w, int shrink)
 					minScaleIndex = j;
 				}
 			
-			//scales(i)=ss(x);
-			//scales[i] = ss[minScaleIndex];
+			// scales(i)=ss(x);
+			// scales[i] = ss[minScaleIndex];
 			tempScales[i] = ss[minScaleIndex];	
 		}
 		
-		//just keep the values of scales[i] which are different from their neighbours
+		// just keep the values of scales[i] which are different from their neighbours
 		scales = (double*)malloc(computedScales*sizeof(double));
 		scales[0] = tempScales[0];
 		int scalesIndex=1;

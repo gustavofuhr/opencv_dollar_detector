@@ -81,15 +81,18 @@ void Detector::acfDetect(cv::Mat image)
 		float* chns;
 		float* ch1 = cvImage2floatArray(opts.pPyramid.computedChannels[i].image, 3);
 		int ch1Size = opts.pPyramid.computedChannels[i].image.rows * opts.pPyramid.computedChannels[i].image.cols * 3;
+		// int ch1Size = opts.pPyramid.computedChannels[i].image.total();
+
 		float* ch2 = cvImage2floatArray(opts.pPyramid.computedChannels[i].gradientMagnitude, 1);
 		int ch2Size = opts.pPyramid.computedChannels[i].gradientMagnitude.rows * opts.pPyramid.computedChannels[i].gradientMagnitude.cols;
+		// int ch2Size = opts.pPyramid.computedChannels[i].gradientMagnitude.total();
 
 		// the new conversion im testing for gradHist channels is direct
 		// float* ch3 = cvMat2floatArray(opts.pPyramid.computedChannels[i].gradientHistogram, opts.pPyramid.pChns.pGradHist.gradHist_hb, opts.pPyramid.pChns.pGradHist.gradHist_wb, opts.pPyramid.pChns.pGradHist.gradHist_nChns);
 		float* ch3 = (float*)opts.pPyramid.computedChannels[i].gradientHistogram.data;
 		int ch3Size = opts.pPyramid.pChns.pGradHist.gradHist_hb * opts.pPyramid.pChns.pGradHist.gradHist_wb * opts.pPyramid.pChns.pGradHist.gradHist_nChns;
 
-		chns = (float*) malloc(ch1Size+ch2Size+ch3Size);
+		chns = (float*) malloc((ch1Size+ch2Size+ch3Size)*sizeof(float));
 
 		// debug
 		std::cout << "acfDetect, before memcpy, ch1Size=" << ch1Size << ", ch2Size=" << ch2Size << ", ch3Size=" << ch3Size << std::endl;
