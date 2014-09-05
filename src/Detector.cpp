@@ -69,13 +69,23 @@ void Detector::acfDetect(cv::Mat image)
 	//compute feature pyramid
 	opts.pPyramid.computeMultiScaleChannelFeaturePyramid(I);
 
+
+	// testing contents of the H matrix:
+	std::cout << std::endl << "printing H matrix:" << std::endl;
+	for (int i=0; i < 10; i++)
+	{
+		for (int j=0; j < 10; j++)
+			std::cout << " " << opts.pPyramid.computedChannels[0].gradientHistogram.at<float>(i,j,0);
+		std::cout << std::endl;
+	}
+
 	//this became a simple loop because we will apply just one detector here, 
 	//to apply multiple detector models you need to create multiple Detector objects. 
 	for (int i = 0; i < opts.pPyramid.computedScales; i++)
 	{
 
 		// debug
-		std::cout << std::endl << "acfDetect, start of loop, i=" << i << ", computedScales=" << opts.pPyramid.computedScales << std::endl;
+		// std::cout << std::endl << "acfDetect, computedScales[" << i << "] = " << opts.pPyramid.computedScales << std::endl;
 
 		// float *chns = (float*) mxGetData(prhs[0]);
 		float* chns;
@@ -98,15 +108,7 @@ void Detector::acfDetect(cv::Mat image)
 		std::cout << "acfDetect, before memcpy, ch1Size=" << ch1Size << ", ch2Size=" << ch2Size << ", ch3Size=" << ch3Size << std::endl;
 
 		memcpy(chns, ch1, ch1Size);
-
-		// debug
-		std::cout << "acfDetect, after memcpy 1" << std::endl;
-
 		memcpy(&chns[ch1Size], ch2, ch2Size);
-
-		// debug
-		std::cout << "acfDetect, after memcpy 2" << std::endl;
-
 		memcpy(&chns[ch1Size+ch2Size], ch3, ch3Size);
 
 		// debug
@@ -210,13 +212,6 @@ void Detector::acfDetect(cv::Mat image)
 			}
 			delete [] cids;
 			m=cs.size();
-
-			// test section: without it, we get seg fault at i = 2; with it, the seg fault happens at i = 8, in the same spot.
-			delete [] chns;
-			delete [] ch1;
-			delete [] ch2;
-			delete [] ch3;
-			// */
 
 			// debug
 			std::cout << "acfDetect, after loop" << std::endl;

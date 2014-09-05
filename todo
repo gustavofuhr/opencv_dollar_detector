@@ -1,8 +1,10 @@
-Current Total: 15
+Current Total: 14
+
+General:
+	Find out how gradHist produces 144x180x6 matrix, while my version produces 72x90x6
 
 Detector.cpp:
 	acfDetect:
-		line 082: check if memcpy works in this situation
 		line 094: check if direct conversion actually works
 		line 098: check if the three assignments are correct
 	nmsMax:
@@ -20,7 +22,7 @@ GradientMagnitudeChannel.cpp:
 	
 QuantizedGradientChannel.cpp:
 	mGradHist:
-		line 088: test if conversion works and if there's a need to multiple cells by 1.0/255.0
+		line 088: test if conversion works and if there's a need to multiply cells by 1.0/255.0
 
 Pyramid.cpp:
 	computeMultiScaleChannelFeaturePyramid:
@@ -35,5 +37,4 @@ pNms.cpp:
 	check if it is necessary!
 
 utils.cpp:
-	convolution:
-		line 285: Check if the resulting matrix in that case has correct values
+	OK!

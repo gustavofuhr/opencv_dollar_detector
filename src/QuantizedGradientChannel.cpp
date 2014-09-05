@@ -59,6 +59,19 @@ cv::Mat QuantizedGradientChannel::mGradHist(cv::Mat gradMag, cv::Mat gradOri, in
   //pl[0] = mxCreateMatrix3(hb,wb,nChns,mxSINGLE_CLASS,1,(void**)&H);
   H = (float*)calloc(hb*wb*nChns, sizeof(float));
 
+  // debug
+  std::cout << "resulting H will have size=[" << hb << ", " << wb << ", " << nChns << "], binsize=" << binSize << ", h=" << h << ", w=" << w << std::endl;
+
+  // debug
+  cv::Mat testM, testO;
+  testM = floatArray2cvImage(M, gradMag.rows, gradMag.cols, 1);
+  testO = floatArray2cvImage(O, gradOri.rows, gradOri.cols, 1);
+  cv::destroyAllWindows();
+  cv::imshow("testing M", testM);
+  cv::imshow("testing O", testO);
+  cv::waitKey();
+  // */
+
   int resSize[3] = {hb,wb,nChns};
   cv::Mat result(3, resSize, CV_32F, cv::Scalar::all(0));
 
