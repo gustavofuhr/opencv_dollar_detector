@@ -7,109 +7,50 @@ void QuantizedGradientChannel::readGradientHistogram(cv::FileNode histNode)
 	useSoftBinning = histNode["softBin"];
 	useHogNormalization = histNode["useHog"];
 	clipHog = histNode["clipHog"];
-  binSize = 8;
+  binSize = 4;
 }
 
-//Compute oriented gradient histograms
-//H=gradHist(M,O,[...]) - see gradientHist.m
-//H=gradientHist(M,O,binSize,p.nOrients,p.softBin,p.useHog,p.clipHog,full);
-cv::Mat QuantizedGradientChannel::mGradHist(cv::Mat gradMag, cv::Mat gradOri, int full)
+/******************************************************************************/
+
+// helper for gradHist, quantize O and M into O0, O1 and M0, M1 (uses sse)
+void gradQuantize( float *O, float *M, int *O0, int *O1, float *M0, float *M1,
+  int nb, int n, float norm, int nOrients, bool full, bool interpolate )
 {
-  /*
-    int h, w, d, hb, wb, nChns, binSize, nOrients, softBin, useHog;
-    bool full; float *M, *O, *H, clipHog;
-  */
-	int h = gradMag.rows, w = gradMag.cols, hb, wb;
-
-
-  /*
-    checkArgs(nl,pl,nr,pr,1,3,2,8,&h,&w,&d,mxSINGLE_CLASS,(void**)&M);
-    O = (float*) mxGetPr(pr[1]);
-  */
-  float *M, *O, *H;
-
-  M = cvImage2floatArray(gradMag, 1);
-  O = cvImage2floatArray(gradOri, 1);
-
-	//next there's a bunch of tests to see which parameters were given and which are to be default, i wont put that here for now at least
-  /*
-    if( mxGetM(pr[1])!=h || mxGetN(pr[1])!=w || d!=1 ||
-      mxGetClassID(pr[1])!=mxSINGLE_CLASS ) mexErrMsgTxt("M or O is bad.");
-    binSize  = (nr>=3) ? (int)   mxGetScalar(pr[2])    : 8;
-    nOrients = (nr>=4) ? (int)   mxGetScalar(pr[3])    : 9;
-    softBin  = (nr>=5) ? (int)   mxGetScalar(pr[4])    : 1;
-    useHog   = (nr>=6) ? (int)   mxGetScalar(pr[5])    : 0;
-    clipHog  = (nr>=7) ? (float) mxGetScalar(pr[6])    : 0.2f;
-    full     = (nr>=8) ? (bool) (mxGetScalar(pr[7])>0) : false;
-  */
-
-  hb = h/binSize; wb = w/binSize;
-
-  //nChns = useHog== 0 ? nOrients : (useHog==1 ? nOrients*4 : nOrients*3+5);
-  int nChns;
-  switch (useHogNormalization)
-  {
-    case 0:   nChns = orientationChannels;
-              break;
-    case 1:   nChns = orientationChannels*4;
-              break;
-    default:  nChns = orientationChannels*3+5;
-  } 
-
-  //pl[0] = mxCreateMatrix3(hb,wb,nChns,mxSINGLE_CLASS,1,(void**)&H);
-  H = (float*)calloc(hb*wb*nChns, sizeof(float));
-
-  // debug
-  std::cout << "resulting H will have size=[" << hb << ", " << wb << ", " << nChns << "], binsize=" << binSize << ", h=" << h << ", w=" << w << std::endl;
-
-  // debug
-  cv::Mat testM, testO;
-  testM = floatArray2cvImage(M, gradMag.rows, gradMag.cols, 1);
-  testO = floatArray2cvImage(O, gradOri.rows, gradOri.cols, 1);
-  cv::destroyAllWindows();
-  cv::imshow("testing M", testM);
-  cv::imshow("testing O", testO);
-  cv::waitKey();
-  // */
-
-  int resSize[3] = {hb,wb,nChns};
-  cv::Mat result(3, resSize, CV_32F, cv::Scalar::all(0));
-
-  // if( nOrients==0 ) return;
-	if (orientationChannels == 0)
-		result.data = NULL;
-	else
-	{
-    // if( useHog==0 ) { gradHist( M, O, H, h, w, binSize, nOrients, softBin, full ); }
-		if (useHogNormalization == 0)
-    {
-			gradHist(M, O, H, h, w, binSize, orientationChannels, useSoftBinning, full);
-    }
-		else
-		{
-      // else if(useHog==1) { hog( M, O, H, h, w, binSize, nOrients, softBin, full, clipHog ); }
-      // else { fhog( M, O, H, h, w, binSize, nOrients, softBin, clipHog ); }
-			if (useHogNormalization == 1)
-				hog(M, O, H, h, w, binSize, orientationChannels, useSoftBinning, full, clipHog );
-			else
-				fhog(M, O, H, h, w, binSize, orientationChannels, useSoftBinning, clipHog );
-		}
-
-		//the resulting histogram matrix is our return value
-		//result = floatArray2cvMat(H, hb, wb, nChns); // has nChns channels, needs to be checked
-    //result = floatArray2cvImage(H, hb, wb, nChns); // has nChns channels, needs to be checked
-    result.data = (uchar*)H;
-	}
-
-  gradHist_hb = hb;
-  gradHist_wb = wb;
-  gradHist_nChns = nChns;
-
-	return result;
+  // assumes all *OUTPUT* matrices are 4-byte aligned
+  int i, o0, o1; float o, od, m;
+  __m128i _o0, _o1, *_O0, *_O1; __m128 _o, _od, _m, *_M0, *_M1;
+  // define useful constants
+  const float oMult=(float)nOrients/(full?2*PI:PI); const int oMax=nOrients*nb;
+  const __m128 _norm=SET(norm), _oMult=SET(oMult), _nbf=SET((float)nb);
+  const __m128i _oMax=SET(oMax), _nb=SET(nb);
+  // perform the majority of the work with sse
+  _O0=(__m128i*) O0; _O1=(__m128i*) O1; _M0=(__m128*) M0; _M1=(__m128*) M1;
+  if( interpolate ) for( i=0; i<=n-4; i+=4 ) {
+    _o=MUL(LDu(O[i]),_oMult); _o0=CVT(_o); _od=SUB(_o,CVT(_o0));
+    _o0=CVT(MUL(CVT(_o0),_nbf)); _o0=AND(CMPGT(_oMax,_o0),_o0); *_O0++=_o0;
+    _o1=ADD(_o0,_nb); _o1=AND(CMPGT(_oMax,_o1),_o1); *_O1++=_o1;
+    _m=MUL(LDu(M[i]),_norm); *_M1=MUL(_od,_m); *_M0++=SUB(_m,*_M1); _M1++;
+  } else for( i=0; i<=n-4; i+=4 ) {
+    _o=MUL(LDu(O[i]),_oMult); _o0=CVT(ADD(_o,SET(.5f)));
+    _o0=CVT(MUL(CVT(_o0),_nbf)); _o0=AND(CMPGT(_oMax,_o0),_o0); *_O0++=_o0;
+    *_M0++=MUL(LDu(M[i]),_norm); *_M1++=SET(0.f); *_O1++=SET(0);
+  }
+  // compute trailing locations without sse
+  if( interpolate ) for( i; i<n; i++ ) {
+    o=O[i]*oMult; o0=(int) o; od=o-o0;
+    o0*=nb; if(o0>=oMax) o0=0; O0[i]=o0;
+    o1=o0+nb; if(o1==oMax) o1=0; O1[i]=o1;
+    m=M[i]*norm; M1[i]=od*m; M0[i]=m-M1[i];
+  } else for( i; i<n; i++ ) {
+    o=O[i]*oMult; o0=(int) (o+.5f);
+    o0*=nb; if(o0>=oMax) o0=0; O0[i]=o0;
+    M0[i]=M[i]*norm; M1[i]=0; O1[i]=0;
+  }
 }
 
 // compute nOrients gradient histograms per bin x bin block of pixels
-void QuantizedGradientChannel::gradHist( float *M, float *O, float *H, int h, int w, int bin, int nOrients, int softBin, int full)
+void gradHist( float *M, float *O, float *H, int h, int w,
+  int bin, int nOrients, int softBin, bool full )
 {
   const int hb=h/bin, wb=w/bin, h0=hb*bin, w0=wb*bin, nb=wb*hb;
   const float s=(float)bin, sInv=1/s, sInv2=1/s/s;
@@ -193,78 +134,10 @@ void QuantizedGradientChannel::gradHist( float *M, float *O, float *H, int h, in
   }
 }
 
-// helper for gradHist, quantize O and M into O0, O1 and M0, M1 (uses sse)
-void QuantizedGradientChannel::gradQuantize( float *O, float *M, int *O0, int *O1, float *M0, float *M1, int nb, int n, float norm, int nOrients, int full, bool interpolate )
-{
-  // assumes all *OUTPUT* matrices are 4-byte aligned
-  int i, o0, o1; float o, od, m;
-  __m128i _o0, _o1, *_O0, *_O1; __m128 _o, _od, _m, *_M0, *_M1;
-  // define useful constants
-  const float oMult=(float)nOrients/(full?2*PI:PI); const int oMax=nOrients*nb;
-  const __m128 _norm=SET(norm), _oMult=SET(oMult), _nbf=SET((float)nb);
-  const __m128i _oMax=SET(oMax), _nb=SET(nb);
-  // perform the majority of the work with sse
-  _O0=(__m128i*) O0; _O1=(__m128i*) O1; _M0=(__m128*) M0; _M1=(__m128*) M1;
-  if( interpolate ) for( i=0; i<=n-4; i+=4 ) {
-    _o=MUL(LDu(O[i]),_oMult); _o0=CVT(_o); _od=SUB(_o,CVT(_o0));
-    _o0=CVT(MUL(CVT(_o0),_nbf)); _o0=AND(CMPGT(_oMax,_o0),_o0); *_O0++=_o0;
-    _o1=ADD(_o0,_nb); _o1=AND(CMPGT(_oMax,_o1),_o1); *_O1++=_o1;
-    _m=MUL(LDu(M[i]),_norm); *_M1=MUL(_od,_m); *_M0++=SUB(_m,*_M1); _M1++;
-  } else for( i=0; i<=n-4; i+=4 ) {
-    _o=MUL(LDu(O[i]),_oMult); _o0=CVT(ADD(_o,SET(.5f)));
-    _o0=CVT(MUL(CVT(_o0),_nbf)); _o0=AND(CMPGT(_oMax,_o0),_o0); *_O0++=_o0;
-    *_M0++=MUL(LDu(M[i]),_norm); *_M1++=SET(0.f); *_O1++=SET(0);
-  }
-  // compute trailing locations without sse
-  if( interpolate ) for( i; i<n; i++ ) {
-    o=O[i]*oMult; o0=(int) o; od=o-o0;
-    o0*=nb; if(o0>=oMax) o0=0; O0[i]=o0;
-    o1=o0+nb; if(o1==oMax) o1=0; O1[i]=o1;
-    m=M[i]*norm; M1[i]=od*m; M0[i]=m-M1[i];
-  } else for( i; i<n; i++ ) {
-    o=O[i]*oMult; o0=(int) (o+.5f);
-    o0*=nb; if(o0>=oMax) o0=0; O0[i]=o0;
-    M0[i]=M[i]*norm; M1[i]=0; O1[i]=0;
-  }
-}
-
-// compute HOG features
-void QuantizedGradientChannel::hog( float *M, float *O, float *H, int h, int w, int binSize, int nOrients, int softBin, int full, float clip )
-{
-  float *N, *R; const int hb=h/binSize, wb=w/binSize, nb=hb*wb;
-  // compute unnormalized gradient histograms
-  R = (float*) calloc(wb*hb*nOrients,sizeof(float));
-  gradHist( M, O, R, h, w, binSize, nOrients, softBin, full );
-  // compute block normalization values
-  N = hogNormMatrix( R, nOrients, hb, wb, binSize );
-  // perform four normalizations per spatial block
-  hogChannels( H, R, N, hb, wb, nOrients, clip, 0 );
-  free(N); free(R);
-}
-
-// compute FHOG features
-void QuantizedGradientChannel::fhog( float *M, float *O, float *H, int h, int w, int binSize, int nOrients, int softBin, float clip )
-{
-  const int hb=h/binSize, wb=w/binSize, nb=hb*wb, nbo=nb*nOrients;
-  float *N, *R1, *R2; int o, x;
-  // compute unnormalized constrast sensitive histograms
-  R1 = (float*) calloc(wb*hb*nOrients*2,sizeof(float));
-  gradHist( M, O, R1, h, w, binSize, nOrients*2, softBin, true );
-  // compute unnormalized contrast insensitive histograms
-  R2 = (float*) calloc(wb*hb*nOrients,sizeof(float));
-  for( o=0; o<nOrients; o++ ) for( x=0; x<nb; x++ )
-    R2[o*nb+x] = R1[o*nb+x]+R1[(o+nOrients)*nb+x];
-  // compute block normalization values
-  N = hogNormMatrix( R2, nOrients, hb, wb, binSize );
-  // normalized histograms and texture channels
-  hogChannels( H+nbo*0, R1, N, hb, wb, nOrients*2, clip, 1 );
-  hogChannels( H+nbo*2, R2, N, hb, wb, nOrients*1, clip, 1 );
-  hogChannels( H+nbo*3, R1, N, hb, wb, nOrients*2, clip, 2 );
-  free(N); free(R1); free(R2);
-}
+/******************************************************************************/
 
 // HOG helper: compute 2x2 block normalization values (padded by 1 pixel)
-float* QuantizedGradientChannel::hogNormMatrix( float *H, int nOrients, int hb, int wb, int bin ) {
+float* hogNormMatrix( float *H, int nOrients, int hb, int wb, int bin ) {
   float *N, *N1, *n; int o, x, y, dx, dy, hb1=hb+1, wb1=wb+1;
   float eps = 1e-4f/4/bin/bin/bin/bin; // precise backward equality
   N = (float*) calloc(hb1*wb1,sizeof(float)); N1=N+hb1+1;
@@ -284,7 +157,7 @@ float* QuantizedGradientChannel::hogNormMatrix( float *H, int nOrients, int hb, 
 }
 
 // HOG helper: compute HOG or FHOG channels
-void QuantizedGradientChannel::hogChannels( float *H, const float *R, const float *N,
+void hogChannels( float *H, const float *R, const float *N,
   int hb, int wb, int nOrients, float clip, int type )
 {
   #define GETT(blk) t=R1[y]*N1[y-(blk)]; if(t>clip) t=clip; c++;
@@ -310,4 +183,153 @@ void QuantizedGradientChannel::hogChannels( float *H, const float *R, const floa
   #undef GETT
 }
 
+// compute HOG features
+void hog( float *M, float *O, float *H, int h, int w, int binSize,
+  int nOrients, int softBin, bool full, float clip )
+{
+  float *N, *R; const int hb=h/binSize, wb=w/binSize, nb=hb*wb;
+  // compute unnormalized gradient histograms
+  R = (float*) calloc(wb*hb*nOrients,sizeof(float));
+  gradHist( M, O, R, h, w, binSize, nOrients, softBin, full );
+  // compute block normalization values
+  N = hogNormMatrix( R, nOrients, hb, wb, binSize );
+  // perform four normalizations per spatial block
+  hogChannels( H, R, N, hb, wb, nOrients, clip, 0 );
+  free(N); free(R);
+}
 
+// compute FHOG features
+void fhog( float *M, float *O, float *H, int h, int w, int binSize,
+  int nOrients, int softBin, float clip )
+{
+  const int hb=h/binSize, wb=w/binSize, nb=hb*wb, nbo=nb*nOrients;
+  float *N, *R1, *R2; int o, x;
+  // compute unnormalized constrast sensitive histograms
+  R1 = (float*) calloc(wb*hb*nOrients*2,sizeof(float));
+  gradHist( M, O, R1, h, w, binSize, nOrients*2, softBin, true );
+  // compute unnormalized contrast insensitive histograms
+  R2 = (float*) calloc(wb*hb*nOrients,sizeof(float));
+  for( o=0; o<nOrients; o++ ) for( x=0; x<nb; x++ )
+    R2[o*nb+x] = R1[o*nb+x]+R1[(o+nOrients)*nb+x];
+  // compute block normalization values
+  N = hogNormMatrix( R2, nOrients, hb, wb, binSize );
+  // normalized histograms and texture channels
+  hogChannels( H+nbo*0, R1, N, hb, wb, nOrients*2, clip, 1 );
+  hogChannels( H+nbo*2, R2, N, hb, wb, nOrients*1, clip, 1 );
+  hogChannels( H+nbo*3, R1, N, hb, wb, nOrients*2, clip, 2 );
+  free(N); free(R1); free(R2);
+}
+
+/******************************************************************************/
+
+//Compute oriented gradient histograms
+//H=gradHist(M,O,[...]) - see gradientHist.m
+//H=gradientHist(M,O,binSize,p.nOrients,p.softBin,p.useHog,p.clipHog,full);
+std::vector<cv::Mat> QuantizedGradientChannel::mGradHist(cv::Mat gradMag, cv::Mat gradOri, int full)
+{
+  /*
+    int h, w, d, hb, wb, nChns, binSize, nOrients, softBin, useHog;
+    bool full; float *M, *O, *H, clipHog;
+  */
+	int h = gradMag.rows, w = gradMag.cols, hb, wb;
+
+
+  /*
+    checkArgs(nl,pl,nr,pr,1,3,2,8,&h,&w,&d,mxSINGLE_CLASS,(void**)&M);
+    O = (float*) mxGetPr(pr[1]);
+  */
+  float *M, *O, *H;
+
+  M = cvImage2floatArray(gradMag, 1);
+  O = cvImage2floatArray(gradOri, 1);
+
+	//next there's a bunch of tests to see which parameters were given and which are to be default, i wont put that here for now at least
+  /*
+    if( mxGetM(pr[1])!=h || mxGetN(pr[1])!=w || d!=1 ||
+      mxGetClassID(pr[1])!=mxSINGLE_CLASS ) mexErrMsgTxt("M or O is bad.");
+    binSize  = (nr>=3) ? (int)   mxGetScalar(pr[2])    : 8;
+    nOrients = (nr>=4) ? (int)   mxGetScalar(pr[3])    : 9;
+    softBin  = (nr>=5) ? (int)   mxGetScalar(pr[4])    : 1;
+    useHog   = (nr>=6) ? (int)   mxGetScalar(pr[5])    : 0;
+    clipHog  = (nr>=7) ? (float) mxGetScalar(pr[6])    : 0.2f;
+    full     = (nr>=8) ? (bool) (mxGetScalar(pr[7])>0) : false;
+  */
+
+  hb = h/binSize; wb = w/binSize;
+
+  //nChns = useHog== 0 ? nOrients : (useHog==1 ? nOrients*4 : nOrients*3+5);
+  int nChns;
+  switch (useHogNormalization)
+  {
+    case 0:   nChns = orientationChannels;
+              break;
+    case 1:   nChns = orientationChannels*4;
+              break;
+    default:  nChns = orientationChannels*3+5;
+  } 
+
+  //pl[0] = mxCreateMatrix3(hb,wb,nChns,mxSINGLE_CLASS,1,(void**)&H);
+  H = (float*)calloc(hb*wb*nChns, sizeof(float));
+
+  // debug
+  std::cout << "resulting H will have size=[" << hb << ", " << wb << ", " << nChns << "], binsize=" << binSize << ", h=" << h << ", w=" << w << std::endl;
+
+  /*
+  // debug
+  // these tests provide correct results
+  cv::Mat testM, testO;
+  testM = floatArray2cvImage(M, gradMag.rows, gradMag.cols, 1);
+  testO = floatArray2cvImage(O, gradOri.rows, gradOri.cols, 1);
+  cv::destroyAllWindows();
+  cv::imshow("testing M", testM);
+  cv::imshow("testing O", testO);
+  cv::waitKey();
+  // */
+
+  std::vector<cv::Mat> result;
+
+  // if( nOrients==0 ) return;
+	if (orientationChannels == 0)
+		;
+	else
+	{
+    // if( useHog==0 ) { gradHist( M, O, H, h, w, binSize, nOrients, softBin, full ); }
+		if (useHogNormalization == 0)
+    {
+			gradHist(M, O, H, h, w, binSize, orientationChannels, useSoftBinning, full);
+    }
+		else
+		{
+      // else if(useHog==1) { hog( M, O, H, h, w, binSize, nOrients, softBin, full, clipHog ); }
+      // else { fhog( M, O, H, h, w, binSize, nOrients, softBin, clipHog ); }
+			if (useHogNormalization == 1)
+				hog(M, O, H, h, w, binSize, orientationChannels, useSoftBinning, full, clipHog );
+			else
+				fhog(M, O, H, h, w, binSize, orientationChannels, useSoftBinning, clipHog );
+		}
+
+    int indexForH=0;
+    for (int i=0; i < nChns; i++)
+    {
+      float *tempH = (float*)malloc(hb*wb*sizeof(float));
+
+      for (int j=0; j < hb*wb; j++)
+          tempH[j] = H[indexForH++];
+
+      cv::Mat tempMat = floatArray2cvImage(tempH, hb, wb, 1);
+      result.push_back(tempMat);
+
+      /*
+      // debug
+      cv::imshow("testing Hi", result[i]);
+      cv::waitKey();
+      // */
+    }
+	}
+
+  gradHist_hb = hb;
+  gradHist_wb = wb;
+  gradHist_nChns = nChns;
+
+	return result;
+}

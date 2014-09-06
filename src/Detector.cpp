@@ -69,16 +69,6 @@ void Detector::acfDetect(cv::Mat image)
 	//compute feature pyramid
 	opts.pPyramid.computeMultiScaleChannelFeaturePyramid(I);
 
-
-	// testing contents of the H matrix:
-	std::cout << std::endl << "printing H matrix:" << std::endl;
-	for (int i=0; i < 10; i++)
-	{
-		for (int j=0; j < 10; j++)
-			std::cout << " " << opts.pPyramid.computedChannels[0].gradientHistogram.at<float>(i,j,0);
-		std::cout << std::endl;
-	}
-
 	//this became a simple loop because we will apply just one detector here, 
 	//to apply multiple detector models you need to create multiple Detector objects. 
 	for (int i = 0; i < opts.pPyramid.computedScales; i++)
@@ -87,26 +77,34 @@ void Detector::acfDetect(cv::Mat image)
 		// debug
 		// std::cout << std::endl << "acfDetect, computedScales[" << i << "] = " << opts.pPyramid.computedScales << std::endl;
 
-		// float *chns = (float*) mxGetData(prhs[0]);
 		float* chns;
 		float* ch1 = cvImage2floatArray(opts.pPyramid.computedChannels[i].image, 3);
 		int ch1Size = opts.pPyramid.computedChannels[i].image.rows * opts.pPyramid.computedChannels[i].image.cols * 3;
-		// int ch1Size = opts.pPyramid.computedChannels[i].image.total();
-
+		
 		float* ch2 = cvImage2floatArray(opts.pPyramid.computedChannels[i].gradientMagnitude, 1);
 		int ch2Size = opts.pPyramid.computedChannels[i].gradientMagnitude.rows * opts.pPyramid.computedChannels[i].gradientMagnitude.cols;
-		// int ch2Size = opts.pPyramid.computedChannels[i].gradientMagnitude.total();
 
-		// the new conversion im testing for gradHist channels is direct
-		// float* ch3 = cvMat2floatArray(opts.pPyramid.computedChannels[i].gradientHistogram, opts.pPyramid.pChns.pGradHist.gradHist_hb, opts.pPyramid.pChns.pGradHist.gradHist_wb, opts.pPyramid.pChns.pGradHist.gradHist_nChns);
-		float* ch3 = (float*)opts.pPyramid.computedChannels[i].gradientHistogram.data;
-		int ch3Size = opts.pPyramid.pChns.pGradHist.gradHist_hb * opts.pPyramid.pChns.pGradHist.gradHist_wb * opts.pPyramid.pChns.pGradHist.gradHist_nChns;
+		int hb = opts.pPyramid.pChns.pGradHist.gradHist_hb;
+		int wb = opts.pPyramid.pChns.pGradHist.gradHist_wb;
+		int gradHist_nChns = opts.pPyramid.pChns.pGradHist.gradHist_nChns;
+		int ch3Size = hb * wb * gradHist_nChns;
+		float* ch3 = (float*)malloc(ch3Size*sizeof(float));
+		for (int j=0; j < gradHist_nChns; j++)
+		{
+			memcpy(&ch3[j*hb*wb], cvImage2floatArray(opts.pPyramid.computedChannels[i].gradientHistogram[j], 1), hb*wb);
+		}
 
+		/*
+		// debug: testing content of H matrix
+		for (int k=0; k < gradHist_nChns; k++)
+		{
+			cv::imshow("testing Hi", opts.pPyramid.computedChannels[i].gradientHistogram[k]);
+			cv::waitKey();
+		}
+		// */
+
+		// float *chns = (float*) mxGetData(prhs[0]);
 		chns = (float*) malloc((ch1Size+ch2Size+ch3Size)*sizeof(float));
-
-		// debug
-		std::cout << "acfDetect, before memcpy, ch1Size=" << ch1Size << ", ch2Size=" << ch2Size << ", ch3Size=" << ch3Size << std::endl;
-
 		memcpy(chns, ch1, ch1Size);
 		memcpy(&chns[ch1Size], ch2, ch2Size);
 		memcpy(&chns[ch1Size+ch2Size], ch3, ch3Size);

@@ -13,7 +13,7 @@ class Info
 public:
 	cv::Mat image;
 	cv::Mat gradientMagnitude;
-	cv::Mat gradientHistogram;
+	std::vector<cv::Mat> gradientHistogram;
 	
   	ColorChannel colorCh;
 	GradientMagnitudeChannel gradMag;

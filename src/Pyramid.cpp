@@ -185,7 +185,11 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 			computedChannels[i].gradientMagnitude = resample(computedChannels[iR].gradientMagnitude, computedChannels[iR].gradientMagnitude.rows, computedChannels[iR].gradientMagnitude.cols, h1, w1, ratio[1], 1);
 			ratio[2] = pow(scales[i]/scales[iR],-lambdas[2]);
 			std::cout << "before graHist resample" << std::endl;
-			computedChannels[i].gradientHistogram = resample(computedChannels[iR].gradientHistogram, pChns.pGradHist.gradHist_hb, pChns.pGradHist.gradHist_wb, h1, w1, ratio[2], pChns.pGradHist.gradHist_nChns);
+
+			// only computed Scales of H seem to be working fine
+			for (int k=0; k < pChns.pGradHist.gradHist_nChns; k++)
+				computedChannels[i].gradientHistogram.push_back(resample(computedChannels[iR].gradientHistogram[k], pChns.pGradHist.gradHist_hb, pChns.pGradHist.gradHist_wb, h1, w1, ratio[2], 1));
+			
 			std::cout << "end of i=" << i << ", scales[iR]=" << scales[iR] << ", iR=" << iR << ", h1=" << h1 << ", w1=" << w1 << std::endl;
 		}
 	}
@@ -195,7 +199,8 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 	{
 		computedChannels[i].image = convolution(computedChannels[i].image, 3, pChns.pColor.smoothingRadius, 1, CONV_TRI);
 		computedChannels[i].gradientMagnitude = convolution(computedChannels[i].gradientMagnitude, 1, pChns.pColor.smoothingRadius, 1, CONV_TRI);
-		computedChannels[i].gradientHistogram = convolution(computedChannels[i].gradientHistogram, pChns.pGradHist.gradHist_nChns, pChns.pColor.smoothingRadius, 1, CONV_TRI);
+		for (int j=0; j < pChns.pGradHist.gradHist_nChns; j++)
+			computedChannels[i].gradientHistogram.push_back(convolution(computedChannels[i].gradientHistogram[j], 1, pChns.pColor.smoothingRadius, 1, CONV_TRI));	
 	}
 
 	std::cout << "end of chnsPyramid" << std::endl;
@@ -340,9 +345,6 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 		std::cout << "inside chnsCompute, before mGradHist" << std::endl;
 
 		result.gradientHistogram = pChns.pGradHist.mGradHist(result.gradientMagnitude, gradOrientation, pChns.pGradMag.full);
-
-		// this prints the matrix
-		// std::cout << "gradientHistogram = "<< std::endl << " "  << result.gradientHistogram << std::endl << std::endl;
 
 		// debug
 		std::cout << "inside chnsCompute, after mGradHist" << std::endl;

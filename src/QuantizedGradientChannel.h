@@ -26,13 +26,7 @@ public:
 
 	void readGradientHistogram(cv::FileNode);
 	//comes from gradientMex.cpp, the return still needs a type
-	cv::Mat mGradHist(cv::Mat, cv::Mat, int);
-	void gradHist(float*,float*,float*,int,int,int,int,int,int);
-	void gradQuantize(float*,float*,int*,int*,float*,float*,int, int,float,int,int,bool);
-	void hog(float*,float*,float*,int,int,int,int,int,int,float);
-	void fhog(float*,float*,float*,int,int,int,int,int,float);
-	float* hogNormMatrix(float*,int,int,int,int);
-	void hogChannels(float*,const float*,const float*,int,int, int, float, int);
+	std::vector<cv::Mat> mGradHist(cv::Mat, cv::Mat, int);
 };
 
 #endif

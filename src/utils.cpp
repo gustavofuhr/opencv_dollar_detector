@@ -458,6 +458,9 @@ cv::Mat resample(cv::Mat source, int ori_h, int ori_w, int new_h, int new_w, flo
 		result = floatArray2cvImage(O, new_h, new_w, channels); // three channels
 	else
 		result.data = (uchar*)O;
+
+	// debug
+	std::cout << "leaving resample" << std::endl;
 	
 	return result;
 }
