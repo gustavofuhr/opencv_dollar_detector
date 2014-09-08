@@ -162,6 +162,17 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 	   end
 	end
 	*/
+
+	// debug
+	cv::destroyAllWindows();
+
+	//computedChannels[1].image = floatArray2cvImage(cvImage2floatArray(computedChannels[0].image, 3), computedChannels[0].image.rows, computedChannels[0].image.cols, 3);
+
+	/*
+	// experimental convert: doesn't work
+	computedChannels[0].image.convertTo(computedChannels[1].image, CV_32FC3, 1.0/255.0);
+	// */
+
 	for (int i=0; i<computedScales; i++)
 	{
 		if (i % (approximatedScales+1) != 0)
@@ -180,15 +191,52 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 
 			std::cout << std::endl << "approximating, i=" << i << ", scales[iR]=" << scales[iR] << ", iR=" << iR << ", h1=" << h1 << ", w1=" << w1 << std::endl;
 			ratio[0] = pow(scales[i]/scales[iR],-lambdas[0]);
+
+			// experimental ini
+			// computedChannels[i].image = cv::Mat(h1, w1, CV_32FC3);
 			computedChannels[i].image = resample(computedChannels[iR].image, computedChannels[iR].image.rows, computedChannels[iR].image.cols, h1, w1, ratio[0], 3);
+			
 			ratio[1] = pow(scales[i]/scales[iR],-lambdas[1]);
+
+			// experimental ini: works for this channel, not the others.
+			computedChannels[i].gradientMagnitude = cv::Mat(h1, w1, CV_32FC1);
 			computedChannels[i].gradientMagnitude = resample(computedChannels[iR].gradientMagnitude, computedChannels[iR].gradientMagnitude.rows, computedChannels[iR].gradientMagnitude.cols, h1, w1, ratio[1], 1);
+			
+			
+			// experimental resample: works for the image channel
+			if (i == 1)
+			{
+				computedChannels[i].image = resample(computedChannels[iR].image, computedChannels[iR].image.rows, computedChannels[iR].image.cols, h1, w1, ratio[0], 3);
+				// computedChannels[i].gradientMagnitude = resample(computedChannels[iR].gradientMagnitude, computedChannels[iR].gradientMagnitude.rows, computedChannels[iR].gradientMagnitude.cols, h1, w1, ratio[1], 1);
+			}
+			// */
+
+			// debug
+			std::cout << "printing approx image for scale[" << i << "], rows=" << computedChannels[i].image.rows << ", cols=" << computedChannels[i].image.cols << ", im[iR].type=" << computedChannels[i].image.type() << std::endl;
+			cv::imshow("iR image", computedChannels[iR].image);
+			cv::imshow("approx image", computedChannels[i].image);
+			std::cout << "printing approx gradMag for scale[" << i << "], rows=" << computedChannels[i].gradientMagnitude.rows << ", cols=" << computedChannels[i].gradientMagnitude.cols << std::endl;
+			cv::imshow("approx gradMag", computedChannels[i].gradientMagnitude);
+
 			ratio[2] = pow(scales[i]/scales[iR],-lambdas[2]);
 			std::cout << "before graHist resample" << std::endl;
 
 			// only computed Scales of H seem to be working fine
 			for (int k=0; k < pChns.pGradHist.gradHist_nChns; k++)
+			{
+				// experimental ini
+				// computedChannels[i].gradientHistogram.push_back(cv::Mat(h1, w1, CV_32FC1));
 				computedChannels[i].gradientHistogram.push_back(resample(computedChannels[iR].gradientHistogram[k], pChns.pGradHist.gradHist_hb, pChns.pGradHist.gradHist_wb, h1, w1, ratio[2], 1));
+				std::cout << "printing approx gradHist for scale[" << i << "], rows=" << computedChannels[i].gradientHistogram[k].rows << ", cols=" << computedChannels[i].gradientHistogram[k].cols << std::endl;
+			}
+
+			cv::imshow("approx gradHist0", computedChannels[i].gradientHistogram[0]);
+			cv::imshow("approx gradHist1", computedChannels[i].gradientHistogram[1]);
+			cv::imshow("approx gradHist2", computedChannels[i].gradientHistogram[2]);
+			cv::imshow("approx gradHist3", computedChannels[i].gradientHistogram[3]);
+			cv::imshow("approx gradHist4", computedChannels[i].gradientHistogram[4]);
+			cv::imshow("approx gradHist5", computedChannels[i].gradientHistogram[5]);
+			cv::waitKey();
 			
 			std::cout << "end of i=" << i << ", scales[iR]=" << scales[iR] << ", iR=" << iR << ", h1=" << h1 << ", w1=" << w1 << std::endl;
 		}

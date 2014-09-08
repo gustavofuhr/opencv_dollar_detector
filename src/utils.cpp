@@ -417,16 +417,32 @@ cv::Mat resample(cv::Mat source, int ori_h, int ori_w, int new_h, int new_w, flo
 	// debug
 	//std::cout << "inside resample" << std::endl;
 
+	/*
+	// experimental
+	int type;	
+	if (channels == 1)
+		type = CV_32FC1;
+	else
+		type = CV_32FC3;
+	cv::Mat result(new_h, new_w, type);
+	// */
+
 	cv::Mat result;
 	float* I;
 
 	// debug
 	//std::cout << "inside resample, before conversion number one" << std::endl;
 
+	/*
+	// legacy:
 	if (channels == 1 || channels == 3)
 		I = cvImage2floatArray(source, channels);
 	else
 		I = (float*)source.data;
+	// */
+
+	// experimental
+	I = cvImage2floatArray(source, channels);
 
 	// debug
 	//std::cout << "inside resample, after conversion number one" << std::endl;
@@ -442,7 +458,7 @@ cv::Mat resample(cv::Mat source, int ori_h, int ori_w, int new_h, int new_w, flo
 	*/
 
 	// debug
-	std::cout << "before imResample, ori_h = " << ori_h << ", new_h = " << new_h << ", ori_w = " << ori_w << ", new_w = " << new_w << std::endl;
+	// std::cout << "before imResample, ori_h = " << ori_h << ", new_h = " << new_h << ", ori_w = " << ori_w << ", new_w = " << new_w << std::endl;
 
 	// resample((float*)A, (float*)B, ns[0], ms[0], ns[1], ms[1], nCh, nrm);
 	// ns = (int*) mxGetDimensions(prhs[0]);
@@ -452,15 +468,22 @@ cv::Mat resample(cv::Mat source, int ori_h, int ori_w, int new_h, int new_w, flo
 	imResample(I, O, ori_h, new_h, ori_w, new_w, channels, nrm);
 
 	// debug
-	std::cout << "inside resample, after imResample" << std::endl;
+	// std::cout << "inside resample, after imResample" << std::endl;
 
+
+	/*
+	// legacy:
 	if (channels == 1 || channels == 3)
 		result = floatArray2cvImage(O, new_h, new_w, channels); // three channels
 	else
 		result.data = (uchar*)O;
+	// */
+
+	// experimental
+	result = floatArray2cvImage(O, new_h, new_w, channels);
 
 	// debug
-	std::cout << "leaving resample" << std::endl;
+	// std::cout << "leaving resample" << std::endl;
 	
 	return result;
 }
