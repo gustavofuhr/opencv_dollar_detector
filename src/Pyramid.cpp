@@ -142,16 +142,7 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 		//this will be revisited at a later time
 	}
 	
-	// isR=isR:nApprox+1:nScales; 
-	// isR = 1, 9, 17 in Matlab, in here, it becomes isR = 0, 8, 16
-	// isA=1:nScales; isA(isR)=[];
-	// isA holds the indices that are not in isR
-	// isA = 1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14, 15, 17, 18, 19, 20
-	// j as the points at which we change the real scale used to approximate the current one
-	// j=[0 floor((isR(1:end-1)+isR(2:end))/2) nScales];
-	// j=[0,5,13,21] 
-	// isN holds the scales to be used as a basis for approximations
-	// isN=1:nScales; for i=1:length(isR), isN(j(i)+1:j(i+1))=isR(i); end
+
 	/*
 	% compute image pyramid [approximated scales]
 	for i=isA
@@ -166,13 +157,6 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 	// debug
 	cv::destroyAllWindows();
 
-	//computedChannels[1].image = floatArray2cvImage(cvImage2floatArray(computedChannels[0].image, 3), computedChannels[0].image.rows, computedChannels[0].image.cols, 3);
-
-	/*
-	// experimental convert: doesn't work
-	computedChannels[0].image.convertTo(computedChannels[1].image, CV_32FC3, 1.0/255.0);
-	// */
-
 	for (int i=0; i<computedScales; i++)
 	{
 		if (i % (approximatedScales+1) != 0)
@@ -183,61 +167,66 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 			double ratio[3];
 			int iR = 0;
 
+			// real scale changes in i=5 and i=13 to iR=8 and iR=16  
 			for (int j=0; j < numberOfRealScales-1; j++)
 			{
 				if (i > floor((j*(approximatedScales+1)+(j+1)*(approximatedScales+1))/2))
 					iR = (j+1)*(approximatedScales+1);
 			}
 
+			// debug
 			std::cout << std::endl << "approximating, i=" << i << ", scales[iR]=" << scales[iR] << ", iR=" << iR << ", h1=" << h1 << ", w1=" << w1 << std::endl;
+
 			ratio[0] = pow(scales[i]/scales[iR],-lambdas[0]);
-
-			// experimental ini
-			// computedChannels[i].image = cv::Mat(h1, w1, CV_32FC3);
 			computedChannels[i].image = resample(computedChannels[iR].image, computedChannels[iR].image.rows, computedChannels[iR].image.cols, h1, w1, ratio[0], 3);
-			
+		
 			ratio[1] = pow(scales[i]/scales[iR],-lambdas[1]);
-
-			// experimental ini: works for this channel, not the others.
-			computedChannels[i].gradientMagnitude = cv::Mat(h1, w1, CV_32FC1);
 			computedChannels[i].gradientMagnitude = resample(computedChannels[iR].gradientMagnitude, computedChannels[iR].gradientMagnitude.rows, computedChannels[iR].gradientMagnitude.cols, h1, w1, ratio[1], 1);
 			
-			
-			// experimental resample: works for the image channel
-			if (i == 1)
-			{
-				computedChannels[i].image = resample(computedChannels[iR].image, computedChannels[iR].image.rows, computedChannels[iR].image.cols, h1, w1, ratio[0], 3);
-				// computedChannels[i].gradientMagnitude = resample(computedChannels[iR].gradientMagnitude, computedChannels[iR].gradientMagnitude.rows, computedChannels[iR].gradientMagnitude.cols, h1, w1, ratio[1], 1);
-			}
-			// */
-
-			// debug
-			std::cout << "printing approx image for scale[" << i << "], rows=" << computedChannels[i].image.rows << ", cols=" << computedChannels[i].image.cols << ", im[iR].type=" << computedChannels[i].image.type() << std::endl;
-			cv::imshow("iR image", computedChannels[iR].image);
-			cv::imshow("approx image", computedChannels[i].image);
-			std::cout << "printing approx gradMag for scale[" << i << "], rows=" << computedChannels[i].gradientMagnitude.rows << ", cols=" << computedChannels[i].gradientMagnitude.cols << std::endl;
-			cv::imshow("approx gradMag", computedChannels[i].gradientMagnitude);
-
 			ratio[2] = pow(scales[i]/scales[iR],-lambdas[2]);
-			std::cout << "before graHist resample" << std::endl;
 
 			// only computed Scales of H seem to be working fine
 			for (int k=0; k < pChns.pGradHist.gradHist_nChns; k++)
 			{
-				// experimental ini
-				// computedChannels[i].gradientHistogram.push_back(cv::Mat(h1, w1, CV_32FC1));
 				computedChannels[i].gradientHistogram.push_back(resample(computedChannels[iR].gradientHistogram[k], pChns.pGradHist.gradHist_hb, pChns.pGradHist.gradHist_wb, h1, w1, ratio[2], 1));
-				std::cout << "printing approx gradHist for scale[" << i << "], rows=" << computedChannels[i].gradientHistogram[k].rows << ", cols=" << computedChannels[i].gradientHistogram[k].cols << std::endl;
+
+				// debug 
+				std::cout << "approx gradHist for scale[" << i << "], rows=" << computedChannels[i].gradientHistogram[k].rows << ", cols=" 
+				<< computedChannels[i].gradientHistogram[k].cols << ", type=" << computedChannels[i].gradientHistogram[k].type() << ", ratio=" << ratio[2] << std::endl;
 			}
 
-			cv::imshow("approx gradHist0", computedChannels[i].gradientHistogram[0]);
-			cv::imshow("approx gradHist1", computedChannels[i].gradientHistogram[1]);
-			cv::imshow("approx gradHist2", computedChannels[i].gradientHistogram[2]);
-			cv::imshow("approx gradHist3", computedChannels[i].gradientHistogram[3]);
-			cv::imshow("approx gradHist4", computedChannels[i].gradientHistogram[4]);
-			cv::imshow("approx gradHist5", computedChannels[i].gradientHistogram[5]);
+			// debug: test results of image and gradMag channel approximations
+			cv::imshow("iR image", computedChannels[iR].image);
+			cv::imshow("iR gradMag", computedChannels[iR].gradientMagnitude);
+
+			std::cout << "approx image for scale[" << i << "], rows=" << computedChannels[i].image.rows << ", cols=" 
+			<< computedChannels[i].image.cols << ", type=" << computedChannels[i].image.type() << ", ratio=" << ratio[0] << std::endl;
+			cv::imshow("approx image", computedChannels[i].image);
+
+			std::cout << "approx gradMag for scale[" << i << "], rows=" << computedChannels[i].gradientMagnitude.rows << ", cols=" 
+			<< computedChannels[i].gradientMagnitude.cols << ", type=" << computedChannels[i].gradientMagnitude.type() << ", ratio=" << ratio[1] << std::endl;
+			cv::imshow("approx gradMag", computedChannels[i].gradientMagnitude);
+			// debug */
+
+			// debug: test results of gradHist approximations
+			cv::imshow("iR gradHist0", computedChannels[iR].gradientHistogram[0]);
+			cv::imshow("app gradHist0", computedChannels[i].gradientHistogram[0]);
+			cv::imshow("iR gradHist1", computedChannels[iR].gradientHistogram[1]);
+			cv::imshow("app gradHist1", computedChannels[i].gradientHistogram[1]);
+			cv::imshow("iR gradHist2", computedChannels[iR].gradientHistogram[2]);
+			cv::imshow("app gradHist2", computedChannels[i].gradientHistogram[2]);
+			cv::imshow("iR gradHist3", computedChannels[iR].gradientHistogram[3]);
+			cv::imshow("app gradHist3", computedChannels[i].gradientHistogram[3]);
+			cv::imshow("iR gradHist4", computedChannels[iR].gradientHistogram[4]);
+			cv::imshow("app gradHist4", computedChannels[i].gradientHistogram[4]);
+			cv::imshow("iR gradHist5", computedChannels[iR].gradientHistogram[5]);
+			cv::imshow("app gradHist5", computedChannels[i].gradientHistogram[5]);
+			// */
+
+			// debug
 			cv::waitKey();
 			
+			// debug
 			std::cout << "end of i=" << i << ", scales[iR]=" << scales[iR] << ", iR=" << iR << ", h1=" << h1 << ", w1=" << w1 << std::endl;
 		}
 	}
@@ -245,8 +234,17 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 	//smooth channels, optionally pad and concatenate channels
 	for (int i=0; i < computedScales; i++)
 	{
-		computedChannels[i].image = convolution(computedChannels[i].image, 3, pChns.pColor.smoothingRadius, 1, CONV_TRI);
+		// this convolution is wrong in some of this scales, looks like the type conversion problems i was having before.
+		computedChannels[i].image = convolution(computedChannels[i].image, 3, pChns.pColor.smoothingRadius, 1, CONV_TRI);		
 		computedChannels[i].gradientMagnitude = convolution(computedChannels[i].gradientMagnitude, 1, pChns.pColor.smoothingRadius, 1, CONV_TRI);
+
+		/*
+		// debug
+		cv::imshow("conv image", computedChannels[i].image);
+		cv::imshow("conv gradMag", computedChannels[i].gradientMagnitude);
+		cv::waitKey();
+		// */
+
 		for (int j=0; j < pChns.pGradHist.gradHist_nChns; j++)
 			computedChannels[i].gradientHistogram.push_back(convolution(computedChannels[i].gradientHistogram[j], 1, pChns.pColor.smoothingRadius, 1, CONV_TRI));	
 	}

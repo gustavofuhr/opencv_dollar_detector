@@ -428,17 +428,11 @@ cv::Mat resample(cv::Mat source, int ori_h, int ori_w, int new_h, int new_w, flo
 	// */
 
 	cv::Mat result;
+	// check if previous allocation changes anything here!
 	float* I;
 
 	// debug
 	//std::cout << "inside resample, before conversion number one" << std::endl;
-
-	/*
-	// legacy:
-	if (channels == 1 || channels == 3)
-		I = cvImage2floatArray(source, channels);
-	else
-		I = (float*)source.data;
 	// */
 
 	// experimental
@@ -449,13 +443,12 @@ cv::Mat resample(cv::Mat source, int ori_h, int ori_w, int new_h, int new_w, flo
 
 	float *O = (float*)malloc(new_h*new_w*channels*sizeof(float));
 
-	/* 
+	 /*
 	//debug
-	cv::Mat testMat = floatArray2cvMat(I, source.rows, source.cols);
+	cv::Mat testMat = floatArray2cvImage(I, source.rows, source.cols, channels);
 	cv::imshow("resample input", source);
 	cv::imshow("resample input2", testMat);
-	cv::waitKey();
-	*/
+	// debug */
 
 	// debug
 	// std::cout << "before imResample, ori_h = " << ori_h << ", new_h = " << new_h << ", ori_w = " << ori_w << ", new_w = " << new_w << std::endl;
@@ -470,17 +463,14 @@ cv::Mat resample(cv::Mat source, int ori_h, int ori_w, int new_h, int new_w, flo
 	// debug
 	// std::cout << "inside resample, after imResample" << std::endl;
 
-
-	/*
-	// legacy:
-	if (channels == 1 || channels == 3)
-		result = floatArray2cvImage(O, new_h, new_w, channels); // three channels
-	else
-		result.data = (uchar*)O;
-	// */
-
 	// experimental
 	result = floatArray2cvImage(O, new_h, new_w, channels);
+
+	/*
+	// debug
+	cv::imshow("resample output", result);
+	cv::waitKey();
+	// debug */
 
 	// debug
 	// std::cout << "leaving resample" << std::endl;
