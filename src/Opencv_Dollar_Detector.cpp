@@ -7,7 +7,8 @@ int main(int argc, char** argv)
 	Info result;
 	//cv::FileStorage file("some_name.ext", cv::FileStorage::WRITE);
 
-	cv::String fileString = "../opencv_dollar_detector/detector.xml";
+	// cv::String fileString = "../opencv_dollar_detector/detector.xml";
+	cv::String fileString = "../opencv_dollar_detector/calculate_all_scales_detector.xml";
 	d.importDetectorModel(fileString);
 	
 	image = cv::imread("../opencv_dollar_detector/frame0254.png");

@@ -443,8 +443,8 @@ cv::Mat resample(cv::Mat source, int ori_h, int ori_w, int new_h, int new_w, flo
 
 	float *O = (float*)malloc(new_h*new_w*channels*sizeof(float));
 
-	 /*
-	//debug
+	
+	//debug: test input
 	cv::Mat testMat = floatArray2cvImage(I, source.rows, source.cols, channels);
 	cv::imshow("resample input", source);
 	cv::imshow("resample input2", testMat);
@@ -466,10 +466,9 @@ cv::Mat resample(cv::Mat source, int ori_h, int ori_w, int new_h, int new_w, flo
 	// experimental
 	result = floatArray2cvImage(O, new_h, new_w, channels);
 
-	/*
-	// debug
+	
+	// debug: test output
 	cv::imshow("resample output", result);
-	cv::waitKey();
 	// debug */
 
 	// debug

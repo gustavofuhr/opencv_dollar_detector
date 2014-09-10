@@ -91,7 +91,18 @@ void Detector::acfDetect(cv::Mat image)
 		float* ch3 = (float*)malloc(ch3Size*sizeof(float));
 		for (int j=0; j < gradHist_nChns; j++)
 		{
-			memcpy(&ch3[j*hb*wb], cvImage2floatArray(opts.pPyramid.computedChannels[i].gradientHistogram[j], 1), hb*wb);
+			// old version
+			// memcpy(&ch3[j*hb*wb], cvImage2floatArray(opts.pPyramid.computedChannels[i].gradientHistogram[j], 1), hb*wb);
+			// experimental version
+			memcpy(&ch3[j*hb*wb], cvImage2floatArray(opts.pPyramid.computedChannels[i].gradientHistogram[j], 1), hb*wb*sizeof(float)/8);
+
+			// debug: test contents of ch3
+			float* testFloat = (float*)malloc(hb*wb*sizeof(float));
+			memcpy(testFloat, &ch3[j*hb*wb], hb*wb*sizeof(float)/8);
+			cv::Mat testMat = floatArray2cvImage(testFloat, hb, wb, 1);
+			cv::imshow("content of ch3", testMat);
+			cv::waitKey();
+			// debug */
 		}
 
 		/*
