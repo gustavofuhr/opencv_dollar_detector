@@ -186,13 +186,15 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 			ratio[2] = pow(scales[i]/scales[iR],-lambdas[2]);
 
 			// only computed Scales of H seem to be working fine
-			for (int k=0; k < pChns.pGradHist.gradHist_nChns; k++)
+			for (int k=0; k < pChns.pGradHist.nChannels; k++)
 			{
-				computedChannels[i].gradientHistogram.push_back(resample(computedChannels[iR].gradientHistogram[k], pChns.pGradHist.gradHist_hb, pChns.pGradHist.gradHist_wb, h1, w1, ratio[2], 1));
+				int h = computedChannels[iR].gradientHistogram[k].rows;
+				int w = computedChannels[iR].gradientHistogram[k].cols;
+				computedChannels[i].gradientHistogram.push_back(resample(computedChannels[iR].gradientHistogram[k], h, w, h1, w1, ratio[2], 1));
 
 				// debug 
-				std::cout << "approx gradHist for scale[" << i << "], rows=" << computedChannels[i].gradientHistogram[k].rows << ", cols=" 
-				<< computedChannels[i].gradientHistogram[k].cols << ", type=" << computedChannels[i].gradientHistogram[k].type() << ", ratio=" << ratio[2] << std::endl;
+				std::cout << "approx gradHist for scale[" << i << "], rows=" << h << ", cols=" 
+				<< w << ", type=" << computedChannels[i].gradientHistogram[k].type() << ", ratio=" << ratio[2] << std::endl;
 			}
 
 			// debug: test results of image and gradMag channel approximations
@@ -245,7 +247,7 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 		cv::waitKey();
 		// */
 
-		for (int j=0; j < pChns.pGradHist.gradHist_nChns; j++)
+		for (int j=0; j < pChns.pGradHist.nChannels; j++)
 			computedChannels[i].gradientHistogram.push_back(convolution(computedChannels[i].gradientHistogram[j], 1, pChns.pColor.smoothingRadius, 1, CONV_TRI));	
 	}
 

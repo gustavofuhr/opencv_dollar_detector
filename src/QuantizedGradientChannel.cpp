@@ -7,7 +7,19 @@ void QuantizedGradientChannel::readGradientHistogram(cv::FileNode histNode)
 	useSoftBinning = histNode["softBin"];
 	useHogNormalization = histNode["useHog"];
 	clipHog = histNode["clipHog"];
+
+  // this is the default value, but it could also be provided
   binSize = 4;
+
+  //nChns = useHog== 0 ? nOrients : (useHog==1 ? nOrients*4 : nOrients*3+5);
+  switch (useHogNormalization)
+  {
+    case 0:   nChannels = orientationChannels;
+              break;
+    case 1:   nChannels = orientationChannels*4;
+              break;
+    default:  nChannels = orientationChannels*3+5;
+  } 
 }
 
 /******************************************************************************/
@@ -257,22 +269,11 @@ std::vector<cv::Mat> QuantizedGradientChannel::mGradHist(cv::Mat gradMag, cv::Ma
 
   hb = h/binSize; wb = w/binSize;
 
-  //nChns = useHog== 0 ? nOrients : (useHog==1 ? nOrients*4 : nOrients*3+5);
-  int nChns;
-  switch (useHogNormalization)
-  {
-    case 0:   nChns = orientationChannels;
-              break;
-    case 1:   nChns = orientationChannels*4;
-              break;
-    default:  nChns = orientationChannels*3+5;
-  } 
-
   //pl[0] = mxCreateMatrix3(hb,wb,nChns,mxSINGLE_CLASS,1,(void**)&H);
-  H = (float*)calloc(hb*wb*nChns, sizeof(float));
+  H = (float*)calloc(hb*wb*nChannels, sizeof(float));
 
   // debug
-  std::cout << "resulting H will have size=[" << hb << ", " << wb << ", " << nChns << "], binsize=" << binSize << ", h=" << h << ", w=" << w << std::endl;
+  std::cout << "resulting H will have size=[" << hb << ", " << wb << ", " << nChannels << "], binsize=" << binSize << ", h=" << h << ", w=" << w << std::endl;
 
   /*
   // debug
@@ -309,7 +310,7 @@ std::vector<cv::Mat> QuantizedGradientChannel::mGradHist(cv::Mat gradMag, cv::Ma
 		}
 
     int indexForH=0;
-    for (int i=0; i < nChns; i++)
+    for (int i=0; i < nChannels; i++)
     {
       float *tempH = (float*)malloc(hb*wb*sizeof(float));
 
@@ -326,10 +327,6 @@ std::vector<cv::Mat> QuantizedGradientChannel::mGradHist(cv::Mat gradMag, cv::Ma
       // */
     }
 	}
-
-  gradHist_hb = hb;
-  gradHist_wb = wb;
-  gradHist_nChns = nChns;
 
 	return result;
 }

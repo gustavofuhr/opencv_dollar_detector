@@ -80,39 +80,50 @@ void Detector::acfDetect(cv::Mat image)
 		float* chns;
 		float* ch1 = cvImage2floatArray(opts.pPyramid.computedChannels[i].image, 3);
 		int ch1Size = opts.pPyramid.computedChannels[i].image.rows * opts.pPyramid.computedChannels[i].image.cols * 3;
+
+		/*
+		// debug: test contents of ch1
+		float* testFloat = (float*)malloc(ch1Size*sizeof(float));
+		memcpy(testFloat, ch1, ch1Size*sizeof(float));
+		cv::Mat testMat = floatArray2cvImage(testFloat, opts.pPyramid.computedChannels[i].image.rows, opts.pPyramid.computedChannels[i].image.cols, 3);
+		cv::imshow("content of ch1", testMat);
+		// debug */
 		
 		float* ch2 = cvImage2floatArray(opts.pPyramid.computedChannels[i].gradientMagnitude, 1);
 		int ch2Size = opts.pPyramid.computedChannels[i].gradientMagnitude.rows * opts.pPyramid.computedChannels[i].gradientMagnitude.cols;
 
-		int hb = opts.pPyramid.pChns.pGradHist.gradHist_hb;
-		int wb = opts.pPyramid.pChns.pGradHist.gradHist_wb;
-		int gradHist_nChns = opts.pPyramid.pChns.pGradHist.gradHist_nChns;
-		int ch3Size = hb * wb * gradHist_nChns;
+		/*
+		// debug: test contents of ch2
+		float* testFloat2 = (float*)malloc(ch2Size*sizeof(float));
+		memcpy(testFloat2, ch2, ch2Size*sizeof(float));
+		cv::Mat testMat2 = floatArray2cvImage(testFloat2, opts.pPyramid.computedChannels[i].gradientMagnitude.rows, opts.pPyramid.computedChannels[i].gradientMagnitude.cols, 1);
+		cv::imshow("content of ch2", testMat2);
+		cv::waitKey();
+		// debug */
+
+		int ch3Size = opts.pPyramid.computedChannels[i].gradientHistogram[0].rows*opts.pPyramid.computedChannels[i].gradientHistogram[0].cols * opts.pPyramid.pChns.pGradHist.nChannels;
 		float* ch3 = (float*)malloc(ch3Size*sizeof(float));
-		for (int j=0; j < gradHist_nChns; j++)
+
+		for (int j=0; j < opts.pPyramid.pChns.pGradHist.nChannels; j++)
 		{
-			// old version
-			// memcpy(&ch3[j*hb*wb], cvImage2floatArray(opts.pPyramid.computedChannels[i].gradientHistogram[j], 1), hb*wb);
-			// experimental version
-			memcpy(&ch3[j*hb*wb], cvImage2floatArray(opts.pPyramid.computedChannels[i].gradientHistogram[j], 1), hb*wb*sizeof(float)/8);
+			int rows = opts.pPyramid.computedChannels[i].gradientHistogram[j].rows;
+			int cols = opts.pPyramid.computedChannels[i].gradientHistogram[j].cols;
+			memcpy(&ch3[j*rows*cols], cvImage2floatArray(opts.pPyramid.computedChannels[i].gradientHistogram[j], 1), rows*cols*sizeof(float));
+
+			// debug: test source for this memcpy
+			float* testFloat4 = cvImage2floatArray(opts.pPyramid.computedChannels[i].gradientHistogram[j], 1);
+			cv::Mat testMat4 = floatArray2cvImage(testFloat4, rows, cols, 1);
+			cv::imshow("ch3 source", testMat4);			
+			// */
 
 			// debug: test contents of ch3
-			float* testFloat = (float*)malloc(hb*wb*sizeof(float));
-			memcpy(testFloat, &ch3[j*hb*wb], hb*wb*sizeof(float)/8);
-			cv::Mat testMat = floatArray2cvImage(testFloat, hb, wb, 1);
-			cv::imshow("content of ch3", testMat);
+			float* testFloat3 = (float*)malloc(rows*cols*sizeof(float));
+			memcpy(testFloat3, &ch3[j*rows*cols], rows*cols*sizeof(float));
+			cv::Mat testMat3 = floatArray2cvImage(testFloat3, rows, cols, 1);
+			cv::imshow("content of ch3", testMat3);
 			cv::waitKey();
 			// debug */
 		}
-
-		/*
-		// debug: testing content of H matrix
-		for (int k=0; k < gradHist_nChns; k++)
-		{
-			cv::imshow("testing Hi", opts.pPyramid.computedChannels[i].gradientHistogram[k]);
-			cv::waitKey();
-		}
-		// */
 
 		// float *chns = (float*) mxGetData(prhs[0]);
 		chns = (float*) malloc((ch1Size+ch2Size+ch3Size)*sizeof(float));
@@ -135,17 +146,22 @@ void Detector::acfDetect(cv::Mat image)
 		uint32_t *child = (uint32_t*) clf.child.data;
 		const int treeDepth = clf.treeDepth;
 
+		// this is wrong!
 		// in the original file: *chnsSize = mxGetDimensions(P.data{i});
-		// still need to check these values properly
+		// const int height = (int) chnsSize[0];
+  		// const int width = (int) chnsSize[1];
+  		// const int nChns = mxGetNumberOfDimensions(prhs[0])<=2 ? 1 : (int) chnsSize[2];
 		const int height = opts.pPyramid.computedScales;
-		// second dimension of chns
 		const int width = opts.pPyramid.channelTypes;
 		const int nChns = 3; 
 
-		//nTreeNodes size of the first dimension of fids
+
+		// const mwSize *fidsSize = mxGetDimensions(mxGetField(trees,0,"fids"));
+  		// const int nTreeNodes = (int) fidsSize[0];
+  	 	// const int nTrees = (int) fidsSize[1];
 		const int nTreeNodes = clf.fids.rows;
-		//nTrees size of the second dimension of fids
 		const int nTrees = clf.fids.cols;
+
 		const int height1 = (int)ceil(float(height*shrink-modelHt+1/stride));
 		const int width1 = (int)ceil(float(width*shrink-modelWd+1/stride));
 

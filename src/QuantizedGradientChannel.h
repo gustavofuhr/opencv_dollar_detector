@@ -19,11 +19,6 @@ public:
 	int nChannels;
 	cv::String padWith;
 
-	int gradHist_hb;
-	int gradHist_wb;
-	int gradHist_nChns;
-
-
 	void readGradientHistogram(cv::FileNode);
 	//comes from gradientMex.cpp, the return still needs a type
 	std::vector<cv::Mat> mGradHist(cv::Mat, cv::Mat, int);
