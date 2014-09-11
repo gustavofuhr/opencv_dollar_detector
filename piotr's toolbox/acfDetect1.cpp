@@ -1,10 +1,9 @@
 /*******************************************************************************
-* Piotr's Image&Video Toolbox      Version NEW
+* Piotr's Image&Video Toolbox      Version 3.21
 * Copyright 2013 Piotr Dollar.  [pdollar-at-caltech.edu]
 * Please email me if you find bugs, or have suggestions or questions!
 * Licensed under the Simplified BSD License [see external/bsd.txt]
 *******************************************************************************/
-
 #include "mex.h"
 #include <vector>
 #include <cmath>
@@ -20,7 +19,6 @@ inline void getChild( float *chns1, uint32 *cids, uint32 *fids,
   k0=k+=k0*2; k+=offset;
 }
 
-//bb = acfDetect1(P.data{i},Ds{j}.clf,shrink,modelDsPad(1),modelDsPad(2),opts.stride,opts.cascThr);
 void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
 {
   // get inputs
@@ -37,7 +35,8 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
   float *hs = (float*) mxGetData(mxGetField(trees,0,"hs"));
   uint32 *fids = (uint32*) mxGetData(mxGetField(trees,0,"fids"));
   uint32 *child = (uint32*) mxGetData(mxGetField(trees,0,"child"));
-  const int treeDepth = mxGetField(trees,0,"treeDepth")==NULL ? 0 : (int) mxGetScalar(mxGetField(trees,0,"treeDepth"));
+  const int treeDepth = mxGetField(trees,0,"treeDepth")==NULL ? 0 :
+    (int) mxGetScalar(mxGetField(trees,0,"treeDepth"));
 
   // get dimensions and constants
   const mwSize *chnsSize = mxGetDimensions(prhs[0]);

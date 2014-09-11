@@ -20,7 +20,7 @@ function bbs = acfDetect( I, detector, fileName )
 %  bbs = acfDetect( I, detector, [fileName] )
 %
 % INPUTS
-%  I          - input image(s) or filename(s) of input image(s)
+%  I          - input image(s) of filename(s) of input image(s)
 %  detector   - detector(s) trained via acfTrain
 %  fileName   - [] target filename (if specified return is 1)
 %

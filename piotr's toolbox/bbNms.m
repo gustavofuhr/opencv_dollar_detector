@@ -5,7 +5,7 @@ function bbs = bbNms( bbs, varargin )
 % bbs, if their overlap, defined by:
 %  overlap(bb1,bb2) = area(intersect(bb1,bb2))/area(union(bb1,bb2))
 % is greater than overlap, then the bb with the lower score is suppressed.
-% In the Pascal criteria two bbs are considered a match if overlap>=.5. If
+% In the Pascal critieria two bbs are considered a match if overlap>=.5. If
 % ovrDnm='min', the 'union' in the above formula is replaced with 'min'.
 %
 % type=='maxg': Similar to 'max', except performs the nms in a greedy
@@ -114,14 +114,10 @@ end
     [~,ord]=sort(bbs(:,5),'descend'); bbs=bbs(ord,:);
     n=size(bbs,1); kp=true(1,n); as=bbs(:,3).*bbs(:,4);
     xs=bbs(:,1); xe=bbs(:,1)+bbs(:,3); ys=bbs(:,2); ye=bbs(:,2)+bbs(:,4);
-    for i=1:n, 
-			if(greedy && ~kp(i)), continue; end
-      for j=(i+1):n, 
-				if(kp(j)==0), continue; end
-        iw=min(xe(i),xe(j))-max(xs(i),xs(j)); 
-				if(iw<=0), continue; end
-        ih=min(ye(i),ye(j))-max(ys(i),ys(j)); 
-				if(ih<=0), continue; end
+    for i=1:n, if(greedy && ~kp(i)), continue; end
+      for j=(i+1):n, if(kp(j)==0), continue; end
+        iw=min(xe(i),xe(j))-max(xs(i),xs(j)); if(iw<=0), continue; end
+        ih=min(ye(i),ye(j))-max(ys(i),ys(j)); if(ih<=0), continue; end
         o=iw*ih; if(ovrDnm), u=as(i)+as(j)-o; else u=min(as(i),as(j)); end
         o=o/u; if(o>overlap), kp(j)=0; end
       end
