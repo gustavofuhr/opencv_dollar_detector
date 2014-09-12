@@ -7,6 +7,7 @@ void GradientMagnitudeChannel::readGradientMagnitude(cv::FileNode gradMagNode)
 	normalizationRadius = gradMagNode["normRad"];
 	normalizationConstant = gradMagNode["normConst"];
 	full = gradMagNode["full"];
+  nChannels = gradMagNode["nChns"];
 }
 
 // build lookup table a[] s.t. a[x*n]~=acos(x) for x in [-1,1]

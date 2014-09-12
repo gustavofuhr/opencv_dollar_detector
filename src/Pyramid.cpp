@@ -142,6 +142,8 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 		//this will be revisited at a later time
 	}
 	
+	// debug
+	cv::destroyAllWindows();
 
 	/*
 	% compute image pyramid [approximated scales]
@@ -153,14 +155,11 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 	   end
 	end
 	*/
-
-	// debug
-	cv::destroyAllWindows();
-
 	for (int i=0; i<computedScales; i++)
 	{
 		if (i % (approximatedScales+1) != 0)
 		{
+			// sz1=round(sz*scales(i)/shrink);
 			h1 = round(I.rows*scales[i]/pChns.shrink);
 			w1 = round(I.cols*scales[i]/pChns.shrink);
 			
@@ -260,6 +259,10 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 	cv::Mat gradOrientation;
 	Info result;
 
+	/*
+	[h,w,~]=size(I); cr=mod([h w],shrink);
+	if(any(cr)), h=h-cr(1); w=w-cr(2); I=I(1:h,1:w,:); end
+	*/
 	//crop I so it becomes divisible by shrink
 	int height = I.rows - (I.rows % pChns.shrink);
 	int width =  I.cols - (I.cols % pChns.shrink);
@@ -289,8 +292,9 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
   	// convTri( A, B, ns[0], ns[1], d, r, s );
 	result.image = convolution(result.image, 3, pChns.pColor.smoothingRadius, 1, CONV_TRI);
 
-	if (pChns.pColor.enabled)
-		result.colorCh = pChns.pColor;
+	// h=h/shrink; w=w/shrink;
+	height = height/pChns.shrink;
+	width = width/pChns.shrink;
 
 	if (pChns.pGradHist.enabled)
 	{
@@ -347,7 +351,25 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 	if (pChns.pGradHist.enabled)
 	{
 		result.gradientHistogram = pChns.pGradHist.mGradHist(result.gradientMagnitude, gradOrientation, pChns.pGradMag.full);
+
+		for (int i=0; i < pChns.pGradHist.nChannels; i++)
+			result.gradientHistogram[i] = resample(result.gradientHistogram[i], result.gradientHistogram[i].rows, result.gradientHistogram[i].cols, height, width, 1.0, 1);
 	}	
+
+	// if(p.enabled), chns=addChn(chns,I,nm,p,'replicate',h,w); end
+	if (pChns.pColor.enabled)
+	{
+		if (result.image.rows!=height || result.image.cols!=width)
+		{
+			// data=imResampleMex(data,h,w,1);
+			result.image = resample(result.image, result.image.rows, result.image.cols, height, width, 1.0, pChns.pColor.nChannels);
+		}
+		result.colorCh = pChns.pColor;
+	}
+
+	// if(p.enabled), chns=addChn(chns,M,nm,p,0,h,w); end
+	if (pChns.pGradMag.enabled)
+		result.gradientMagnitude = resample(result.gradientMagnitude, result.gradientMagnitude.rows, result.gradientMagnitude.cols, height, width, 1.0, pChns.pGradMag.nChannels);
 
 	// debug: print results for every channel
 	cv::imshow("0 - testing rgbConvert", result.image);

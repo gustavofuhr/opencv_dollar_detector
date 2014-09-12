@@ -146,14 +146,16 @@ void Detector::acfDetect(cv::Mat image)
 		uint32_t *child = (uint32_t*) clf.child.data;
 		const int treeDepth = clf.treeDepth;
 
-		// this is wrong!
 		// in the original file: *chnsSize = mxGetDimensions(P.data{i});
 		// const int height = (int) chnsSize[0];
   		// const int width = (int) chnsSize[1];
   		// const int nChns = mxGetNumberOfDimensions(prhs[0])<=2 ? 1 : (int) chnsSize[2];
-		const int height = opts.pPyramid.computedScales;
-		const int width = opts.pPyramid.channelTypes;
-		const int nChns = 3; 
+		const int height = opts.pPyramid.computedChannels[i].image.rows;
+		const int width = opts.pPyramid.computedChannels[i].image.cols;
+		const int nChns = opts.pPyramid.pChns.pColor.nChannels + opts.pPyramid.pChns.pGradMag.nChannels + opts.pPyramid.pChns.pGradHist.nChannels; 
+
+		// debug: test values of height width and nChns
+		std::cout << "height=" << height << ", width=" << width << ", nChns="<< nChns << std::endl;
 
 
 		// const mwSize *fidsSize = mxGetDimensions(mxGetField(trees,0,"fids"));
@@ -165,14 +167,11 @@ void Detector::acfDetect(cv::Mat image)
 		const int height1 = (int)ceil(float(height*shrink-modelHt+1/stride));
 		const int width1 = (int)ceil(float(width*shrink-modelWd+1/stride));
 
-		//The number of color channels
-		int nChannels = opts.pPyramid.pChns.pColor.nChannels;
-
 		//construct cids array
-		int nFtrs = modelHt/shrink * modelWd/shrink * nChannels;
+		int nFtrs = modelHt/shrink * modelWd/shrink * nChns;
 		uint32_t *cids = new uint32_t[nFtrs];
 		int m = 0;
-		for (int z = 0; z<nChannels; z++)
+		for (int z = 0; z<nChns; z++)
 			for (int c = 0; c<modelWd / shrink; c++)
 				for (int r = 0; r<modelHt / shrink; r++)
 					cids[m++] = z*width*height + c*height + r;
