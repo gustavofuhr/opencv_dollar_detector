@@ -149,7 +149,15 @@ std::vector<cv::Mat> GradientMagnitudeChannel::mGradMag(cv::Mat I, int channel)
 	if (I.rows>=2 && I.cols>=2)
 	{
     float* If;
+
+    // debug
+    std::cout << "gradMag, before cvImage2floatArray" << std::endl;
+
     If = cvImage2floatArray(I, 3);
+
+    // debug
+    std::cout << "gradMag, after cvImage2floatArray" << std::endl;
+
 
     // if( c>0 && c<=d ) { I += h*w*(c-1); d=1; }
 		if (c>0 && c<=d)
@@ -164,10 +172,18 @@ std::vector<cv::Mat> GradientMagnitudeChannel::mGradMag(cv::Mat I, int channel)
     // if(nl>=2) pl[1] = mxCreateMatrix3(h,w,1,mxSINGLE_CLASS,0,(void**)&O);
     O = (float*)malloc(h*w*sizeof(float));
 
+    // debug
+    std::cout << "gradMag, before gradMag" << std::endl;
+
+
     // gradMag(I, M, O, h, w, d, full>0 );
 		// call to the actual function: gradMag(I, M, O, h, w, d, full>0 );
 		// void gradMag(float*, float*, float*, int, int, int, bool);
     gradMag(If, M, O, I.rows, I.cols, 3, full>0);
+
+    // debug
+    std::cout << "gradMag, after gradMag" << std::endl;
+
 
 		//next, we assign the values of M and O to the matrix thats going to be returned
     cv::Mat matM;
