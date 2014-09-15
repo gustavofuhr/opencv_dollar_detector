@@ -198,6 +198,7 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 				<< w << ", type=" << computedChannels[i].gradientHistogram[k].type() << ", ratio=" << ratio[2] << std::endl;
 			}
 
+			/*
 			// debug: test results of image and gradMag channel approximations
 			cv::imshow("iR image", computedChannels[iR].image);
 			cv::imshow("iR gradMag", computedChannels[iR].gradientMagnitude);
@@ -211,6 +212,7 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 			cv::imshow("approx gradMag", computedChannels[i].gradientMagnitude);
 			// debug */
 
+			/*
 			// debug: test results of gradHist approximations
 			cv::imshow("iR gradHist0", computedChannels[iR].gradientHistogram[0]);
 			cv::imshow("app gradHist0", computedChannels[i].gradientHistogram[0]);
@@ -271,8 +273,13 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 			computedChannels[i].gradientMagnitude = padImage(computedChannels[i].gradientMagnitude, 1, tempPad, padSize, 0);
 
 			for (int j=0; j < pChns.pGradHist.nChannels; j++)
-				computedChannels[i].gradientHistogram.push_back(padImage(computedChannels[i].gradientHistogram[j], 1, tempPad, padSize, 0));
+				computedChannels[i].gradientHistogram[j] = padImage(computedChannels[i].gradientHistogram[j], 1, tempPad, padSize, 0);
 		}
+
+		std::cout << "scale[" << i << "], imgSize=(" << computedChannels[i].image.rows << "," << computedChannels[i].image.cols << 
+			"), magSize=(" << computedChannels[i].gradientMagnitude.rows << "," << computedChannels[i].gradientMagnitude.cols << 
+			"), hisSize=(" << computedChannels[i].gradientHistogram[0].rows << "," << computedChannels[i].gradientHistogram[0].cols << std::endl;
+
 	}
 
 	std::cout << "end of chnsPyramid" << std::endl;
@@ -379,6 +386,7 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 	if (pChns.pGradMag.enabled)
 		result.gradientMagnitude = resample(result.gradientMagnitude, result.gradientMagnitude.rows, result.gradientMagnitude.cols, height, width, 1.0, pChns.pGradMag.nChannels);
 
+	/*
 	// debug: print results for every channel
 	cv::imshow("0 - testing rgbConvert", result.image);
 	cv::imshow("1 - testing convolution", result.image);

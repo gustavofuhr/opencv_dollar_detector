@@ -1,4 +1,4 @@
-Current Total: 15
+Current Total: 14
 
 Detector.cpp:
 	acfDetect:
@@ -34,4 +34,4 @@ pNms.cpp:
 	check if it is necessary!
 
 utils.cpp:
-	test imPad function
+	OK!
