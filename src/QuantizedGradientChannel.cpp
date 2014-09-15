@@ -8,8 +8,9 @@ void QuantizedGradientChannel::readGradientHistogram(cv::FileNode histNode)
 	useHogNormalization = histNode["useHog"];
 	clipHog = histNode["clipHog"];
 
-  // this is the default value, but it could also be provided
-  binSize = 4;
+  binSize = histNode["binSize"];
+  if (binSize == 0)
+    binSize = 4;
 
   //nChns = useHog== 0 ? nOrients : (useHog==1 ? nOrients*4 : nOrients*3+5);
   switch (useHogNormalization)

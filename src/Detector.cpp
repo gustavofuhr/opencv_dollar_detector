@@ -66,14 +66,13 @@ void Detector::acfDetect(cv::Mat image)
 
 	totalDetections = 0;
 
-	//compute feature pyramid
+	// compute feature pyramid
 	opts.pPyramid.computeMultiScaleChannelFeaturePyramid(I);
 
-	//this became a simple loop because we will apply just one detector here, 
-	//to apply multiple detector models you need to create multiple Detector objects. 
+	// this became a simple loop because we will apply just one detector here, 
+	// to apply multiple detector models you need to create multiple Detector objects. 
 	for (int i = 0; i < opts.pPyramid.computedScales; i++)
 	{
-
 		// debug
 		// std::cout << std::endl << "acfDetect, computedScales[" << i << "] = " << opts.pPyramid.computedScales << std::endl;
 
@@ -157,7 +156,6 @@ void Detector::acfDetect(cv::Mat image)
 		// debug: test values of height width and nChns
 		std::cout << "height=" << height << ", width=" << width << ", nChns="<< nChns << std::endl;
 
-
 		// const mwSize *fidsSize = mxGetDimensions(mxGetField(trees,0,"fids"));
   		// const int nTreeNodes = (int) fidsSize[0];
   	 	// const int nTrees = (int) fidsSize[1];
@@ -167,7 +165,7 @@ void Detector::acfDetect(cv::Mat image)
 		const int height1 = (int)ceil(float(height*shrink-modelHt+1/stride));
 		const int width1 = (int)ceil(float(width*shrink-modelWd+1/stride));
 
-		//construct cids array
+		// construct cids array
 		int nFtrs = modelHt/shrink * modelWd/shrink * nChns;
 		uint32_t *cids = new uint32_t[nFtrs];
 		int m = 0;
@@ -185,6 +183,10 @@ void Detector::acfDetect(cv::Mat image)
 		for (c = 0; c<width1; c++) 
 			for (r = 0; r<height1; r++) 
 			{
+				// debug
+				std::cout << "acfDetect, c=" << c << ", r=" << r << ", width1=" << width1 << ", height1=" << height1 << std::endl;
+				// segmentation fault at acfDetect, c=304, r=461, width1=680, height1=480
+
 				float h = 0, *chns1 = chns + (r*stride/shrink) + (c*stride/shrink)*height;
 				if (treeDepth == 1) 
 				{

@@ -7,14 +7,20 @@ void Pyramid::readPyramid(cv::FileNode pyramidNode)
 	scalesPerOctave = pyramidNode["nPerOct"];
 	upsampledOctaves = pyramidNode["nOctUp"];
 	approximatedScales = pyramidNode["nApprox"];
+
 	providedLambdas = pyramidNode["providedLambdas"];
 	lambdas[0] = pyramidNode["lambdas"][0];
 	lambdas[1] = pyramidNode["lambdas"][1];
 	lambdas[2] = pyramidNode["lambdas"][2];
-	pad[0] = pyramidNode["pad"][0];
-	pad[1] = pyramidNode["pad"][1];
+	
+	padSize = pyramidNode["padSize"];
+	pad = (int*)malloc(padSize*sizeof(int));
+	for (int i=0; i < padSize; i++)
+		pad[i] = pyramidNode["pad"][i];
+
 	minImgSize[0] = pyramidNode["minDs"][0];
 	minImgSize[1] = pyramidNode["minDs"][1];
+
 	smoothRadius = pyramidNode["smooth"];
 	concatenateChannels = pyramidNode["concat"];
 	completeInput = pyramidNode["complete"];
@@ -25,12 +31,9 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 {
 	cv::Mat convertedImage;
 
-	//if we are to allow incomplete Pyramids, we need to set some values to default.
-	//for now, it wont be implemented. (lines 115-128 of chnsPyramid.m)
-
 	// p.pad=round(p.pad/shrink)*shrink;
-	pad[0] = round(pad[0]/pChns.shrink)*pChns.shrink;
-	pad[1] = round(pad[1]/pChns.shrink)*pChns.shrink;
+	for (int i=0; i < padSize; i++)
+		pad[i] = round(pad[i]/pChns.shrink)*pChns.shrink;
 
 	// p.minDs=max(p.minDs,shrink*4);
 	minImgSize[0] = std::max(minImgSize[0], pChns.shrink);
@@ -58,20 +61,14 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 
 	computedChannels = new Info[computedScales];
 	
-	//compute image pyramid, from chnsPyramid.m, line 144
-	//there is a for statement where the index i can only assume values of the array isR
-	//I guess isR might be useless, if we do it like this instead:
 	int h1, w1;
 	cv::Mat I1;
 	int numberOfRealScales;
 	int i;
 
-	// real scales are multiples of approximatedScales+1 !
-	// approximated scales are the others
-	// what are upsampled scales?
+	// compute image pyramid [real scales]
 	for (i=0; i < computedScales; i = i+approximatedScales+1)
 	{
-
 		// sz=[size(I,1) size(I,2)];
 		// sz1=round(sz*s/shrink)*shrink;
 		h1 = round(I.rows*scales[i]/pChns.shrink)*pChns.shrink;
@@ -89,11 +86,6 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 			convertedImage = I1; 
 
 		computedChannels[i] = computeSingleScaleChannelFeatures(I1);
-
-		//why is this here?
-		//couldn't it be outside the for?
-		//or is it really needed now that computedChannels=data?
-		//if(i==isR(1)), nTypes=chns.nTypes; data=cell(nScales,nTypes); end
 	}
 	numberOfRealScales = i;
 		
@@ -101,9 +93,7 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 	int isIndex = 0;
 	bool isError = false;
 
-	//if lambdas not specified compute image specific lambdas
-	//chnsPyramid.m, line 154
-	//computedScales is the substitute for nScales
+	// if lambdas not specified compute image specific lambdas
 	if (computedScales>0 && approximatedScales>0 && !providedLambdas)
 	{
 		for (int j=1+upsampledOctaves*scalesPerOctave; j < computedScales; j = j+approximatedScales+1)
@@ -244,6 +234,10 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 		}
 	}
 
+	int tempPad[padSize];
+	for (int i=0; i < padSize; i++)
+		tempPad[i] = pad[i]/pChns.shrink;
+
 	/*
 	% smooth channels, optionally pad and concatenate channels
 	for i=1:nScales*nTypes, data{i}=convTri(data{i},smooth); end
@@ -252,11 +246,9 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 	if(concat && nTypes), data0=data; data=cell(nScales,1); end
 	if(concat && nTypes), for i=1:nScales, data{i}=cat(3,data0{i,:}); end; end
 	*/
-
 	//smooth channels, optionally pad and concatenate channels
 	for (int i=0; i < computedScales; i++)
 	{
-		// this convolution is wrong in some of this scales, looks like the type conversion problems i was having before.
 		computedChannels[i].image = convolution(computedChannels[i].image, 3, pChns.pColor.smoothingRadius, 1, CONV_TRI);		
 		computedChannels[i].gradientMagnitude = convolution(computedChannels[i].gradientMagnitude, 1, pChns.pColor.smoothingRadius, 1, CONV_TRI);
 
@@ -273,7 +265,13 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 		if (pad[0]!=0 || pad[1]!=0)
 		{
 			// data{i,j}=imPad(data{i,j},pad/shrink,info(j).padWith);
-			
+			// J = imPadMex( I, pad, type );
+			// cv::Mat padImage(cv::Mat source, int channels, int *pad, int padSize, int type)
+			computedChannels[i].image = padImage(computedChannels[i].image, 3, tempPad, padSize, REPLICATE);
+			computedChannels[i].gradientMagnitude = padImage(computedChannels[i].gradientMagnitude, 1, tempPad, padSize, 0);
+
+			for (int j=0; j < pChns.pGradHist.nChannels; j++)
+				computedChannels[i].gradientHistogram.push_back(padImage(computedChannels[i].gradientHistogram[j], 1, tempPad, padSize, 0));
 		}
 	}
 
@@ -297,29 +295,6 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 
 	// compute color channels
 	result.image = rgbConvert(I, pChns.pColor.colorSpaceType);
-
-	// debug
-	std::cout << "chnsCompute, after rgbConvert" << std::endl;
-
-	/*
-	// test image converted in the matlab version
-	cv::Mat X = cv::imread("../opencv_dollar_detector/frame0254_luv_single.png");
-	X.convertTo(X, CV_32FC3, 1.0/255.0);
-	result.image = rgbConvert(X, pChns.pColor.colorSpaceType);
-	// */
-
-	// I = convTri(I,p.smooth);
-	// J = convConst('convTri',I,r,s);
-	// A = (float*) mxGetData(prhs[1]);
-	// p = (float) mxGetScalar(prhs[2]);
- 	// r = (int) mxGetScalar(prhs[2]);
-  	// s = (int) mxGetScalar(prhs[3]);
-  	// ms[0]=ns[0]/s; ms[1]=ns[1]/s; ms[2]=d;
-  	// B = (float*) mxMalloc(ms[0]*ms[1]*d*sizeof(float));
-  	// nDims = mxGetNumberOfDimensions(prhs[1]);
-  	// ns = (int*) mxGetDimensions(prhs[1]);
-  	// d = (nDims == 3) ? ns[2] : 1;
-  	// convTri( A, B, ns[0], ns[1], d, r, s );
 	result.image = convolution(result.image, 3, pChns.pColor.smoothingRadius, 1, CONV_TRI);
 
 	// debug
@@ -340,15 +315,6 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 			result.gradientMagnitude = tempResult[0];
 		if (tempResult.size() > 1)
 			gradOrientation = tempResult[1];
-
-		/*
-		std::ofstream out("Orientation.txt");
-    	std::streambuf *coutbuf = std::cout.rdbuf(); //save old buf
-    	std::cout.rdbuf(out.rdbuf()); //redirect std::cout to out.txt!
-    	std::cout << "gradientOrientation = "<< std::endl << " "  << gradOrientation << std::endl << std::endl;
-    	std::cout.rdbuf(coutbuf); //reset to standard output again
-    	std::cout << "done writing matrix" << std::endl;
-    	*/
 
 		if (pChns.pGradMag.normalizationRadius != 0)
 		{

@@ -23,7 +23,7 @@
 				</pGradMag>
 				<pGradHist>
 					<enabled>1</enabled>
-					<binSize>dummy</binSize>
+					<binSize>0</binSize>
 					<nOrients>6</nOrients>
 					<softBin>0</softBin>
 					<useHog>0</useHog>
@@ -39,6 +39,7 @@
 			<nApprox>7</nApprox>
 			<providedLambdas>1</providedLambdas>
 			<lambdas>0 0.11579 0.11579</lambdas>
+			<padSize>2</padSize>
 			<pad>16 12</pad>
 			<minDs>100 41</minDs>
 			<smooth>1</smooth>

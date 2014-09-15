@@ -22,5 +22,6 @@ void alFree(void* aligned);
 cv::Mat convolution(cv::Mat source, int channels, int radius, int s, int flag);
 cv::Mat resample(cv::Mat source, int ori_h, int ori_w, int new_h, int new_w, float nrm, int channels);
 cv::Mat rgbConvert(cv::Mat, int);
+cv::Mat padImage(cv::Mat source, int channels, int *pad, int padSize, int type);
 
 #endif

@@ -15,7 +15,8 @@ public:
 	int approximatedScales; //number of approx. scales
 	int providedLambdas;
 	double lambdas[3]; //for power law scaling
-	int pad[2]; //amount to pad channels (along T/B and L/R)
+	int padSize;
+	int *pad; //amount to pad channels (along T/B and L/R)
 	int minImgSize[2]; //minimum image size for channel computation, substitutes minDs
 	int smoothRadius; //radius for channel smoothing (using convTri)
 	int concatenateChannels; //if true, concatenate channels

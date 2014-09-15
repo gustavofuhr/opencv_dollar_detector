@@ -1,4 +1,4 @@
-Current Total: 17
+Current Total: 15
 
 Detector.cpp:
 	acfDetect:
@@ -19,13 +19,11 @@ GradientMagnitudeChannel.cpp:
 	OK!
 	
 QuantizedGradientChannel.cpp:
-	readGradientHistogram:
-		line 011: fix binSize reading
+	OK!
 
 Pyramid.cpp:
 	computeMultiScaleChannelFeaturePyramid:
-		line 028: possibly add default values for parameters
-		line 088: possibly delete this part
+		change literal number of channels of nChannels whenever needed
 		line 113: the whole for statement needs work, write a substitution for is=is(2:3) 
 		line 140: compute lambdas
 		line 189: fix approximated (resampled) scales of H
@@ -36,4 +34,4 @@ pNms.cpp:
 	check if it is necessary!
 
 utils.cpp:
-	add imPad function
+	test imPad function
