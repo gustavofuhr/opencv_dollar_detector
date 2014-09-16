@@ -17,6 +17,8 @@ float* cvImage2floatArray(cv::Mat source, int channels);
 cv::Mat floatArray2cvImage(float* source, int rows, int cols, int channels);
 float* cvMat2floatArray(cv::Mat source, int length1, int length2, int length3);
 cv::Mat floatArray2cvMat(float* source, int length1, int length2, int length3);
+uint32_t* cvMat2charArray(cv::Mat source, int channels);
+cv::Mat charArray2cvMat(uint32_t* source, int rows, int cols, int channels);
 void* alMalloc( size_t size, int alignment );
 void alFree(void* aligned);
 cv::Mat convolution(cv::Mat source, int channels, int radius, int s, int flag);

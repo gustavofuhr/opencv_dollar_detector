@@ -102,6 +102,42 @@ cv::Mat floatArray2cvMat(float* source, int length1, int length2, int length3)
 	Mat bigCube(3, sz, CV_8U, Scalar::all(0));
 */
 
+uint32_t* cvMat2charArray(cv::Mat source, int channels)
+{
+	uint32_t* result = (uint32_t*)malloc(source.rows*source.cols*channels*sizeof(uint32_t));
+	int resultIndex=0;
+
+	for (int channel=0; channel < channels; channel++)
+		for (int column=0; column < source.cols; column++)
+			for (int row=0; row < source.rows; row++)
+				result[resultIndex++] = source.data[column*channels + row*source.cols*channels + channel];
+
+	return result;
+}
+
+cv::Mat charArray2cvMat(uint32_t* source, int rows, int cols, int channels)
+{
+	int type;	
+	if (channels == 1)
+		type = CV_8UC1;
+	else
+		type = CV_8UC3;
+
+	cv::Mat result(rows, cols, type);
+
+	uint32_t* tempChar = (uint32_t*)malloc(rows*cols*channels*sizeof(uint32_t));
+	int tempIndex=0;
+
+	for (int channel=0; channel < channels; channel++)
+		for (int column=0; column < cols; column++)
+			for (int row=0; row < rows; row++)
+				tempChar[column*channels + row*cols*channels + channel] = source[tempIndex++];
+
+	result.data = (uchar*)tempChar;
+
+	return result;
+}
+
 /************************************************************************************************************/
 // Convolutions
 
