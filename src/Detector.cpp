@@ -143,10 +143,15 @@ void Detector::acfDetect(cv::Mat image)
 
 		float *thrs = cvImage2floatArray(clf.thrs, 1);
 		float *hs = cvImage2floatArray(clf.hs, 1);
-		// needs a trasposition
-		uint32_t *fids = (uint32_t*) clf.fids.data;
-		// needs a trasposition
-		uint32_t *child = (uint32_t*) clf.child.data;
+		
+		cv::Mat tempFids;
+		cv::transpose(clf.fids, tempFids);
+		uint32_t *fids = (uint32_t*) tempFids.data;
+		
+		cv::Mat tempChild;
+		cv::transpose(clf.child, tempChild);
+		uint32_t *child = (uint32_t*) tempChild.data;
+		
 		const int treeDepth = clf.treeDepth;
 
 		// in the original file: *chnsSize = mxGetDimensions(P.data{i});
@@ -175,6 +180,29 @@ void Detector::acfDetect(cv::Mat image)
 				for (int r = 0; r<modelHt / shrink; r++)
 					cids[m++] = z*width*height + c*height + r;
 
+		/* original results:
+			shrink=4, modelHt=128, modelWd=64, stride=4, cascThr=-1.000000, treeDepth=2
+			height=152, width=186, nChns=10, nTreeNodes=7, nTrees=2048, height1=121, width1=171, nFtrs=5120
+
+			First ten elements of chns:
+			 0.022487 0.022487 0.022487 0.022487 0.022487 0.012699 0.007645 0.006215 0.003156 0.001374
+
+			First ten elements of thrs:
+			 0.190968 0.273173 0.064298 0.000000 0.000000 0.000000 0.000000 0.063845 0.083150 0.303183
+
+			First ten elements of hs:
+			 0.530309 -0.520309 0.530309 -0.520309 0.530309 -0.520309 0.530309 -0.439302 0.449302 -0.439302
+
+			First ten elements of fids:
+			 2328 2392 3271 0 0 0 0 2301 2222 2697
+
+			First ten elements of child:
+			 2 4 6 0 0 0 0 2 4 6
+
+			First ten elements of cids:
+			 0 1 2 3 4 5 6 7 8 9
+		*/
+
 		/*
 		// debug: prints values of several variables, all of these return correct results
 		// shrink=4, modelHt=128, modelWd=64, stride=4, cascThr=-1.000000, treeDepth=2
@@ -184,39 +212,12 @@ void Detector::acfDetect(cv::Mat image)
 			", width1=" << width1 << ", nFtrs=" << nFtrs << std::endl;
 		// debug */
 
-		/* original results:
-		  shrink=4, modelHt=128, modelWd=64, stride=4, cascThr=-1.000000, treeDepth=2
-		  height=152, width=186, nChns=10, nTreeNodes=7, nTrees=2048, height1=121, width1=171, nFtrs=5120
-
-
-		  First ten elements of thrs:
-		   0.190968 0.273173 0.064298 0.000000 0.000000 0.000000 0.000000 0.063845 0.083150 0.303183
-
-		  First ten elements of hs:
-		   0.530309 -0.520309 0.530309 -0.520309 0.530309 -0.520309 0.530309 -0.439302 0.449302 -0.439302
-
-		  First ten elements of fids:
-		   2328 2392 3271 0 0 0 0 2301 2222 2697
-
-		  First ten elements of child:
-		   2 4 6 0 0 0 0 2 4 6
-		*/
-
-		/*
-		First ten elements of thrs:
-		 0.19097 0.27317 0.064298 0 0 0 0 0.063845 0.08315 0.30318
-
-		First ten elements of hs:
-		 0.53031 -0.52031 0.53031 -0.52031 0.53031 -0.52031 0.53031 -0.4393 0.4493 -0.4393
-
-		First ten elements of fids:
-		 2328 2301 2412 1265 2262 1950 774 351 1802 212
-
-		First ten elements of child:
-		 2 2 2 2 2 2 2 2 2 2
-		*/
-
-
+		 
+		// debug: print input matrices
+		std::cout << std::endl << "First ten elements of chns:" << std::endl;
+		for (int j=0; j < 10; j++)
+			std::cout << " " << chns[j];
+		std::cout << std::endl;
 
 		std::cout << std::endl << "First ten elements of thrs:" << std::endl;
 		for (int j=0; j < 10; j++)
@@ -238,7 +239,13 @@ void Detector::acfDetect(cv::Mat image)
 			std::cout << " " << child[j];
 		std::cout << std::endl;
 
+		std::cout << std::endl << "First ten elements of cids:" << std::endl;
+		for (int j=0; j < 10; j++)
+			std::cout << " " << cids[j];
+		std::cout << std::endl;
+
 		std::cin.get();
+		// debug */
 
 		// debug
 		std::cout << "acfDetect, after cids" << std::endl;
@@ -249,10 +256,6 @@ void Detector::acfDetect(cv::Mat image)
 		for (c = 0; c<width1; c++) 
 			for (r = 0; r<height1; r++) 
 			{
-				// debug
-				// std::cout << "acfDetect, c=" << c << ", r=" << r << ", width1=" << width1 << ", height1=" << height1 << std::endl;
-				// segmentation fault at acfDetect, c=304, r=461, width1=680, height1=480
-
 				float h = 0, *chns1 = chns + (r*stride/shrink) + (c*stride/shrink)*height;
 				if (treeDepth == 1) 
 				{
@@ -300,7 +303,10 @@ void Detector::acfDetect(cv::Mat image)
 						h += hs[k]; if (h <= cascThr) break;
 					}
 				}
-				if (h>cascThr) { cs.push_back(c); rs.push_back(r); hs1.push_back(h); }
+				if (h>cascThr) { 
+					std::cout << "detection detection detection detection detection" << std::endl;
+					cs.push_back(c); rs.push_back(r); hs1.push_back(h); 
+				}
 			}
 			delete [] cids;
 			m=cs.size();

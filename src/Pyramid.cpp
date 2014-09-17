@@ -48,6 +48,17 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 	convertedImage = rgbConvert(I, pChns.pColor.colorSpaceType);
 	pChns.pColor.colorSpaceType = ORIG;
 
+	/*
+	// debug: testing bgr to rgb
+	cv::Mat rgbTest;
+	cv::cvtColor(convertedImage, rgbTest, CV_BGR2RGB);
+
+	cv::imshow("BGR image", convertedImage);
+	cv::imshow("RGB image", rgbTest);
+	cv::waitKey();
+	// debug */
+
+	// debug
 	std::cout << "nPerOct = " << scalesPerOctave << ", nOctUp = " << upsampledOctaves << ", minDs = (" << minImgSize[0] << "," << minImgSize[1] << 
 	"), shrink = " << pChns.shrink << ", sz = (" << convertedImage.rows << "," << convertedImage.cols << ")" <<std::endl;
 

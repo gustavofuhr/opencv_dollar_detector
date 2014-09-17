@@ -102,42 +102,6 @@ cv::Mat floatArray2cvMat(float* source, int length1, int length2, int length3)
 	Mat bigCube(3, sz, CV_8U, Scalar::all(0));
 */
 
-uint32_t* cvMat2charArray(cv::Mat source, int channels)
-{
-	uint32_t* result = (uint32_t*)malloc(source.rows*source.cols*channels*sizeof(uint32_t));
-	int resultIndex=0;
-
-	for (int channel=0; channel < channels; channel++)
-		for (int column=0; column < source.cols; column++)
-			for (int row=0; row < source.rows; row++)
-				result[resultIndex++] = source.data[column*channels + row*source.cols*channels + channel];
-
-	return result;
-}
-
-cv::Mat charArray2cvMat(uint32_t* source, int rows, int cols, int channels)
-{
-	int type;	
-	if (channels == 1)
-		type = CV_8UC1;
-	else
-		type = CV_8UC3;
-
-	cv::Mat result(rows, cols, type);
-
-	uint32_t* tempChar = (uint32_t*)malloc(rows*cols*channels*sizeof(uint32_t));
-	int tempIndex=0;
-
-	for (int channel=0; channel < channels; channel++)
-		for (int column=0; column < cols; column++)
-			for (int row=0; row < rows; row++)
-				tempChar[column*channels + row*cols*channels + channel] = source[tempIndex++];
-
-	result.data = (uchar*)tempChar;
-
-	return result;
-}
-
 /************************************************************************************************************/
 // Convolutions
 
@@ -681,28 +645,21 @@ template<class iT, class oT> void normalize( iT *I, oT *J, int n, oT nrm ) {
   for(int i=0; i<n; i++) *(J++)=(oT)*(I++)*nrm;
 }
 
-float* rgbConvertImg(float *I, int n, int d, int flag, float nrm) 
-{
-  float *J = (float*) malloc(n*(flag==0 ? (d==1?1:d/3) : d)*sizeof(float));
-  int i, n1=d*(n<1000?n/10:100); float thr = float(1.001);
-
+// Convert rgb to various colorspaces
+template<class iT, class oT>
+oT* rgbConvertImg( iT *I, int n, int d, int flag, oT nrm ) {
+  oT *J = (oT*) wrMalloc(n*(flag==0 ? (d==1?1:d/3) : d)*sizeof(oT));
+  int i, n1=d*(n<1000?n/10:100); oT thr = oT(1.001);
   if(flag>1 && nrm==1) for(i=0; i<n1; i++) if(I[i]>thr)
-  {
-  	std::cout << "before throw" <<std::endl;
-  	throw "For floats all values in I must be smaller than 1.";
-  }
-  bool useSse = n%4==0;
+    wrError("For floats all values in I must be smaller than 1.");
+  bool useSse = n%4==0 && typeid(oT)==typeid(float);
   if( flag==2 && useSse )
     for(i=0; i<d/3; i++) rgb2luv_sse(I+i*n*3,(float*)(J+i*n*3),n,(float)nrm);
   else if( (flag==0 && d==1) || flag==1 ) normalize(I,J,n*d,nrm);
   else if( flag==0 ) for(i=0; i<d/3; i++) rgb2gray(I+i*n*3,J+i*n*1,n,nrm);
   else if( flag==2 ) for(i=0; i<d/3; i++) rgb2luv(I+i*n*3,J+i*n*3,n,nrm);
   else if( flag==3 ) for(i=0; i<d/3; i++) rgb2hsv(I+i*n*3,J+i*n*3,n,nrm);
-  else
-  { 
-  	std::cout << "before throw2" <<std::endl;
-  	throw "Unknown flag.";
-  }
+  else wrError("Unknown flag.");
   return J;
 }
 
@@ -711,7 +668,7 @@ cv::Mat rgbConvert(cv::Mat source, int colorSpace)
 	cv::Mat result;
 
 	float* I = cvImage2floatArray(source, 3);
-	float* O;
+	void* O;
 
 	// flag = find(strcmpi(colorSpace,{'gray','rgb','luv','hsv','orig'}))-1;
 	int flag = colorSpace;
@@ -729,12 +686,13 @@ cv::Mat rgbConvert(cv::Mat source, int colorSpace)
 	std::cout << "before rgbConvertImg" << std::endl;
 
 	// J = (void*) rgbConvert( (float*) I, n, d, flag, 1.0 );
-	O = rgbConvertImg(I, n, d, flag, 1.0);
+	// O = rgbConvertImg(I, n, d, flag, 1.0f);
+	O = (void*) rgbConvertImg( (float*) I, n, d, flag, 1.0f );
 
 	std::cout << "after rgbConvertImg" << std::endl;
 
 
-	result = floatArray2cvImage(O, source.rows, source.cols, 3);
+	result = floatArray2cvImage((float*)O, source.rows, source.cols, 3);
 
 	return result;
 }
