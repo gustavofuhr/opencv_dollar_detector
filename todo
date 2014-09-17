@@ -1,10 +1,8 @@
-Current Total: 14
+Current Total: 12
 
 Detector.cpp:
 	acfDetect:
-		line 094: check if direct conversion actually works
-		line 098: check if the three assignments are correct
-		line 149: recalculate height width and channels of the equivalent of P.data{i}
+		line 130: test why contents of chns are different sometimes
 	nmsMax:
 		line 248: sort bounding boxes
 		line 253: add test for greediness
@@ -23,7 +21,7 @@ QuantizedGradientChannel.cpp:
 
 Pyramid.cpp:
 	computeMultiScaleChannelFeaturePyramid:
-		change literal number of channels of nChannels whenever needed
+		change literal number of channels to nChannels whenever needed
 		line 113: the whole for statement needs work, write a substitution for is=is(2:3) 
 		line 140: compute lambdas
 		line 189: fix approximated (resampled) scales of H

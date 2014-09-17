@@ -20,7 +20,6 @@ public:
 
 	void exportDetectorModel(cv::String);
 	void importDetectorModel(cv::String);
-	void getChild(float*, uint32_t*, uint32_t*,	float*, uint32_t, uint32_t&, uint32_t&);
 	void acfDetect(cv::Mat);
 	BB_Array bbNms(BB_Array bbs, int size);
 	BB_Array nmsMax (BB_Array source, int size, bool greedy);

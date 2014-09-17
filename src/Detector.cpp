@@ -49,12 +49,12 @@ void Detector::importDetectorModel(cv::String fileName)
 }
 
 //this procedure was just copied verbatim
-void Detector::getChild( float *chns1, uint32_t *cids, uint32_t *fids, float *thrs, uint32_t offset, uint32_t &k0, uint32_t &k )
+inline void getChild( float *chns1, uint32 *cids, uint32 *fids, float *thrs, uint32 offset, uint32 &k0, uint32 &k )
 {
-  	float ftr = chns1[cids[fids[k]]];
-  	k = (ftr<thrs[k]) ? 1 : 2;
-  	k0=k+=k0*2;
-	k+=offset;
+	std::cout << "k=" << k << ", fids[k]=" << fids[k] << ", cids[fids[k]]=" << cids[fids[k]] << ", chns1[cids[fids[k]]]=" << chns1[cids[fids[k]]] << ", thrs[k]=" << thrs[k] << std::endl;		
+  float ftr = chns1[cids[fids[k]]];
+  k = (ftr<thrs[k]) ? 1 : 2;
+  k0=k+=k0*2; k+=offset;
 }
 
 //bb = acfDetect1(P.data{i},Ds{j}.clf,shrink,modelDsPad(1),modelDsPad(2),opts.stride,opts.cascThr);
@@ -146,11 +146,11 @@ void Detector::acfDetect(cv::Mat image)
 		
 		cv::Mat tempFids;
 		cv::transpose(clf.fids, tempFids);
-		uint32_t *fids = (uint32_t*) tempFids.data;
+		uint32 *fids = (uint32*) tempFids.data;
 		
 		cv::Mat tempChild;
 		cv::transpose(clf.child, tempChild);
-		uint32_t *child = (uint32_t*) tempChild.data;
+		uint32 *child = (uint32*) tempChild.data;
 		
 		const int treeDepth = clf.treeDepth;
 
@@ -173,7 +173,7 @@ void Detector::acfDetect(cv::Mat image)
 
 		// construct cids array
 		int nFtrs = modelHt/shrink * modelWd/shrink * nChns;
-		uint32_t *cids = new uint32_t[nFtrs];
+		uint32 *cids = new uint32[nFtrs];
 		int m = 0;
 		for (int z = 0; z<nChns; z++)
 			for (int c = 0; c<modelWd / shrink; c++)
@@ -212,11 +212,21 @@ void Detector::acfDetect(cv::Mat image)
 			", width1=" << width1 << ", nFtrs=" << nFtrs << std::endl;
 		// debug */
 
-		 
+		
 		// debug: print input matrices
 		std::cout << std::endl << "First ten elements of chns:" << std::endl;
 		for (int j=0; j < 10; j++)
 			std::cout << " " << chns[j];
+		std::cout << std::endl;
+
+		std::cout << std::endl << "First ten elements of ch2:" << std::endl;
+		for (int j=0; j < 10; j++)
+			std::cout << " " << ch2[j];
+		std::cout << std::endl;
+
+		std::cout << std::endl << "First ten elements of ch3:" << std::endl;
+		for (int j=0; j < 10; j++)
+			std::cout << " " << ch3[j];
 		std::cout << std::endl;
 
 		std::cout << std::endl << "First ten elements of thrs:" << std::endl;
@@ -257,6 +267,12 @@ void Detector::acfDetect(cv::Mat image)
 			for (r = 0; r<height1; r++) 
 			{
 				float h = 0, *chns1 = chns + (r*stride/shrink) + (c*stride/shrink)*height;
+
+				std::cout << std::endl << "First ten elements of chns1:" << std::endl;
+				for (int j=0; j < 10; j++)
+					std::cout << " " << chns1[j];
+				std::cout << std::endl;
+
 				if (treeDepth == 1) 
 				{
 					// specialized case for treeDepth==1
@@ -271,10 +287,54 @@ void Detector::acfDetect(cv::Mat image)
 				{
 					// specialized case for treeDepth==2
 					for (int t = 0; t < nTrees; t++) {
-						uint32_t offset = t*nTreeNodes, k = offset, k0 = 0;
+						/* in the original file:
+						First ten elements of chns1: 0.022487 0.022487 0.022487 0.022487 0.022487 0.012699 0.007645 0.006215 0.003156 0.001374
+
+						offset=0, k0=0, k=0
+						k=0, fids[k]=2328, cids[fids[k]]=114328, chns1[cids[fids[k]]]=0.380177, thrs[k]=0.190968
+						offset=0, k0=2, k=2
+						k=2, fids[k]=3271, cids[fids[k]]=170551, chns1[cids[fids[k]]]=0.078499, thrs[k]=0.064298
+						offset=0, k0=6, k=6, hs[k]=0.530309, h=0.000000
+						offset=0, k0=6, k=6, hs[k]=0.530309, h=0.530309
+
+						offset=7, k0=0, k=7
+						k=7, fids[k]=2301, cids[fids[k]]=114181, chns1[cids[fids[k]]]=0.280171, thrs[k]=0.063845
+						offset=7, k0=2, k=9
+						k=9, fids[k]=2697, cids[fids[k]]=141977, chns1[cids[fids[k]]]=0.009604, thrs[k]=0.303183
+						offset=7, k0=5, k=12, hs[k]=-0.439302, h=0.530309
+						offset=7, k0=5, k=12, hs[k]=-0.439302, h=0.091007
+
+						offset=14, k0=0, k=14
+						k=14, fids[k]=2412, cids[fids[k]]=114772, chns1[cids[fids[k]]]=0.021188, thrs[k]=0.153221
+						offset=14, k0=1, k=15
+						k=15, fids[k]=4905, cids[fids[k]]=255825, chns1[cids[fids[k]]]=0.029096, thrs[k]=0.317917
+						offset=14, k0=3, k=17, hs[k]=-0.370339, h=0.091007
+						offset=14, k0=3, k=17, hs[k]=-0.370339, h=-0.279332
+
+						offset=21, k0=0, k=21
+						k=21, fids[k]=1265, cids[fids[k]]=57625, chns1[cids[fids[k]]]=0.447796, thrs[k]=0.499741
+						offset=21, k0=1, k=22
+						k=22, fids[k]=773, cids[fids[k]]=29493, chns1[cids[fids[k]]]=0.328119, thrs[k]=0.324258
+						offset=21, k0=4, k=25, hs[k]=0.413041, h=-0.279332
+						offset=21, k0=4, k=25, hs[k]=0.413041, h=0.133709
+
+						offset=28, k0=0, k=28
+						k=28, fids[k]=2262, cids[fids[k]]=114022, chns1[cids[fids[k]]]=0.432883, thrs[k]=0.177437
+						offset=28, k0=2, k=30
+						k=30, fids[k]=2287, cids[fids[k]]=114167, chns1[cids[fids[k]]]=0.177121, thrs[k]=0.302899
+						offset=28, k0=5, k=33, hs[k]=0.354781, h=0.133709
+						offset=28, k0=5, k=33, hs[k]=0.354781, h=0.488490
+						*/
+						uint32 offset = t*nTreeNodes, k = offset, k0 = 0;
+						std::cout << "offset=" << offset << ", k0=" << k0 << ", k=" << k << std::endl;
 						getChild(chns1, cids, fids, thrs, offset, k0, k);
+						std::cout << "offset=" << offset << ", k0=" << k0 << ", k=" << k << std::endl;
 						getChild(chns1, cids, fids, thrs, offset, k0, k);
-						h += hs[k]; if (h <= cascThr) break;
+						std::cout << "offset=" << offset << ", k0=" << k0 << ", k=" << k << ", hs[k]=" << hs[k] << ", h=" << h << std::endl;
+						h += hs[k]; 
+						std::cout << "offset=" << offset << ", k0=" << k0 << ", k=" << k << ", hs[k]=" << hs[k] << ", h=" << h << std::endl;
+						std::cin.get();
+						if (h <= cascThr) break;
 					}
 				}
 				else if (treeDepth>2) 
@@ -304,12 +364,15 @@ void Detector::acfDetect(cv::Mat image)
 					}
 				}
 				if (h>cascThr) { 
-					std::cout << "detection detection detection detection detection" << std::endl;
+					std::cout << "detection! h=" << h << ", cascThr=" << cascThr << std::endl;
+					std::cin.get();
 					cs.push_back(c); rs.push_back(r); hs1.push_back(h); 
 				}
 			}
 			delete [] cids;
 			m=cs.size();
+
+			std::cin.get();
 
 			// debug
 			std::cout << "acfDetect, after loop" << std::endl;

@@ -13,7 +13,8 @@ typedef unsigned int uint32;
 
 inline void getChild( float *chns1, uint32 *cids, uint32 *fids,
   float *thrs, uint32 offset, uint32 &k0, uint32 &k )
-{
+{ 
+  mexPrintf("k=%d, fids[k]=%d, cids[fids[k]]=%d, chns1[cids[fids[k]]]=%f, thrs[k]=%f\n", k, fids[k], cids[fids[k]], chns1[cids[fids[k]]], thrs[k]);
   float ftr = chns1[cids[fids[k]]];
   k = (ftr<thrs[k]) ? 1 : 2;
   k0=k+=k0*2; k+=offset;
@@ -62,6 +63,12 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
   vector<int> rs, cs; vector<float> hs1;
   for( int c=0; c<width1; c++ ) for( int r=0; r<height1; r++ ) {
     float h=0, *chns1=chns+(r*stride/shrink) + (c*stride/shrink)*height;
+
+      mexPrintf("First ten elements of chns1:");
+      for (int i=0; i < 10; i++)
+        mexPrintf(" %f", chns1[i]);
+      mexPrintf("\n");
+
     if( treeDepth==1 ) {
       // specialized case for treeDepth==1
       for( int t = 0; t < nTrees; t++ ) {
@@ -73,9 +80,15 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
       // specialized case for treeDepth==2
       for( int t = 0; t < nTrees; t++ ) {
         uint32 offset=t*nTreeNodes, k=offset, k0=0;
+        mexPrintf("\noffset=%d, k0=%d, k=%d\n", offset, k0, k);
         getChild(chns1,cids,fids,thrs,offset,k0,k);
+        mexPrintf("offset=%d, k0=%d, k=%d\n", offset, k0, k);
         getChild(chns1,cids,fids,thrs,offset,k0,k);
-        h += hs[k]; if( h<=cascThr ) break;
+        mexPrintf("offset=%d, k0=%d, k=%d, hs[k]=%f, h=%f\n", offset, k0, k, hs[k], h);
+        h += hs[k]; 
+        mexPrintf("offset=%d, k0=%d, k=%d, hs[k]=%f, h=%f\n", offset, k0, k, hs[k], h);
+        mexCallMATLAB(0, NULL, 0, NULL, "pause");
+        if( h<=cascThr ) break;
       }
     } else if( treeDepth>2) {
       // specialized case for treeDepth>2
@@ -98,7 +111,7 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
       }
     }
     if(h>cascThr) { 
-      mexPrintf("detection!\n");
+      mexPrintf("detection! h=%f, cascThr=%f\n", h, cascThr);
       cs.push_back(c); rs.push_back(r); hs1.push_back(h); 
     }
   }

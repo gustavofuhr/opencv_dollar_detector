@@ -46,6 +46,11 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
   mexPrintf("shrink=%d, modelHt=%d, modelWd=%d, stride=%d, cascThr=%f, treeDepth=%d\n", shrink, modelHt, modelWd, stride, cascThr, treeDepth);
   mexPrintf("height=%d, width=%d, nChns=%d, nTreeNodes=%d, nTrees=%d, height1=%d, width1=%d, nFtrs=%d\n\n", height, width, nChns, nTreeNodes, nTrees, height1, width1, nFtrs);
 
+  mexPrintf("\nFirst ten elements of chns:\n");
+  for (int i=0; i < 10; i++)
+    mexPrintf(" %f", chns[i]);
+  mexPrintf("\n");
+
   mexPrintf("\nFirst ten elements of thrs:\n");
   for (int i=0; i < 10; i++)
     mexPrintf(" %f", thrs[i]);
@@ -64,6 +69,11 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
   mexPrintf("\nFirst ten elements of child:\n");
   for (int i=0; i < 10; i++)
     mexPrintf(" %d", child[i]);
+  mexPrintf("\n");
+
+  mexPrintf("\nFirst ten elements of cids:\n");
+  for (int i=0; i < 10; i++)
+    mexPrintf(" %d", cids[i]);
   mexPrintf("\n");
 
   /*
