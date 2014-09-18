@@ -181,7 +181,6 @@ if(~isempty(j)), info(j).pChn.colorSpace=cs; end
 pyramid = struct( 'pPyramid',pPyramid, 'nTypes',nTypes, ...
   'nScales',nScales, 'data',{data}, 'info',info, 'lambdas',lambdas, ...
   'scales',scales, 'scaleshw',scaleshw );
-
 end
 
 function [scales,scaleshw] = getScales(nPerOct,nOctUp,minDs,shrink,sz)

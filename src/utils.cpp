@@ -788,7 +788,7 @@ cv::Mat padImage(cv::Mat source, int channels, int *pad, int padSize, int type)
 
 	I = cvImage2floatArray(source, channels);
 
-	imPad(I, O, source.rows, source.cols, channels, padTop, padBottom, padLeft, padRight, type, 0.0);
+	imPad(I, O, source.rows, source.cols, channels, padTop, padBottom, padLeft, padRight, type, 0);
 
 	result = floatArray2cvImage(O, newRows, newCols, channels);
 

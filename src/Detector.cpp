@@ -51,7 +51,7 @@ void Detector::importDetectorModel(cv::String fileName)
 //this procedure was just copied verbatim
 inline void getChild( float *chns1, uint32 *cids, uint32 *fids, float *thrs, uint32 offset, uint32 &k0, uint32 &k )
 {
-	std::cout << "k=" << k << ", fids[k]=" << fids[k] << ", cids[fids[k]]=" << cids[fids[k]] << ", chns1[cids[fids[k]]]=" << chns1[cids[fids[k]]] << ", thrs[k]=" << thrs[k] << std::endl;		
+	// std::cout << "k=" << k << ", fids[k]=" << fids[k] << ", cids[fids[k]]=" << cids[fids[k]] << ", chns1[cids[fids[k]]]=" << chns1[cids[fids[k]]] << ", thrs[k]=" << thrs[k] << std::endl;		
   float ftr = chns1[cids[fids[k]]];
   k = (ftr<thrs[k]) ? 1 : 2;
   k0=k+=k0*2; k+=offset;
@@ -97,7 +97,6 @@ void Detector::acfDetect(cv::Mat image)
 		memcpy(testFloat2, ch2, ch2Size*sizeof(float));
 		cv::Mat testMat2 = floatArray2cvImage(testFloat2, opts.pPyramid.computedChannels[i].gradientMagnitude.rows, opts.pPyramid.computedChannels[i].gradientMagnitude.cols, 1);
 		cv::imshow("content of ch2", testMat2);
-		cv::waitKey();
 		// debug */
 
 		int ch3Size = opts.pPyramid.computedChannels[i].gradientHistogram[0].rows*opts.pPyramid.computedChannels[i].gradientHistogram[0].cols * opts.pPyramid.pChns.pGradHist.nChannels;
@@ -212,7 +211,7 @@ void Detector::acfDetect(cv::Mat image)
 			", width1=" << width1 << ", nFtrs=" << nFtrs << std::endl;
 		// debug */
 
-		
+		/*
 		// debug: print input matrices
 		std::cout << std::endl << "First ten elements of chns:" << std::endl;
 		for (int j=0; j < 10; j++)
@@ -268,10 +267,12 @@ void Detector::acfDetect(cv::Mat image)
 			{
 				float h = 0, *chns1 = chns + (r*stride/shrink) + (c*stride/shrink)*height;
 
+				/*
 				std::cout << std::endl << "First ten elements of chns1:" << std::endl;
 				for (int j=0; j < 10; j++)
 					std::cout << " " << chns1[j];
 				std::cout << std::endl;
+				// */
 
 				if (treeDepth == 1) 
 				{
@@ -326,14 +327,14 @@ void Detector::acfDetect(cv::Mat image)
 						offset=28, k0=5, k=33, hs[k]=0.354781, h=0.488490
 						*/
 						uint32 offset = t*nTreeNodes, k = offset, k0 = 0;
-						std::cout << "offset=" << offset << ", k0=" << k0 << ", k=" << k << std::endl;
+						// std::cout << "offset=" << offset << ", k0=" << k0 << ", k=" << k << std::endl;
 						getChild(chns1, cids, fids, thrs, offset, k0, k);
-						std::cout << "offset=" << offset << ", k0=" << k0 << ", k=" << k << std::endl;
+						// std::cout << "offset=" << offset << ", k0=" << k0 << ", k=" << k << std::endl;
 						getChild(chns1, cids, fids, thrs, offset, k0, k);
-						std::cout << "offset=" << offset << ", k0=" << k0 << ", k=" << k << ", hs[k]=" << hs[k] << ", h=" << h << std::endl;
+						// std::cout << "offset=" << offset << ", k0=" << k0 << ", k=" << k << ", hs[k]=" << hs[k] << ", h=" << h << std::endl;
 						h += hs[k]; 
-						std::cout << "offset=" << offset << ", k0=" << k0 << ", k=" << k << ", hs[k]=" << hs[k] << ", h=" << h << std::endl;
-						std::cin.get();
+						// std::cout << "offset=" << offset << ", k0=" << k0 << ", k=" << k << ", hs[k]=" << hs[k] << ", h=" << h << std::endl;
+						// std::cin.get();
 						if (h <= cascThr) break;
 					}
 				}
@@ -365,7 +366,7 @@ void Detector::acfDetect(cv::Mat image)
 				}
 				if (h>cascThr) { 
 					std::cout << "detection! h=" << h << ", cascThr=" << cascThr << std::endl;
-					std::cin.get();
+					// std::cin.get();
 					cs.push_back(c); rs.push_back(r); hs1.push_back(h); 
 				}
 			}

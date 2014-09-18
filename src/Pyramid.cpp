@@ -49,17 +49,17 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 	pChns.pColor.colorSpaceType = ORIG;
 
 
-	// debug
+	// debug: loads image converted inside matlab
 	convertedImage = cv::imread("../opencv_dollar_detector/frame0254_luv_single.png");
 	cv::cvtColor(convertedImage, convertedImage, CV_BGR2RGB);
 	convertedImage.convertTo(convertedImage, CV_32FC3, 1.0/255.0);
+	cv::cvtColor(convertedImage, convertedImage, CV_BGR2RGB);
 	// debug */
 
-	
+	/*
 	// debug: testing bgr to rgb
 	cv::Mat rgbTest;
 	cv::cvtColor(convertedImage, rgbTest, CV_BGR2RGB);
-
 	cv::imshow("BGR image", convertedImage);
 	cv::imshow("RGB image", rgbTest);
 	cv::waitKey();
@@ -161,9 +161,6 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 		//lambdas = - log2(f0./f1) / log2(scales(is(1))/scales(is(2)));
 		//this will be revisited at a later time
 	}
-	
-	// debug
-	cv::destroyAllWindows();
 
 	/*
 	% compute image pyramid [approximated scales]
@@ -269,18 +266,27 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 	//smooth channels, optionally pad and concatenate channels
 	for (int i=0; i < computedScales; i++)
 	{
+		/*
+		// debug: images before convolution
+		cv::imshow("image", computedChannels[i].image);
+		cv::imshow("gradMag", computedChannels[i].gradientMagnitude);
+		cv::imshow("gradHist", computedChannels[i].gradientHistogram[1]);
+		// debug */
+
+
 		computedChannels[i].image = convolution(computedChannels[i].image, 3, pChns.pColor.smoothingRadius, 1, CONV_TRI);		
 		computedChannels[i].gradientMagnitude = convolution(computedChannels[i].gradientMagnitude, 1, pChns.pColor.smoothingRadius, 1, CONV_TRI);
 
 		for (int j=0; j < pChns.pGradHist.nChannels; j++)
-			computedChannels[i].gradientHistogram.push_back(convolution(computedChannels[i].gradientHistogram[j], 1, pChns.pColor.smoothingRadius, 1, CONV_TRI));
+			computedChannels[i].gradientHistogram[j] = convolution(computedChannels[i].gradientHistogram[j], 1, pChns.pColor.smoothingRadius, 1, CONV_TRI);
 
 		/*
-		// debug
+		// debug: images after convolution
 		cv::imshow("conv image", computedChannels[i].image);
 		cv::imshow("conv gradMag", computedChannels[i].gradientMagnitude);
+		cv::imshow("conv gradHist", computedChannels[i].gradientHistogram[1]);
 		cv::waitKey();
-		// */	
+		// debug */	
 
 		if (pad[0]!=0 || pad[1]!=0)
 		{
