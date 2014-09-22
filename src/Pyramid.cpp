@@ -53,16 +53,7 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 	convertedImage = cv::imread("../opencv_dollar_detector/frame0254_luv_single.png");
 	cv::cvtColor(convertedImage, convertedImage, CV_BGR2RGB);
 	convertedImage.convertTo(convertedImage, CV_32FC3, 1.0/255.0);
-	cv::cvtColor(convertedImage, convertedImage, CV_BGR2RGB);
-	// debug */
-
-	/*
-	// debug: testing bgr to rgb
-	cv::Mat rgbTest;
-	cv::cvtColor(convertedImage, rgbTest, CV_BGR2RGB);
-	cv::imshow("BGR image", convertedImage);
-	cv::imshow("RGB image", rgbTest);
-	cv::waitKey();
+	//cv::cvtColor(convertedImage, convertedImage, CV_BGR2RGB);
 	// debug */
 
 	// debug
@@ -306,7 +297,7 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 
 	}
 
-	std::cout << "end of chnsPyramid" << std::endl;
+	std::cout << "end of chnsPyramid" << std::endl << std::endl;
 }
 
 //translation of the chnsCompute.m file

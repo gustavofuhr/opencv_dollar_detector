@@ -63,7 +63,6 @@ cv::Mat floatArray2cvImage(float* source, int rows, int cols, int channels)
 	return result;
 }
 
-
 // this is experimental
 float* cvMat2floatArray(cv::Mat source, int length1, int length2, int length3)
 {
@@ -788,7 +787,9 @@ cv::Mat padImage(cv::Mat source, int channels, int *pad, int padSize, int type)
 
 	I = cvImage2floatArray(source, channels);
 
-	imPad(I, O, source.rows, source.cols, channels, padTop, padBottom, padLeft, padRight, type, 0);
+	double val = (double)type;
+
+	imPad(I, O, source.rows, source.cols, channels, padTop, padBottom, padLeft, padRight, type, val);
 
 	result = floatArray2cvImage(O, newRows, newCols, channels);
 
