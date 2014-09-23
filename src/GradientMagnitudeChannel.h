@@ -8,8 +8,6 @@
 
 #define PI 3.14159265f
 
-#define COLOR_CHANNEL 1
-
 class GradientMagnitudeChannel
 {
 public:

@@ -797,3 +797,35 @@ cv::Mat padImage(cv::Mat source, int channels, int *pad, int padSize, int type)
 }
 
 /************************************************************************************************************/
+
+void printElements(float* source, cv::String name)
+{
+	std::cout << std::endl << "First ten elements of " << name << std::endl;
+	for (int j=0; j < 10; j++)
+		std::cout << j+1 << ": " << source[j] << std::endl;
+}
+
+void testFeatures(Info features, cv::String name)
+{
+	float *floatIm = cvImage2floatArray(features.image, 3);
+	float *floatMg = cvImage2floatArray(features.gradientMagnitude, 1);
+	float *floatH1 = cvImage2floatArray(features.gradientHistogram[0], 1);
+	float *floatH2 = cvImage2floatArray(features.gradientHistogram[1], 1);
+	float *floatH3 = cvImage2floatArray(features.gradientHistogram[2], 1);
+	float *floatH4 = cvImage2floatArray(features.gradientHistogram[3], 1);
+	float *floatH5 = cvImage2floatArray(features.gradientHistogram[4], 1);
+	float *floatH6 = cvImage2floatArray(features.gradientHistogram[5], 1);
+	int rows = features.image.rows;
+	int cols = features.image.cols;
+
+	printElements(floatIm, "ch 1 " + name);
+	printElements(&floatIm[rows*cols], "ch 2 " + name);
+	printElements(&floatIm[2*rows*cols], "ch 3 " + name);
+	printElements(floatMg, "ch 4 " + name);
+	printElements(floatH1, "ch 5 " + name);
+	printElements(floatH2, "ch 6 " + name);
+	printElements(floatH3, "ch 7 " + name);
+	printElements(floatH4, "ch 8 " + name);
+	printElements(floatH5, "ch 9 " + name);
+	printElements(floatH6, "ch 10 " + name);
+}

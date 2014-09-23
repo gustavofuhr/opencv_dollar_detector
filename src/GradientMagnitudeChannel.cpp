@@ -48,8 +48,8 @@ void grad1( float *I, float *Gx, float *Gy, int h, int w, int x ) {
 }
 
 // compute gradient magnitude and orientation at each location
-// gradMag(I, M, O, h, w, d, full>0 );
-void gradMag(float *I, float *M, float *O, int h, int w, int d, bool full) {
+// compute gradient magnitude and orientation at each location (uses sse)
+void gradMag( float *I, float *M, float *O, int h, int w, int d, bool full ) {
   int x, y, y1, c, h4, s; float *Gx, *Gy, *M2; __m128 *_Gx, *_Gy, *_M2, _m;
   float *acost = acosTable(), acMult=10000.0f;
   // allocate memory for storing one column of output (padded so h4%4==0)
@@ -65,8 +65,7 @@ void gradMag(float *I, float *M, float *O, int h, int w, int d, bool full) {
       for( y=0; y<h4/4; y++ ) {
         y1=h4/4*c+y;
         _M2[y1]=ADD(MUL(_Gx[y1],_Gx[y1]),MUL(_Gy[y1],_Gy[y1]));
-        if( c==0 ) continue; 
-    _m = CMPGT( _M2[y1], _M2[y] );
+        if( c==0 ) continue; _m = CMPGT( _M2[y1], _M2[y] );
         _M2[y] = OR( AND(_m,_M2[y1]), ANDNOT(_m,_M2[y]) );
         _Gx[y] = OR( AND(_m,_Gx[y1]), ANDNOT(_m,_Gx[y]) );
         _Gy[y] = OR( AND(_m,_Gy[y1]), ANDNOT(_m,_Gy[y]) );
@@ -74,7 +73,7 @@ void gradMag(float *I, float *M, float *O, int h, int w, int d, bool full) {
     }
     // compute gradient mangitude (M) and normalize Gx
     for( y=0; y<h4/4; y++ ) {
-      _m = MMIN( RCPSQRT(_M2[y]), SET(1e10f) );
+      _m = MIN( RCPSQRT(_M2[y]), SET(1e10f) );
       _M2[y] = RCP(_m);
       if(O) _Gx[y] = MUL( MUL(_Gx[y],_m), SET(acMult) );
       if(O) _Gx[y] = XOR( _Gx[y], AND(_Gy[y], SET(-0.f)) );
@@ -90,6 +89,7 @@ void gradMag(float *I, float *M, float *O, int h, int w, int d, bool full) {
       for( ; y<h; y++ ) O[y+x*h]+=(Gy[y]<0)*PI;
     }
   }
+  alFree(Gx); alFree(Gy); alFree(M2);
 }
 
 // gradMagNorm( M, S, norm ) - operates on M - see gradientMag.m
@@ -145,7 +145,6 @@ std::vector<cv::Mat> GradientMagnitudeChannel::mGradMag(cv::Mat I, int channel)
   c = (int) mxGetScalar(pr[1]); 
   full = (int) mxGetScalar(pr[2]);
   */
-
 	if (I.rows>=2 && I.cols>=2)
 	{
     float* If;
@@ -173,7 +172,7 @@ std::vector<cv::Mat> GradientMagnitudeChannel::mGradMag(cv::Mat I, int channel)
     O = (float*)malloc(h*w*sizeof(float));
 
     // debug
-    std::cout << "gradMag, before gradMag" << std::endl;
+    std::cout << "gradMag, before gradMag, h=" << h << ", w=" << w << std::endl;
 
 
     // gradMag(I, M, O, h, w, d, full>0 );

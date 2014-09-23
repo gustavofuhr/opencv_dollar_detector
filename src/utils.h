@@ -9,6 +9,11 @@
 #include <iostream>
 #include <fstream>
 
+#include "Info.h"
+
+// check if this is supposed to be 0 or 1!
+#define COLOR_CHANNEL 0
+
 typedef unsigned int uint32;
 
 enum method { CONV_BOX, CONV_TRI, CONV_11, CONV_TRI1, CONV_MAX};
@@ -27,5 +32,7 @@ cv::Mat convolution(cv::Mat source, int channels, int radius, int s, int flag);
 cv::Mat resample(cv::Mat source, int ori_h, int ori_w, int new_h, int new_w, float nrm, int channels);
 cv::Mat rgbConvert(cv::Mat, int);
 cv::Mat padImage(cv::Mat source, int channels, int *pad, int padSize, int type);
+void printElements(float* source, cv::String name);
+void testFeatures(Info features, cv::String name);
 
 #endif
