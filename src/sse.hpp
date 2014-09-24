@@ -37,8 +37,7 @@ RETf INC( __m128 &x, const __m128 y ) { return x = ADD(x,y); }
 RETf INC( float &x, const __m128 y ) { __m128 t=ADD(LD(x),y); return STR(x,t); }
 RETf DEC( __m128 &x, const __m128 y ) { return x = SUB(x,y); }
 RETf DEC( float &x, const __m128 y ) { __m128 t=SUB(LD(x),y); return STR(x,t); }
-//the nex line was altered, aparently MIN is a key-word...
-RETf MMIN( const __m128 x, const __m128 y ) { return _mm_min_ps(x,y); }
+RETf SSEMIN( const __m128 x, const __m128 y ) { return _mm_min_ps(x,y); }
 RETf RCP( const __m128 x ) { return _mm_rcp_ps(x); }
 RETf RCPSQRT( const __m128 x ) { return _mm_rsqrt_ps(x); }
 

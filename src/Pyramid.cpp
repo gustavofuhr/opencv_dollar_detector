@@ -332,9 +332,22 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 	int width =  I.cols - (I.cols % pChns.shrink);
 	result.image = cv::Mat(height, width, I.type());
 
+	// debug
+	float *If = cvImage2floatArray(I, 3);
+	printElements(If, "image before rgbConvert");
+
 	// compute color channels
 	result.image = rgbConvert(I, pChns.pColor.colorSpaceType);
+
+	// debug
+	float *If2 = cvImage2floatArray(result.image, 3);
+	printElements(If2, "image before convolution");
+
 	result.image = convolution(result.image, 3, pChns.pColor.smoothingRadius, 1, CONV_TRI);
+
+	// debug
+	float *If3 = cvImage2floatArray(result.image, 3);
+	printElements(If3, "image after convolution");
 
 	// debug
 	std::cout << "chnsCompute, after convolution" << std::endl;
@@ -356,7 +369,7 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 			gradOrientation = tempResult[1];
 
 		// debug: after gradMag
-		// gradMag is correct, orientarion is not
+		// gradMag is correct, orientarion is not, orientation matrix size is correct
 		float *fMg = cvImage2floatArray(result.gradientMagnitude, 1);
 		float *fOr = cvImage2floatArray(gradOrientation, 1);
 		printElements(fMg, "gradMag before normalization");

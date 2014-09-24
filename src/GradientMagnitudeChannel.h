@@ -1,12 +1,7 @@
 #ifndef GRADMAG_H
 #define GRADMAG_H
 
-#include "opencv.hpp"
-#include "sse.hpp"
-#include "math.h"
 #include "utils.h"
-
-#define PI 3.14159265f
 
 class GradientMagnitudeChannel
 {

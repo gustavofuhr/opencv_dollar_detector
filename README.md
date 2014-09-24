@@ -10,7 +10,7 @@ This is a work-in-progress port of the Dóllar pedestrian detector to OpenCV in 
 To Do List:
 ======================
 
-Current Total: 13
+Current Total: 14
 
 Detector.cpp:
 	acfDetect:
@@ -26,7 +26,8 @@ ColorChannel.cpp:
 	OK!
 
 GradientMagnitudeChannel.cpp:
-	OK!
+	gradMag:
+		test why Orientation matrix gives wrong results, while Magnitude matrix seems OK.
 	
 QuantizedGradientChannel.cpp:
 	OK!

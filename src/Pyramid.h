@@ -2,8 +2,6 @@
 #include "Info.h"
 #include "utils.h"
 
-//#include "opencv.hpp"
-//#include "highgui.hpp"
 #include <stdio.h>
 
 class Pyramid

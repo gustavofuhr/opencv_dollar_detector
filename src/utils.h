@@ -3,16 +3,12 @@
 
 #include "opencv.hpp"
 #include "sse.hpp"
-#include <stdio.h>
-#include <typeinfo>
-
-#include <iostream>
-#include <fstream>
 
 #include "Info.h"
 
 // check if this is supposed to be 0 or 1!
 #define COLOR_CHANNEL 0
+#define PI 3.14159265f
 
 typedef unsigned int uint32;
 

@@ -47,7 +47,6 @@ void grad1( float *I, float *Gx, float *Gy, int h, int w, int x ) {
   #undef GRADY
 }
 
-// compute gradient magnitude and orientation at each location
 // compute gradient magnitude and orientation at each location (uses sse)
 void gradMag( float *I, float *M, float *O, int h, int w, int d, bool full ) {
   int x, y, y1, c, h4, s; float *Gx, *Gy, *M2; __m128 *_Gx, *_Gy, *_M2, _m;
@@ -73,14 +72,19 @@ void gradMag( float *I, float *M, float *O, int h, int w, int d, bool full ) {
     }
     // compute gradient mangitude (M) and normalize Gx
     for( y=0; y<h4/4; y++ ) {
-      _m = MIN( RCPSQRT(_M2[y]), SET(1e10f) );
+      _m = SSEMIN( RCPSQRT(_M2[y]), SET(1e10f) );
       _M2[y] = RCP(_m);
       if(O) _Gx[y] = MUL( MUL(_Gx[y],_m), SET(acMult) );
       if(O) _Gx[y] = XOR( _Gx[y], AND(_Gy[y], SET(-0.f)) );
     };
     memcpy( M+x*h, M2, h*sizeof(float) );
     // compute and store gradient orientation (O) via table lookup
-    if( O!=0 ) for( y=0; y<h; y++ ) O[x*h+y] = acost[(int)Gx[y]];
+    if( O!=0 ) for( y=0; y<h; y++ ) 
+    {
+      O[x*h+y] = acost[(int)Gx[y]];
+      std::cout << "x=" << x << ", h=" << h << ", y=" << y << ", x*h+y=" << x*h+y << ", O[" << x*h+y << "]=" << O[x*h+y] << ", Gx[y]=" << Gx[y];
+      std::cin.get();
+    }
     if( O!=0 && full ) {
       y1=((~size_t(O+x*h)+1)&15)/4; y=0;
       for( ; y<y1; y++ ) O[y+x*h]+=(Gy[y]<0)*PI;
@@ -172,13 +176,14 @@ std::vector<cv::Mat> GradientMagnitudeChannel::mGradMag(cv::Mat I, int channel)
     O = (float*)malloc(h*w*sizeof(float));
 
     // debug
-    std::cout << "gradMag, before gradMag, h=" << h << ", w=" << w << std::endl;
+    std::cout << "gradMag, before gradMag, h=" << h << ", w=" << w << ", full=" << full << std::endl;
 
+    printElements(If, "If");
 
     // gradMag(I, M, O, h, w, d, full>0 );
 		// call to the actual function: gradMag(I, M, O, h, w, d, full>0 );
 		// void gradMag(float*, float*, float*, int, int, int, bool);
-    gradMag(If, M, O, I.rows, I.cols, 3, full>0);
+    gradMag(If, M, O, h, w, 3, full>0);
 
     // debug
     std::cout << "gradMag, after gradMag" << std::endl;
