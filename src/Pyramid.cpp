@@ -48,7 +48,7 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 	// convertedImage = rgbConvert(I, pChns.pColor.colorSpaceType);
 	pChns.pColor.colorSpaceType = ORIG;
 
-
+	
 	// debug: loads image converted inside matlab
 	convertedImage = cv::imread("../opencv_dollar_detector/frame0254_luv_single.png");
 	cv::cvtColor(convertedImage, convertedImage, CV_BGR2RGB);
@@ -330,7 +330,6 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 	//crop I so it becomes divisible by shrink
 	int height = I.rows - (I.rows % pChns.shrink);
 	int width =  I.cols - (I.cols % pChns.shrink);
-	result.image = cv::Mat(height, width, I.type());
 
 	// debug
 	float *If = cvImage2floatArray(I, 3);
@@ -338,16 +337,11 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 
 	// compute color channels
 	result.image = rgbConvert(I, pChns.pColor.colorSpaceType);
-
-	// debug
-	float *If2 = cvImage2floatArray(result.image, 3);
-	printElements(If2, "image before convolution");
-
 	result.image = convolution(result.image, 3, pChns.pColor.smoothingRadius, 1, CONV_TRI);
 
 	// debug
-	float *If3 = cvImage2floatArray(result.image, 3);
-	printElements(If3, "image after convolution");
+	float *If2 = cvImage2floatArray(result.image, 3);
+	printElements(If2, "image after convolution");
 
 	// debug
 	std::cout << "chnsCompute, after convolution" << std::endl;
@@ -368,8 +362,8 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 		if (tempResult.size() > 1)
 			gradOrientation = tempResult[1];
 
-		// debug: after gradMag
-		// gradMag is correct, orientarion is not, orientation matrix size is correct
+		/*
+		// debug: after gradMag, M has error smaller than 0.01, O is wrong
 		float *fMg = cvImage2floatArray(result.gradientMagnitude, 1);
 		float *fOr = cvImage2floatArray(gradOrientation, 1);
 		printElements(fMg, "gradMag before normalization");
@@ -386,10 +380,10 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 			int h = result.gradientMagnitude.rows;
 			int w = result.gradientMagnitude.cols;
 
+			// normalization constant is read inside the procedure
 			pChns.pGradMag.gradMagNorm(M, S, h, w);
 
-			// debug: after normalization
-			// S matrix is correct
+			// debug: after normalization, S matrix is correct, M matrix has error smaller than 0.1
 			printElements(M, "gradMag after normalization");
 			printElements(S, "S matrix");
 			std::cin.get();

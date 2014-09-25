@@ -14,11 +14,5 @@ public:
 	cv::Mat image;
 	cv::Mat gradientMagnitude;
 	std::vector<cv::Mat> gradientHistogram;
-	
-	/*
-  	ColorChannel colorCh;
-	GradientMagnitudeChannel gradMag;
-	QuantizedGradientChannel gradHist;
-	*/
 };
 #endif

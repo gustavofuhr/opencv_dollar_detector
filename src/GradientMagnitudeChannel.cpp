@@ -22,6 +22,7 @@ float* acosTable() {
   init=true; return a1;
 }
 
+/*
 // compute x and y gradients for just one column (uses sse)
 void grad1( float *I, float *Gx, float *Gy, int h, int w, int x ) {
   int y, y1; float *Ip, *In, r; __m128 *_Ip, *_In, *_G, _r;
@@ -46,6 +47,29 @@ void grad1( float *I, float *Gx, float *Gy, int h, int w, int x ) {
   for(; y<h-1; y++) GRADY(.5f); In--; GRADY(1);
   #undef GRADY
 }
+*/
+
+// compute x and y gradients for just one column (no sse)
+void grad1( float *I, float *Gx, float *Gy, int h, int w, int x ) {
+  int y, y1; float *Ip, *In, r; __m128 *_Ip, *_In, *_G, _r;
+  // compute column of Gx
+  Ip=I-h; In=I+h; r=.5f;
+  if(x==0) { r=1; Ip+=h; } else if(x==w-1) { r=1; In-=h; }
+  for( y=0; y<h; y++ ) *Gx++=(*In++-*Ip++)*r;
+  
+  // compute column of Gy
+  #define GRADY(r) *Gy++=(*In++-*Ip++)*r;
+  Ip=I; In=Ip+1;
+  // GRADY(1); Ip--; for(y=1; y<h-1; y++) GRADY(.5f); In--; GRADY(1);
+  y1=((~((size_t) Gy) + 1) & 15)/4; if(y1==0) y1=4; if(y1>h-1) y1=h-1;
+  GRADY(1); Ip--; for(y=1; y<y1; y++) GRADY(.5f);
+  _r = SET(.5f); _G=(__m128*) Gy;
+  for(; y+4<h-1; y+=4, Ip+=4, In+=4, Gy+=4)
+    *_G++=MUL(SUB(LDu(*In),LDu(*Ip)),_r);
+  for(; y<h-1; y++) GRADY(.5f); In--; GRADY(1);
+  #undef GRADY
+}
+
 
 // compute gradient magnitude and orientation at each location (uses sse)
 void gradMag( float *I, float *M, float *O, int h, int w, int d, bool full ) {
@@ -82,8 +106,10 @@ void gradMag( float *I, float *M, float *O, int h, int w, int d, bool full ) {
     if( O!=0 ) for( y=0; y<h; y++ ) 
     {
       O[x*h+y] = acost[(int)Gx[y]];
-      std::cout << "x=" << x << ", h=" << h << ", y=" << y << ", x*h+y=" << x*h+y << ", O[" << x*h+y << "]=" << O[x*h+y] << ", Gx[y]=" << Gx[y];
-      std::cin.get();
+
+      // debug
+      // std::cout << "x=" << x << ", h=" << h << ", y=" << y << ", x*h+y=" << x*h+y << ", O[" << x*h+y << "]=" << O[x*h+y] << ", Gx[y]=" << Gx[y];
+      // std::cin.get();
     }
     if( O!=0 && full ) {
       y1=((~size_t(O+x*h)+1)&15)/4; y=0;
@@ -178,7 +204,7 @@ std::vector<cv::Mat> GradientMagnitudeChannel::mGradMag(cv::Mat I, int channel)
     // debug
     std::cout << "gradMag, before gradMag, h=" << h << ", w=" << w << ", full=" << full << std::endl;
 
-    printElements(If, "If");
+    printElements(If, "If inside mGradMag");
 
     // gradMag(I, M, O, h, w, d, full>0 );
 		// call to the actual function: gradMag(I, M, O, h, w, d, full>0 );
@@ -188,14 +214,16 @@ std::vector<cv::Mat> GradientMagnitudeChannel::mGradMag(cv::Mat I, int channel)
     // debug
     std::cout << "gradMag, after gradMag" << std::endl;
 
+    printElements(M, "gradMag inside mGradMag");
+    printElements(O, "Orientation inside mGradMag");
 
 		//next, we assign the values of M and O to the matrix thats going to be returned
     cv::Mat matM;
-    matM = floatArray2cvImage(M, I.rows, I.cols, 1); // only one channel
+    matM = floatArray2cvImage(M, h, w, 1); // only one channel
     resultMatrix.push_back(matM);
     
     cv::Mat matO;
-    matO = floatArray2cvImage(O, I.rows, I.cols, 1); // only one channel
+    matO = floatArray2cvImage(O, h, w, 1); // only one channel
     resultMatrix.push_back(matO);
 	}
 	else
