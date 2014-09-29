@@ -726,11 +726,15 @@ cv::Mat padImage(cv::Mat source, int channels, int *pad, int padSize, int type)
 
 /************************************************************************************************************/
 
-void printElements(float* source, cv::String name)
+void printElements(float* source, int rows, cv::String name)
 {
-	std::cout << std::endl << "First twenty elements of " << name << std::endl;
-	for (int j=0; j < 20; j++)
-		std::cout << j+1 << ": " << source[j] << std::endl;
+	std::cout << std::endl << "First one hundred elements of " << name << std::endl;
+	for (int i=0; i < 10; i++)
+	{
+		for (int j=0; j < 10; j++)
+			std::cout << "  " << std::fixed << std::setprecision(5) << source[i+j*rows];
+		std::cout << std::endl;
+	}
 }
 
 void testFeatures(Info features, cv::String name)
@@ -746,14 +750,14 @@ void testFeatures(Info features, cv::String name)
 	int rows = features.image.rows;
 	int cols = features.image.cols;
 
-	printElements(floatIm, "ch 1 " + name);
-	printElements(&floatIm[rows*cols], "ch 2 " + name);
-	printElements(&floatIm[2*rows*cols], "ch 3 " + name);
-	printElements(floatMg, "ch 4 " + name);
-	printElements(floatH1, "ch 5 " + name);
-	printElements(floatH2, "ch 6 " + name);
-	printElements(floatH3, "ch 7 " + name);
-	printElements(floatH4, "ch 8 " + name);
-	printElements(floatH5, "ch 9 " + name);
-	printElements(floatH6, "ch 10 " + name);
+	printElements(floatIm, rows, "ch 1 " + name);
+	printElements(&floatIm[rows*cols], rows, "ch 2 " + name);
+	printElements(&floatIm[2*rows*cols], rows, "ch 3 " + name);
+	printElements(floatMg, rows, "ch 4 " + name);
+	printElements(floatH1, rows, "ch 5 " + name);
+	printElements(floatH2, rows, "ch 6 " + name);
+	printElements(floatH3, rows, "ch 7 " + name);
+	printElements(floatH4, rows, "ch 8 " + name);
+	printElements(floatH5, rows, "ch 9 " + name);
+	printElements(floatH6, rows, "ch 10 " + name);
 }

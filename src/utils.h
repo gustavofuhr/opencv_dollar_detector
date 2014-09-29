@@ -3,11 +3,11 @@
 
 #include "opencv.hpp"
 #include "sse.hpp"
+#include <iomanip>
 //#include <typeinfo> // for sse rgbConvert functions
 
 #include "Info.h"
 
-#define COLOR_CHANNEL 0
 #define PI 3.14159265f
 
 typedef unsigned int uint32;
@@ -28,7 +28,7 @@ cv::Mat convolution(cv::Mat source, int channels, int radius, int s, int flag);
 cv::Mat resample(cv::Mat source, int ori_h, int ori_w, int new_h, int new_w, float nrm, int channels);
 cv::Mat rgbConvert(cv::Mat, int);
 cv::Mat padImage(cv::Mat source, int channels, int *pad, int padSize, int type);
-void printElements(float* source, cv::String name);
+void printElements(float* source, int rows, cv::String name);
 void testFeatures(Info features, cv::String name);
 
 #endif

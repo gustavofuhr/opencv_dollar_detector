@@ -10,19 +10,7 @@ void GradientMagnitudeChannel::readGradientMagnitude(cv::FileNode gradMagNode)
   nChannels = gradMagNode["nChns"];
 }
 
-// build lookup table a[] s.t. a[x*n]~=acos(x) for x in [-1,1]
-float* acosTable() {
-  const int n=10000, b=10; int i;
-  static float a[n*2+b*2]; static bool init=false;
-  float *a1=a+n+b; if( init ) return a1;
-  for( i=-n-b; i<-n; i++ )   a1[i]=PI;
-  for( i=-n; i<n; i++ )      a1[i]=float(acos(i/float(n)));
-  for( i=n; i<n+b; i++ )     a1[i]=0;
-  for( i=-n-b; i<n/10; i++ ) if( a1[i] > PI-1e-6f ) a1[i]=PI-1e-6f;
-  init=true; return a1;
-}
 
-/*
 // compute x and y gradients for just one column (uses sse)
 void grad1( float *I, float *Gx, float *Gy, int h, int w, int x ) {
   int y, y1; float *Ip, *In, r; __m128 *_Ip, *_In, *_G, _r;
@@ -47,8 +35,9 @@ void grad1( float *I, float *Gx, float *Gy, int h, int w, int x ) {
   for(; y<h-1; y++) GRADY(.5f); In--; GRADY(1);
   #undef GRADY
 }
-*/
+// */
 
+/*
 // compute x and y gradients for just one column (no sse)
 void grad1( float *I, float *Gx, float *Gy, int h, int w, int x ) {
   int y, y1; float *Ip, *In, r; __m128 *_Ip, *_In, *_G, _r;
@@ -69,7 +58,19 @@ void grad1( float *I, float *Gx, float *Gy, int h, int w, int x ) {
   for(; y<h-1; y++) GRADY(.5f); In--; GRADY(1);
   #undef GRADY
 }
+// */
 
+// build lookup table a[] s.t. a[x*n]~=acos(x) for x in [-1,1]
+float* acosTable() {
+  const int n=10000, b=10; int i;
+  static float a[n*2+b*2]; static bool init=false;
+  float *a1=a+n+b; if( init ) return a1;
+  for( i=-n-b; i<-n; i++ )   a1[i]=PI;
+  for( i=-n; i<n; i++ )      a1[i]=float(acos(i/float(n)));
+  for( i=n; i<n+b; i++ )     a1[i]=0;
+  for( i=-n-b; i<n/10; i++ ) if( a1[i] > PI-1e-6f ) a1[i]=PI-1e-6f;
+  init=true; return a1;
+}
 
 // compute gradient magnitude and orientation at each location (uses sse)
 void gradMag( float *I, float *M, float *O, int h, int w, int d, bool full ) {
@@ -96,7 +97,7 @@ void gradMag( float *I, float *M, float *O, int h, int w, int d, bool full ) {
     }
     // compute gradient mangitude (M) and normalize Gx
     for( y=0; y<h4/4; y++ ) {
-      _m = SSEMIN( RCPSQRT(_M2[y]), SET(1e10f) );
+      _m = MIN( RCPSQRT(_M2[y]), SET(1e10f) );
       _M2[y] = RCP(_m);
       if(O) _Gx[y] = MUL( MUL(_Gx[y],_m), SET(acMult) );
       if(O) _Gx[y] = XOR( _Gx[y], AND(_Gy[y], SET(-0.f)) );
@@ -105,11 +106,9 @@ void gradMag( float *I, float *M, float *O, int h, int w, int d, bool full ) {
     // compute and store gradient orientation (O) via table lookup
     if( O!=0 ) for( y=0; y<h; y++ ) 
     {
-      O[x*h+y] = acost[(int)Gx[y]];
-
-      // debug
-      // std::cout << "x=" << x << ", h=" << h << ", y=" << y << ", x*h+y=" << x*h+y << ", O[" << x*h+y << "]=" << O[x*h+y] << ", Gx[y]=" << Gx[y];
-      // std::cin.get();
+        O[x*h+y] = acost[(int)Gx[y]];
+        //mexPrintf("x=%d, h=%d, y=%d, x*h+y=%d, O[%d]=%f, Gx[y]=%f\n",x,h,y,x*h+y,x*h+y,O[x*h+y],Gx[y]); 
+        //mexCallMATLAB(0, NULL, 0, NULL, "pause");
     }
     if( O!=0 && full ) {
       y1=((~size_t(O+x*h)+1)&15)/4; y=0;
@@ -121,6 +120,7 @@ void gradMag( float *I, float *M, float *O, int h, int w, int d, bool full ) {
   }
   alFree(Gx); alFree(Gy); alFree(M2);
 }
+
 
 // gradMagNorm( M, S, norm ) - operates on M - see gradientMag.m
 // gradientMex('gradientMagNorm',M,S,normConst);
@@ -178,15 +178,7 @@ std::vector<cv::Mat> GradientMagnitudeChannel::mGradMag(cv::Mat I, int channel)
 	if (I.rows>=2 && I.cols>=2)
 	{
     float* If;
-
-    // debug
-    std::cout << "gradMag, before cvImage2floatArray" << std::endl;
-
     If = cvImage2floatArray(I, 3);
-
-    // debug
-    std::cout << "gradMag, after cvImage2floatArray" << std::endl;
-
 
     // if( c>0 && c<=d ) { I += h*w*(c-1); d=1; }
 		if (c>0 && c<=d)
@@ -196,26 +188,28 @@ std::vector<cv::Mat> GradientMagnitudeChannel::mGradMag(cv::Mat I, int channel)
 		}
 
     // pl[0] = mxCreateMatrix3(h,w,1,mxSINGLE_CLASS,0,(void**)&M);
-    M = (float*)malloc(h*w*sizeof(float));
+    M = (float*)malloc(h*w*1*sizeof(float));
 
     // if(nl>=2) pl[1] = mxCreateMatrix3(h,w,1,mxSINGLE_CLASS,0,(void**)&O);
-    O = (float*)malloc(h*w*sizeof(float));
+    O = (float*)malloc(h*w*1*sizeof(float));
+
+    // debug: prints before gradMag, h=576, w=720, full=0, c=0, d=3
+    std::cout << "before gradMag, h=" << h << ", w=" << w << ", full=" << full << ", c=" << c << ", d=" << d << std::endl;
 
     // debug
-    std::cout << "gradMag, before gradMag, h=" << h << ", w=" << w << ", full=" << full << std::endl;
-
-    printElements(If, "If inside mGradMag");
+    printElements(If, h, "If inside mGradMag");
 
     // gradMag(I, M, O, h, w, d, full>0 );
 		// call to the actual function: gradMag(I, M, O, h, w, d, full>0 );
 		// void gradMag(float*, float*, float*, int, int, int, bool);
-    gradMag(If, M, O, h, w, 3, full>0);
+    gradMag(If, M, O, h, w, d, full>0);
 
     // debug
-    std::cout << "gradMag, after gradMag" << std::endl;
+    std::cout << "after gradMag" << std::endl;
 
-    printElements(M, "gradMag inside mGradMag");
-    printElements(O, "Orientation inside mGradMag");
+    // debug
+    printElements(M, h, "gradMag inside mGradMag");
+    printElements(O, h, "Orientation inside mGradMag");
 
 		//next, we assign the values of M and O to the matrix thats going to be returned
     cv::Mat matM;

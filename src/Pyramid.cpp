@@ -333,7 +333,7 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 
 	// debug
 	float *If = cvImage2floatArray(I, 3);
-	printElements(If, "image before rgbConvert");
+	printElements(If, I.rows, "image before rgbConvert");
 
 	// compute color channels
 	result.image = rgbConvert(I, pChns.pColor.colorSpaceType);
@@ -341,7 +341,7 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 
 	// debug
 	float *If2 = cvImage2floatArray(result.image, 3);
-	printElements(If2, "image after convolution");
+	printElements(If2, I.rows, "image after convolution");
 
 	// debug
 	std::cout << "chnsCompute, after convolution" << std::endl;
@@ -352,7 +352,7 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 
 	if (pChns.pGradHist.enabled)
 	{
-		std::vector<cv::Mat> tempResult = pChns.pGradMag.mGradMag(result.image,COLOR_CHANNEL);
+		std::vector<cv::Mat> tempResult = pChns.pGradMag.mGradMag(result.image,0);
 
 		// debug
 		std::cout << "chnsCompute, after mGradMag" << std::endl;
@@ -361,14 +361,6 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 			result.gradientMagnitude = tempResult[0];
 		if (tempResult.size() > 1)
 			gradOrientation = tempResult[1];
-
-		/*
-		// debug: after gradMag, M has error smaller than 0.01, O is wrong
-		float *fMg = cvImage2floatArray(result.gradientMagnitude, 1);
-		float *fOr = cvImage2floatArray(gradOrientation, 1);
-		printElements(fMg, "gradMag before normalization");
-		printElements(fOr, "Orientation before normalization");
-		// debug */
 
 		if (pChns.pGradMag.normalizationRadius != 0)
 		{
@@ -384,8 +376,8 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 			pChns.pGradMag.gradMagNorm(M, S, h, w);
 
 			// debug: after normalization, S matrix is correct, M matrix has error smaller than 0.1
-			printElements(M, "gradMag after normalization");
-			printElements(S, "S matrix");
+			printElements(M, h, "gradMag after normalization");
+			printElements(S, h, "S matrix");
 			std::cin.get();
 			// debug */
 
@@ -396,7 +388,7 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 	{
 		if (pChns.pGradMag.enabled)
 		{
-			result.gradientMagnitude = (pChns.pGradMag.mGradMag(result.image, COLOR_CHANNEL))[0];			
+			result.gradientMagnitude = (pChns.pGradMag.mGradMag(result.image, 0))[0];			
 
 			if (pChns.pGradMag.normalizationRadius != 0)
 			{
