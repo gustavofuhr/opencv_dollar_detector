@@ -100,7 +100,7 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 
 	// gradient and histogram channels are all wrong here
 	testFeatures(computedChannels[0], "after chnsCompute");
-	std::cin.get();
+	//std::cin.get();
 
 
 
@@ -279,7 +279,7 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 		// debug: test values inside computedChannels
 		// color channels are still correct here
 		testFeatures(computedChannels[0], "after convolution");
-		std::cin.get();
+		//std::cin.get();
 		// debug*/
 
 		/*
@@ -305,7 +305,7 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 		// debug: test values inside computedChannels
 		// all channels are correct here
 		testFeatures(computedChannels[0], "after padding");
-		std::cin.get();
+		//std::cin.get();
 		// debug*/
 
 		std::cout << "scale[" << i << "], imgSize=(" << computedChannels[i].image.rows << "," << computedChannels[i].image.cols << 
@@ -378,7 +378,7 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 			// debug: after normalization, S matrix is correct, M matrix has error smaller than 0.1
 			printElements(M, h, "gradMag after normalization");
 			printElements(S, h, "S matrix");
-			std::cin.get();
+			//std::cin.get();
 			// debug */
 
 			result.gradientMagnitude = floatArray2cvImage(M, h, w, 1); // only one channel

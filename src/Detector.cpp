@@ -51,7 +51,7 @@ void Detector::importDetectorModel(cv::String fileName)
 //this procedure was just copied verbatim
 inline void getChild( float *chns1, uint32 *cids, uint32 *fids, float *thrs, uint32 offset, uint32 &k0, uint32 &k )
 {
-  std::cout << "k=" << k << ", fids[k]=" << fids[k] << ", cids[fids[k]]=" << cids[fids[k]] << ", chns1[cids[fids[k]]]=" << chns1[cids[fids[k]]] << ", thrs[k]=" << thrs[k] << std::endl;		
+  //std::cout << "k=" << k << ", fids[k]=" << fids[k] << ", cids[fids[k]]=" << cids[fids[k]] << ", chns1[cids[fids[k]]]=" << chns1[cids[fids[k]]] << ", thrs[k]=" << thrs[k] << std::endl;		
   float ftr = chns1[cids[fids[k]]];
   k = (ftr<thrs[k]) ? 1 : 2;
   k0=k+=k0*2; k+=offset;
@@ -80,7 +80,7 @@ void Detector::acfDetect(cv::Mat image)
 		float* ch1 = cvImage2floatArray(opts.pPyramid.computedChannels[i].image, 3);
 		int ch1Size = opts.pPyramid.computedChannels[i].image.rows * opts.pPyramid.computedChannels[i].image.cols * 3;
 
-		std::cout << "rows*cols=" << opts.pPyramid.computedChannels[i].image.rows * opts.pPyramid.computedChannels[i].image.cols << std::endl;
+		// std::cout << "rows*cols=" << opts.pPyramid.computedChannels[i].image.rows * opts.pPyramid.computedChannels[i].image.cols << std::endl;
 
 		/*
 		// debug: prints "ch1Size=84816"
@@ -134,21 +134,17 @@ void Detector::acfDetect(cv::Mat image)
 
 		// float *chns = (float*) mxGetData(prhs[0]);
 		chns = (float*) malloc((ch1Size+ch2Size+ch3Size)*sizeof(float));
+
+		/*
+		// real memcpys, removed for testing
 		memcpy(chns, ch1, ch1Size);
 		memcpy(&chns[ch1Size], ch2, ch2Size);
 		memcpy(&chns[ch1Size+ch2Size], ch3, ch3Size);
+		// */
 
 		// total size: 282720
-		std::cout << "total size: " << ch1Size+ch2Size+ch3Size << std::endl;
-
-		/*
-		std::cout << std::endl << "First ten elements of chns:" << std::endl;
-		for (int j=0; j < 10; j++)
-			std::cout << " " << chns[j];
-		std::cout << std::endl << std::endl;
-		*/
+		// std::cout << "total size: " << ch1Size+ch2Size+ch3Size << std::endl;
 		
-		/*
 		// debug: read chns from file
 	  	FILE *file = fopen("chns", "rb");
 	  	if (!file)
@@ -156,29 +152,15 @@ void Detector::acfDetect(cv::Mat image)
 	  		std::cout << "not able to read file";
 	  		std::cin.get();
 	  	}
-		for(int j = 0; j < 10; j++)
+		for(int j = 0; j < ch1Size+ch2Size+ch3Size; j++)
 		{
 		    float f;
 		    fread(&f, sizeof(float), 1, file);
-		    std::cout << "f=" << f << std::endl;
-		    std::cin.get();
+		    // std::cout << "f=" << f << std::endl;
 		    chns[j] = f;
 		}
 		fclose(file);
 		// debug */
-
-		/*
-		// debug
-  		std::cout << std::endl << "First ten elements of chns:" << std::endl;
-		for (int j=0; j < 10; j++)
-			std::cout << " " << chns[j];
-		std::cout << std::endl;
-
-		std::cin.get();
-		// debug */
-
-		// debug
-		std::cout << "acfDetect, after memcpys" << std::endl;
 
 		const int shrink = opts.pPyramid.pChns.shrink;
 		const int modelHt = opts.modelDsPad[0];
@@ -225,29 +207,6 @@ void Detector::acfDetect(cv::Mat image)
 				for (int r = 0; r<modelHt / shrink; r++)
 					cids[m++] = z*width*height + c*height + r;
 
-		/* original results:
-			shrink=4, modelHt=128, modelWd=64, stride=4, cascThr=-1.000000, treeDepth=2
-			height=152, width=186, nChns=10, nTreeNodes=7, nTrees=2048, height1=121, width1=171, nFtrs=5120
-
-			First ten elements of chns:
-			 0.022487 0.022487 0.022487 0.022487 0.022487 0.012699 0.007645 0.006215 0.003156 0.001374
-
-			First ten elements of thrs:
-			 0.190968 0.273173 0.064298 0.000000 0.000000 0.000000 0.000000 0.063845 0.083150 0.303183
-
-			First ten elements of hs:
-			 0.530309 -0.520309 0.530309 -0.520309 0.530309 -0.520309 0.530309 -0.439302 0.449302 -0.439302
-
-			First ten elements of fids:
-			 2328 2392 3271 0 0 0 0 2301 2222 2697
-
-			First ten elements of child:
-			 2 4 6 0 0 0 0 2 4 6
-
-			First ten elements of cids:
-			 0 1 2 3 4 5 6 7 8 9
-		*/
-
 		/*
 		// debug: prints values of several variables, all of these return correct results
 		// shrink=4, modelHt=128, modelWd=64, stride=4, cascThr=-1.000000, treeDepth=2
@@ -260,31 +219,14 @@ void Detector::acfDetect(cv::Mat image)
 
 		// size of one image: 28272
 		
+		/*
 		// debug: print input matrices
-		std::cout << std::endl << "First ten elements of image:" << std::endl;
-		for (int j=0; j < 10; j++)
-			std::cout << " " << opts.pPyramid.computedChannels[i].image.at<float>(j, 0);
-		std::cout << std::endl;
+		int rows = opts.pPyramid.computedChannels[i].image.rows;
 
-		std::cout << std::endl << "First ten elements of channel 1:" << std::endl;
-		for (int j=0; j < 10; j++)
-			std::cout << " " << chns[j];
-		std::cout << std::endl;
-
-		std::cout << std::endl << "First ten elements of channel 2:" << std::endl;
-		for (int j=28272; j < 28272+10; j++)
-			std::cout << " " << chns[j];
-		std::cout << std::endl;
-
-		std::cout << std::endl << "First ten elements of channel 3:" << std::endl;
-		for (int j=28272*2; j < (28272*2)+10; j++)
-			std::cout << " " << chns[j];
-		std::cout << std::endl;
-
-		std::cout << std::endl << "First ten elements of channel 4:" << std::endl;
-		for (int j=28272*3; j < (28272*3)+10; j++)
-			std::cout << " " << chns[j];
-		std::cout << std::endl;
+		printElements(chns, rows, "channel 0");
+		printElements(&chns[28272], rows, "channel 1");
+		printElements(&chns[28272*2], rows, "channel 2");
+		printElements(&chns[28272*3], rows, "channel 3");
 
 		std::cout << std::endl << "First ten elements of thrs:" << std::endl;
 		for (int j=0; j < 10; j++)
@@ -314,16 +256,13 @@ void Detector::acfDetect(cv::Mat image)
 		std::cin.get();
 		// debug */
 
-		// debug
-		std::cout << "acfDetect, after cids" << std::endl << std::endl;
-
 		// apply classifier to each patch
 		std::vector<int> rs, cs; std::vector<float> hs1;
 		int c, r;
 		for (c = 0; c<width1; c++) 
 			for (r = 0; r<height1; r++) 
 			{
-				float h = 0, *chns1 = chns + (r*stride/shrink) + (c*stride/shrink)*height;
+				float h = 0.0, *chns1 = chns + (r*stride/shrink) + (c*stride/shrink)*height;
 
 				/*
 				// debug
@@ -396,14 +335,14 @@ void Detector::acfDetect(cv::Mat image)
 						offset=35, k0=5, k=40, hs[k]=-0.351664, h=0.136826
 						*/
 						uint32 offset = t*nTreeNodes, k = offset, k0 = 0;
-						std::cout << "offset=" << offset << ", k0=" << k0 << ", k=" << k << std::endl;
+						//std::cout << "offset=" << offset << ", k0=" << k0 << ", k=" << k << std::endl;
 						getChild(chns1, cids, fids, thrs, offset, k0, k);
-						std::cout << "offset=" << offset << ", k0=" << k0 << ", k=" << k << std::endl;
+						//std::cout << "offset=" << offset << ", k0=" << k0 << ", k=" << k << std::endl;
 						getChild(chns1, cids, fids, thrs, offset, k0, k);
-						std::cout << "offset=" << offset << ", k0=" << k0 << ", k=" << k << ", hs[k]=" << hs[k] << ", h=" << h << std::endl;
+						//std::cout << "offset=" << offset << ", k0=" << k0 << ", k=" << k << ", hs[k]=" << hs[k] << ", h=" << h << std::endl;
 						h += hs[k]; 
-						std::cout << "offset=" << offset << ", k0=" << k0 << ", k=" << k << ", hs[k]=" << hs[k] << ", h=" << h << std::endl;
-						std::cin.get();
+						//std::cout << "offset=" << offset << ", k0=" << k0 << ", k=" << k << ", hs[k]=" << hs[k] << ", h=" << h << std::endl;
+						//std::cin.get();
 						if (h <= cascThr) break;
 					}
 				}
@@ -442,10 +381,10 @@ void Detector::acfDetect(cv::Mat image)
 			delete [] cids;
 			m=cs.size();
 
-			std::cin.get();
+			// std::cin.get();
 
 			// debug
-			std::cout << "acfDetect, after loop" << std::endl;
+			// std::cout << "acfDetect, after loop" << std::endl;
 
 			double shift[2];
 			shift[0] = (modelHt-opts.modelDs[0])/2-opts.pPyramid.pad[0];
@@ -464,7 +403,7 @@ void Detector::acfDetect(cv::Mat image)
 				bb.score = hs1[j];
 				bbs.push_back(bb);
 				totalDetections++;
-				std::cout << "a boundingBox was added, totalDetections: " << totalDetections << std::endl;
+				// std::cout << "a boundingBox was added, totalDetections: " << totalDetections << std::endl;
 			}
 
 			bbs = bbNms(bbs, m);
@@ -472,7 +411,7 @@ void Detector::acfDetect(cv::Mat image)
 			detections.push_back(bbs);
 
 			// debug
-			std::cout << "acfDetect, end of loop, i=" << i << ", computedScales=" << opts.pPyramid.computedScales << std::endl;
+			// std::cout << "acfDetect, end of loop, i=" << i << ", computedScales=" << opts.pPyramid.computedScales << std::endl;
 
 	}
 }

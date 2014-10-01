@@ -3,8 +3,6 @@
 
 #include "utils.h"
 
-#define PI 3.14159265f
-
 class QuantizedGradientChannel
 {
 public:
