@@ -273,9 +273,6 @@ std::vector<cv::Mat> QuantizedGradientChannel::mGradHist(cv::Mat gradMag, cv::Ma
   //pl[0] = mxCreateMatrix3(hb,wb,nChns,mxSINGLE_CLASS,1,(void**)&H);
   H = (float*)calloc(hb*wb*nChannels, sizeof(float));
 
-  // debug
-  std::cout << "resulting H will have size=[" << hb << ", " << wb << ", " << nChannels << "], binsize=" << binSize << ", h=" << h << ", w=" << w << std::endl;
-
   /*
   // debug
   // these tests provide correct results

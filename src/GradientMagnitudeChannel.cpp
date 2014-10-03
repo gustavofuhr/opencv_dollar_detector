@@ -48,9 +48,11 @@ void grad1( float *I, float *Gx, float *Gy, int h, int w, int x ) {
   {
     *Gx++=(*In++-*Ip++)*r;
 
+    /*
     // debug
     if (y < 20 && x==0)
       std::cout << "y=" << y << ", r=" << r << ", In=" << *(In-1) << ", Ip=" << *(Ip-1) << ", Gx=" << *(Gx-1) << std::endl;
+    // */
   }
   
   // compute column of Gy
@@ -84,11 +86,13 @@ void gradMag( float *I, float *M, float *O, int h, int w, int d, bool full ) {
   int x, y, y1, c, h4, s; float *Gx, *Gy, *M2, m; __m128 *_Gx, *_Gy, *_M2, _m;
   float *acost = acosTable(), acMult=10000.0f;
 
+  /*
   // debug: values of acost seem to be correct
   std::cout << std::endl << "Printing first twenty elements of acost:" << std::endl;
   for (int i=0; i < 20; i++)
     std::cout << i << ":  " << acost[i] << std::endl;
   std::cout << std::endl;
+  // */
  
   // allocate memory for storing one column of output (padded so h4%4==0)
   h4=(h%4==0) ? h : h-(h%4)+4; s=d*h4*sizeof(float);
@@ -101,11 +105,13 @@ void gradMag( float *I, float *M, float *O, int h, int w, int d, bool full ) {
     for(c=0; c<d; c++) {
       grad1( I+x*h+c*w*h, Gx+c*h4, Gy+c*h4, h, w, x );
 
+      /*
       // debug
       std::cout << std::endl << "Printing first twenty elements of Gx after grad1 in channel " << c << ":" << std::endl;
       for (int i=0; i < 20; i++)
         std::cout << i << ":  " << Gx[i] << std::endl;
       std::cout << std::endl;
+      // */
 
       for( y=0; y<h4/4; y++ ) {
         y1=h4/4*c+y;
@@ -130,11 +136,13 @@ void gradMag( float *I, float *M, float *O, int h, int w, int d, bool full ) {
       }
       // */
 
+      /*
       // debug
       std::cout << std::endl << "Printing first twenty elements of Gx after for in channel " << c << ":" << std::endl;
       for (int i=0; i < 20; i++)
         std::cout << i << ":  " << Gx[i] << std::endl;
       std::cout << std::endl;
+      // */
     }
 
     // compute gradient mangitude (M) and normalize Gx
@@ -145,11 +153,13 @@ void gradMag( float *I, float *M, float *O, int h, int w, int d, bool full ) {
       if(O) _Gx[y] = XOR( _Gx[y], AND(_Gy[y], SET(-0.f)) );
     };
 
+    /*
     // debug
     std::cout << std::endl << "Printing first twenty elements of Gx after normalization:" << std::endl;
     for (int i=0; i < 20; i++)
       std::cout << i << ":  " << Gx[i] << std::endl;
     std::cout << std::endl;
+    // */
 
     memcpy( M+x*h, M2, h*sizeof(float) );
     // compute and store gradient orientation (O) via table lookup
@@ -247,10 +257,10 @@ std::vector<cv::Mat> GradientMagnitudeChannel::mGradMag(cv::Mat I, int channel)
     O = (float*)malloc(h*w*1*sizeof(float));
 
     // debug: prints before gradMag, h=576, w=720, full=0, c=0, d=3
-    std::cout << "before gradMag, h=" << h << ", w=" << w << ", full=" << full << ", c=" << c << ", d=" << d << std::endl;
+    // std::cout << "before gradMag, h=" << h << ", w=" << w << ", full=" << full << ", c=" << c << ", d=" << d << std::endl;
 
     // debug
-    printElements(If, h, "If inside mGradMag");
+    // printElements(If, h, "If inside mGradMag");
 
     // gradMag(I, M, O, h, w, d, full>0 );
 		// call to the actual function: gradMag(I, M, O, h, w, d, full>0 );
@@ -258,11 +268,13 @@ std::vector<cv::Mat> GradientMagnitudeChannel::mGradMag(cv::Mat I, int channel)
     gradMag(If, M, O, h, w, d, full>0);
 
     // debug
-    std::cout << "after gradMag" << std::endl;
+    // std::cout << "after gradMag" << std::endl;
 
     // debug
-    printElements(M, h, "gradMag inside mGradMag");
-    printElements(O, h, "Orientation inside mGradMag");
+    // printElements(M, h, "gradMag inside mGradMag");
+    // printElements(O, h, "Orientation inside mGradMag");
+
+    // std::cin.get();
 
 		//next, we assign the values of M and O to the matrix thats going to be returned
     cv::Mat matM;

@@ -63,44 +63,6 @@ cv::Mat floatArray2cvImage(float* source, int rows, int cols, int channels)
 	return result;
 }
 
-// this is experimental
-float* cvMat2floatArray(cv::Mat source, int length1, int length2, int length3)
-{
-	float* result = (float*)malloc(length1*length2*length3*sizeof(float));
-	float* tempFloat = (float*)source.data;
-	int resultIndex=0;
-
-	for (int i=0; i < length3; i++)
-		for (int j=0; j < length2; j++)
-			for (int k=0; k < length1; k++)
-				result[resultIndex++] = tempFloat[i*length2*length1 + j*length1 + k];
-
-	return result;
-}
-
-cv::Mat floatArray2cvMat(float* source, int length1, int length2, int length3)
-{
-	int size[3] = {length1, length2, length3};
-	cv::Mat result(3, size, CV_32F, cv::Scalar::all(0));
-
-	float* tempFloat = (float*)malloc(length1*length2*length3*sizeof(float));
-	int tempIndex=0;
-
-	for (int i=0; i < length3; i++)
-		for (int j=0; j < length2; j++)
-			for (int k=0; k < length1; k++)
-				tempFloat[i*length2*length1 + j*length1 + k] = source[tempIndex++];
-
-	result.data = (uchar*)tempFloat;
-
-	return result;
-}
-/*
-	// create a 100x100x100 8-bit array
-	int sz[] = {100, 100, 100};
-	Mat bigCube(3, sz, CV_8U, Scalar::all(0));
-*/
-
 /************************************************************************************************************/
 // Convolutions
 
@@ -610,13 +572,13 @@ cv::Mat rgbConvert(cv::Mat source, int colorSpace)
 	// nDims = mxGetNumberOfDimensions(pr[0]); d=(nDims==2) ? 1 : dims[2];
 	int d = 3;
 
-	std::cout << "before rgbConvertImg" << std::endl;
+	// std::cout << "before rgbConvertImg" << std::endl;
 
 	// J = (void*) rgbConvert( (float*) I, n, d, flag, 1.0 );
 	// O = rgbConvertImg(I, n, d, flag, 1.0f);
 	O = (void*) rgbConvertImg( (float*) I, n, d, flag, 1.0f );
 
-	std::cout << "after rgbConvertImg" << std::endl;
+	//std::cout << "after rgbConvertImg" << std::endl;
 
 
 	result = floatArray2cvImage((float*)O, source.rows, source.cols, 3);

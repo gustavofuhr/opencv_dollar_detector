@@ -10,11 +10,11 @@ This is a work-in-progress port of the Dóllar pedestrian detector to OpenCV in 
 To Do List:
 ======================
 
-Current Total: 14
+Current Total: 13
 
 Detector.cpp:
 	acfDetect:
-		line 130: test why contents of chns are different sometimes
+		separate detection in a scale to a single function
 	nmsMax:
 		line 248: sort bounding boxes
 		line 253: add test for greediness
@@ -34,7 +34,6 @@ QuantizedGradientChannel.cpp:
 
 Pyramid.cpp:
 	computeMultiScaleChannelFeaturePyramid:
-		investigate why convolution is not blurring images the same way as matlab is
 		change literal number of channels to nChannels whenever needed
 		line 113: the whole for statement needs work, write a substitution for is=is(2:3) 
 		line 140: compute lambdas

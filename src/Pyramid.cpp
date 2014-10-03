@@ -45,10 +45,10 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 
 	// convert I to appropriate color space (or simply normalize)
 	// I=rgbConvert(I,cs); pChns.pColor.colorSpace='orig';
-	// convertedImage = rgbConvert(I, pChns.pColor.colorSpaceType);
+	convertedImage = rgbConvert(I, pChns.pColor.colorSpaceType);
 	pChns.pColor.colorSpaceType = ORIG;
 
-	
+	/*
 	// debug: loads image converted inside matlab
 	convertedImage = cv::imread("../opencv_dollar_detector/frame0254_luv_single.png");
 	cv::cvtColor(convertedImage, convertedImage, CV_BGR2RGB);
@@ -56,10 +56,12 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 	//cv::cvtColor(convertedImage, convertedImage, CV_BGR2RGB);
 	// debug */
 
+	/*
 	// debug
 	std::cout << "nPerOct = " << scalesPerOctave << ", nOctUp = " << upsampledOctaves << ", minDs = (" << minImgSize[0] << "," << minImgSize[1] << 
 	"), shrink = " << pChns.shrink << ", sz = (" << convertedImage.rows << "," << convertedImage.cols << ")" <<std::endl;
-
+	// debug */
+	
 	/*
 	nPerOct = 8, nOctUp = 0, minDs = (100,41), shrink = 4, sz = (576,720)
 	*/
@@ -83,7 +85,8 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 		h1 = round(I.rows*scales[i]/pChns.shrink)*pChns.shrink;
 		w1 = round(I.cols*scales[i]/pChns.shrink)*pChns.shrink;
 
-		std::cout << std::endl << "now computing scales[" << i << "] = " << scales[i] << ", shrink=" << pChns.shrink << ", h1=" << h1 << ", w1=" << w1 << std::endl;
+		// debug
+		// std::cout << std::endl << "now computing scales[" << i << "] = " << scales[i] << ", shrink=" << pChns.shrink << ", h1=" << h1 << ", w1=" << w1 << std::endl;
 
 		if (h1 == I.rows && w1 == I.cols)
 			I1 = convertedImage;
@@ -99,7 +102,7 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 	numberOfRealScales = i;
 
 	// gradient and histogram channels are all wrong here
-	testFeatures(computedChannels[0], "after chnsCompute");
+	// testFeatures(computedChannels[0], "after chnsCompute");
 	//std::cin.get();
 
 
@@ -187,7 +190,7 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 			}
 
 			// debug
-			std::cout << std::endl << "approximating, i=" << i << ", scales[iR]=" << scales[iR] << ", iR=" << iR << ", h1=" << h1 << ", w1=" << w1 << std::endl;
+			// std::cout << std::endl << "approximating, i=" << i << ", scales[iR]=" << scales[iR] << ", iR=" << iR << ", h1=" << h1 << ", w1=" << w1 << std::endl;
 
 			ratio[0] = pow(scales[i]/scales[iR],-lambdas[0]);
 			computedChannels[i].image = resample(computedChannels[iR].image, computedChannels[iR].image.rows, computedChannels[iR].image.cols, h1, w1, ratio[0], 3);
@@ -203,9 +206,11 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 				int w = computedChannels[iR].gradientHistogram[k].cols;
 				computedChannels[i].gradientHistogram.push_back(resample(computedChannels[iR].gradientHistogram[k], h, w, h1, w1, ratio[2], 1));
 
+				/*
 				// debug 
 				std::cout << "approx gradHist for scale[" << i << "], rows=" << h << ", cols=" 
 				<< w << ", type=" << computedChannels[i].gradientHistogram[k].type() << ", ratio=" << ratio[2] << std::endl;
+				// debug */
 			}
 
 			/*
@@ -239,10 +244,10 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 			// */
 
 			// debug
-			cv::waitKey();
+			// cv::waitKey();
 			
 			// debug
-			std::cout << "end of i=" << i << ", scales[iR]=" << scales[iR] << ", iR=" << iR << ", h1=" << h1 << ", w1=" << w1 << std::endl;
+			// std::cout << "end of i=" << i << ", scales[iR]=" << scales[iR] << ", iR=" << iR << ", h1=" << h1 << ", w1=" << w1 << std::endl;
 		}
 	}
 
@@ -278,7 +283,7 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 
 		// debug: test values inside computedChannels
 		// color channels are still correct here
-		testFeatures(computedChannels[0], "after convolution");
+		// testFeatures(computedChannels[0], "after convolution");
 		//std::cin.get();
 		// debug*/
 
@@ -303,18 +308,18 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 		}
 
 		// debug: test values inside computedChannels
-		// all channels are correct here
-		testFeatures(computedChannels[0], "after padding");
+		// testFeatures(computedChannels[0], "after padding");
 		//std::cin.get();
 		// debug*/
 
+		/*
+		// debug 
 		std::cout << "scale[" << i << "], imgSize=(" << computedChannels[i].image.rows << "," << computedChannels[i].image.cols << 
 			"), magSize=(" << computedChannels[i].gradientMagnitude.rows << "," << computedChannels[i].gradientMagnitude.cols << 
-			"), hisSize=(" << computedChannels[i].gradientHistogram[0].rows << "," << computedChannels[i].gradientHistogram[0].cols << std::endl;
+			"), hisSize=(" << computedChannels[i].gradientHistogram[0].rows << "," << computedChannels[i].gradientHistogram[0].cols << ")" << std::endl;
+		// debug */
 
 	}
-
-	std::cout << "end of chnsPyramid" << std::endl << std::endl;
 }
 
 //translation of the chnsCompute.m file
@@ -331,20 +336,21 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 	int height = I.rows - (I.rows % pChns.shrink);
 	int width =  I.cols - (I.cols % pChns.shrink);
 
+	/*
 	// debug
 	float *If = cvImage2floatArray(I, 3);
 	printElements(If, I.rows, "image before rgbConvert");
+	// debug */
 
 	// compute color channels
 	result.image = rgbConvert(I, pChns.pColor.colorSpaceType);
 	result.image = convolution(result.image, 3, pChns.pColor.smoothingRadius, 1, CONV_TRI);
 
+	/*
 	// debug
 	float *If2 = cvImage2floatArray(result.image, 3);
 	printElements(If2, I.rows, "image after convolution");
-
-	// debug
-	std::cout << "chnsCompute, after convolution" << std::endl;
+	// debug */
 
 	// h=h/shrink; w=w/shrink;
 	height = height/pChns.shrink;
@@ -353,9 +359,6 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 	if (pChns.pGradHist.enabled)
 	{
 		std::vector<cv::Mat> tempResult = pChns.pGradMag.mGradMag(result.image,0);
-
-		// debug
-		std::cout << "chnsCompute, after mGradMag" << std::endl;
 
 		if (tempResult.size() > 0)
 			result.gradientMagnitude = tempResult[0];
@@ -375,6 +378,7 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 			// normalization constant is read inside the procedure
 			pChns.pGradMag.gradMagNorm(M, S, h, w);
 
+			/*
 			// debug: after normalization, S matrix is correct, M matrix has error smaller than 0.1
 			printElements(M, h, "gradMag after normalization");
 			printElements(S, h, "S matrix");
@@ -413,9 +417,6 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 		for (int i=0; i < pChns.pGradHist.nChannels; i++)
 			result.gradientHistogram[i] = resample(result.gradientHistogram[i], result.gradientHistogram[i].rows, result.gradientHistogram[i].cols, height, width, 1.0, 1);
 	}	
-
-	// debug
-	std::cout << "chnsCompute, after gradHist" << std::endl;
 
 	// if(p.enabled), chns=addChn(chns,I,nm,p,'replicate',h,w); end
 	if (pChns.pColor.enabled)

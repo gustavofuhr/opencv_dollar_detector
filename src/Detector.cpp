@@ -48,10 +48,11 @@ void Detector::importDetectorModel(cv::String fileName)
 	}
 }
 
+//std::cout << "k=" << k << ", fids[k]=" << fids[k] << ", cids[fids[k]]=" << cids[fids[k]] << ", chns1[cids[fids[k]]]=" << chns1[cids[fids[k]]] << ", thrs[k]=" << thrs[k] << std::endl;
+
 //this procedure was just copied verbatim
-inline void getChild( float *chns1, uint32 *cids, uint32 *fids, float *thrs, uint32 offset, uint32 &k0, uint32 &k )
+inline void getChild(float *chns1, uint32 *cids, uint32 *fids, float *thrs, uint32 offset, uint32 &k0, uint32 &k)
 {
-  //std::cout << "k=" << k << ", fids[k]=" << fids[k] << ", cids[fids[k]]=" << cids[fids[k]] << ", chns1[cids[fids[k]]]=" << chns1[cids[fids[k]]] << ", thrs[k]=" << thrs[k] << std::endl;		
   float ftr = chns1[cids[fids[k]]];
   k = (ftr<thrs[k]) ? 1 : 2;
   k0=k+=k0*2; k+=offset;
@@ -68,6 +69,33 @@ void Detector::acfDetect(cv::Mat image)
 
 	// compute feature pyramid
 	opts.pPyramid.computeMultiScaleChannelFeaturePyramid(I);
+
+	const int shrink = opts.pPyramid.pChns.shrink;
+	const int modelHt = opts.modelDsPad[0];
+	const int modelWd = opts.modelDsPad[1];
+	const int stride = opts.stride;
+	const float cascThr = opts.cascadeThreshold;
+
+	float *thrs = cvImage2floatArray(clf.thrs, 1);
+	float *hs = cvImage2floatArray(clf.hs, 1);
+	
+	cv::Mat tempFids;
+	cv::transpose(clf.fids, tempFids);
+	uint32 *fids = (uint32*) tempFids.data;
+	
+	cv::Mat tempChild;
+	cv::transpose(clf.child, tempChild);
+	uint32 *child = (uint32*) tempChild.data;
+
+	// const mwSize *fidsSize = mxGetDimensions(mxGetField(trees,0,"fids"));
+	// const int nTreeNodes = (int) fidsSize[0];
+ 	// const int nTrees = (int) fidsSize[1];
+	const int nTreeNodes = clf.fids.rows;
+	const int nTrees = clf.fids.cols;
+	
+	const int treeDepth = clf.treeDepth;
+	const int nChns = opts.pPyramid.pChns.pColor.nChannels + opts.pPyramid.pChns.pGradMag.nChannels + opts.pPyramid.pChns.pGradHist.nChannels; 
+
 
 	// this became a simple loop because we will apply just one detector here, 
 	// to apply multiple detector models you need to create multiple Detector objects. 
@@ -87,7 +115,7 @@ void Detector::acfDetect(cv::Mat image)
 		std::cout << "ch1Size=" << ch1Size << std::endl;
 		// debug */
 
-		/*
+		
 		// debug: test contents of ch1
 		float* testFloat = (float*)malloc(ch1Size*sizeof(float));
 		memcpy(testFloat, ch1, ch1Size*sizeof(float));
@@ -98,7 +126,7 @@ void Detector::acfDetect(cv::Mat image)
 		float* ch2 = cvImage2floatArray(opts.pPyramid.computedChannels[i].gradientMagnitude, 1);
 		int ch2Size = opts.pPyramid.computedChannels[i].gradientMagnitude.rows * opts.pPyramid.computedChannels[i].gradientMagnitude.cols;
 
-		/*
+		
 		// debug: test contents of ch2
 		float* testFloat2 = (float*)malloc(ch2Size*sizeof(float));
 		memcpy(testFloat2, ch2, ch2Size*sizeof(float));
@@ -122,7 +150,7 @@ void Detector::acfDetect(cv::Mat image)
 			cv::imshow("ch3 source", testMat4);			
 			// */
 
-			/*
+			
 			// debug: test contents of ch3
 			float* testFloat3 = (float*)malloc(rows*cols*sizeof(float));
 			memcpy(testFloat3, &ch3[j*rows*cols], rows*cols*sizeof(float));
@@ -135,7 +163,7 @@ void Detector::acfDetect(cv::Mat image)
 		// float *chns = (float*) mxGetData(prhs[0]);
 		chns = (float*) malloc((ch1Size+ch2Size+ch3Size)*sizeof(float));
 
-		/*
+		
 		// real memcpys, removed for testing
 		memcpy(chns, ch1, ch1Size);
 		memcpy(&chns[ch1Size], ch2, ch2Size);
@@ -145,6 +173,7 @@ void Detector::acfDetect(cv::Mat image)
 		// total size: 282720
 		// std::cout << "total size: " << ch1Size+ch2Size+ch3Size << std::endl;
 		
+		/*
 		// debug: read chns from file
 	  	FILE *file = fopen("chns", "rb");
 	  	if (!file)
@@ -162,57 +191,30 @@ void Detector::acfDetect(cv::Mat image)
 		fclose(file);
 		// debug */
 
-		const int shrink = opts.pPyramid.pChns.shrink;
-		const int modelHt = opts.modelDsPad[0];
-		const int modelWd = opts.modelDsPad[1];
-		const int stride = opts.stride;
-		const float cascThr = opts.cascadeThreshold;
-
-		float *thrs = cvImage2floatArray(clf.thrs, 1);
-		float *hs = cvImage2floatArray(clf.hs, 1);
-		
-		cv::Mat tempFids;
-		cv::transpose(clf.fids, tempFids);
-		uint32 *fids = (uint32*) tempFids.data;
-		
-		cv::Mat tempChild;
-		cv::transpose(clf.child, tempChild);
-		uint32 *child = (uint32*) tempChild.data;
-		
-		const int treeDepth = clf.treeDepth;
-
 		// in the original file: *chnsSize = mxGetDimensions(P.data{i});
 		// const int height = (int) chnsSize[0];
   		// const int width = (int) chnsSize[1];
   		// const int nChns = mxGetNumberOfDimensions(prhs[0])<=2 ? 1 : (int) chnsSize[2];
 		const int height = opts.pPyramid.computedChannels[i].image.rows;
 		const int width = opts.pPyramid.computedChannels[i].image.cols;
-		const int nChns = opts.pPyramid.pChns.pColor.nChannels + opts.pPyramid.pChns.pGradMag.nChannels + opts.pPyramid.pChns.pGradHist.nChannels; 
-
-		// const mwSize *fidsSize = mxGetDimensions(mxGetField(trees,0,"fids"));
-  		// const int nTreeNodes = (int) fidsSize[0];
-  	 	// const int nTrees = (int) fidsSize[1];
-		const int nTreeNodes = clf.fids.rows;
-		const int nTrees = clf.fids.cols;
 
 		const int height1 = (int)ceil(float(height*shrink-modelHt+1)/stride);
 		const int width1 = (int)ceil(float(width*shrink-modelWd+1)/stride);
 
 		// construct cids array
-		int nFtrs = modelHt/shrink * modelWd/shrink * nChns;
-		uint32 *cids = new uint32[nFtrs];
-		int m = 0;
-		for (int z = 0; z<nChns; z++)
-			for (int c = 0; c<modelWd / shrink; c++)
-				for (int r = 0; r<modelHt / shrink; r++)
-					cids[m++] = z*width*height + c*height + r;
+	  	int nFtrs = modelHt/shrink*modelWd/shrink*nChns;
+	  	uint32 *cids = new uint32[nFtrs]; int m=0;
+	  	for( int z=0; z<nChns; z++ )
+	    	for( int c=0; c<modelWd/shrink; c++ )
+	      		for( int r=0; r<modelHt/shrink; r++ )
+	        		cids[m++] = z*width*height + c*height + r;
 
 		/*
 		// debug: prints values of several variables, all of these return correct results
 		// shrink=4, modelHt=128, modelWd=64, stride=4, cascThr=-1.000000, treeDepth=2
 		// height=152, width=186, nChns=10, nTreeNodes=7, nTrees=2048, height1=121, width1=171, nFtrs=5120
 		std::cout << "shrink=" << shrink << ", modelHt=" << modelHt << ", modelWd=" << modelWd << ", stride=" << stride << ", cascThr=" << cascThr << ", treeDepth=" << treeDepth << std::endl;
-		std::cout << "height=" << height << ", width=" << width << ", nChns="<< nChns <<  ", nTreeNodes=" << nTreeNodes << ", nTrees=" << nTrees << ", height1=" << height1 << 
+		std::cout << "height=" << height << ", width=" << width << ", nChns=" << nChns <<  ", nTreeNodes=" << nTreeNodes << ", nTrees=" << nTrees << ", height1=" << height1 << 
 			", width1=" << width1 << ", nFtrs=" << nFtrs << std::endl;
 		// debug */
 
@@ -227,191 +229,121 @@ void Detector::acfDetect(cv::Mat image)
 		printElements(&chns[28272], rows, "channel 1");
 		printElements(&chns[28272*2], rows, "channel 2");
 		printElements(&chns[28272*3], rows, "channel 3");
+		printElements(&chns[28272*4], rows, "channel 4");
+		printElements(&chns[28272*5], rows, "channel 5");
+		printElements(&chns[28272*6], rows, "channel 6");
+		printElements(&chns[28272*7], rows, "channel 7");
+		printElements(&chns[28272*8], rows, "channel 8");
+		printElements(&chns[28272*9], rows, "channel 9");
 
-		std::cout << std::endl << "First ten elements of thrs:" << std::endl;
-		for (int j=0; j < 10; j++)
-			std::cout << " " << thrs[j];
-		std::cout << std::endl;
+		std::cout << std::endl << "First twenty elements of thrs:" << std::endl;
+		for (int j=0; j < 20; j++)
+			std::cout << j << ": " << thrs[j] << std::endl;
 
-		std::cout << std::endl << "First ten elements of hs:" << std::endl;
-		for (int j=0; j < 10; j++)
-			std::cout << " " << hs[j];
-		std::cout << std::endl;
+		std::cout << std::endl << "First twenty elements of hs:" << std::endl;
+		for (int j=0; j < 20; j++)
+			std::cout << j << ": " << hs[j] << std::endl;
 
-		std::cout << std::endl << "First ten elements of fids:" << std::endl;
-		for (int j=0; j < 10; j++)
-			std::cout << " " << fids[j];
-		std::cout << std::endl;
+		std::cout << std::endl << "First twenty elements of fids:" << std::endl;
+		for (int j=0; j < 20; j++)
+			std::cout << j << ": " << fids[j] << std::endl;
 
-		std::cout << std::endl << "First ten elements of child:" << std::endl;
-		for (int j=0; j < 10; j++)
-			std::cout << " " << child[j];
-		std::cout << std::endl;
+		std::cout << std::endl << "First twenty elements of child:" << std::endl;
+		for (int j=0; j < 20; j++)
+			std::cout << j << ": " << child[j] << std::endl;
 
-		std::cout << std::endl << "First ten elements of cids:" << std::endl;
-		for (int j=0; j < 10; j++)
-			std::cout << " " << cids[j];
-		std::cout << std::endl;
+		std::cout << std::endl << "First twenty elements of cids:" << std::endl;
+		for (int j=0; j < 20; j++)
+			std::cout << j << ": " << cids[j] << std::endl;
 
 		std::cin.get();
 		// debug */
 
 		// apply classifier to each patch
-		std::vector<int> rs, cs; std::vector<float> hs1;
-		int c, r;
-		for (c = 0; c<width1; c++) 
-			for (r = 0; r<height1; r++) 
-			{
-				float h = 0.0, *chns1 = chns + (r*stride/shrink) + (c*stride/shrink)*height;
+  		std::vector<int> rs, cs; std::vector<float> hs1;
+  		for( int c=0; c<width1; c++ ) 
+  		{
+  			for( int r=0; r<height1; r++ ) 
+  			{
+			    float h=0, *chns1=chns+(r*stride/shrink) + (c*stride/shrink)*height;
+			    if( treeDepth==1 ) {
+			      // specialized case for treeDepth==1
+			      for( int t = 0; t < nTrees; t++ ) {
+			        uint32 offset=t*nTreeNodes, k=offset, k0=0;
+			        getChild(chns1,cids,fids,thrs,offset,k0,k);
+			        h += hs[k]; if( h<=cascThr ) break;
+			      }
+			    } else if( treeDepth==2 ) {
+			      // specialized case for treeDepth==2
+			      for( int t = 0; t < nTrees; t++ ) {
+			        uint32 offset=t*nTreeNodes, k=offset, k0=0;
+			        getChild(chns1,cids,fids,thrs,offset,k0,k);
+			        getChild(chns1,cids,fids,thrs,offset,k0,k);
+			        h += hs[k]; if( h<=cascThr ) break;
+			      }
+			    } else if( treeDepth>2) {
+			      // specialized case for treeDepth>2
+			      for( int t = 0; t < nTrees; t++ ) {
+			        uint32 offset=t*nTreeNodes, k=offset, k0=0;
+			        for( int i=0; i<treeDepth; i++ )
+			          getChild(chns1,cids,fids,thrs,offset,k0,k);
+			        h += hs[k]; if( h<=cascThr ) break;
+			      }
+			    } else {
+			      // general case (variable tree depth)
+			      for( int t = 0; t < nTrees; t++ ) {
+			        uint32 offset=t*nTreeNodes, k=offset, k0=k;
+			        while( child[k] ) {
+			          float ftr = chns1[cids[fids[k]]];
+			          k = (ftr<thrs[k]) ? 1 : 0;
+			          k0 = k = child[k0]-k+offset;
+			        }
+			        h += hs[k]; if( h<=cascThr ) break;
+			      }
+		    }
+		    if(h>cascThr) { 
+		    	std::cout << "detection!" << std::endl;
+		    	std::cin.get();
+		    	cs.push_back(c); rs.push_back(r); hs1.push_back(h); 
+		    }
+		  }
+		}
+		delete [] cids;
+		free(chns);
+		m=cs.size();
 
-				/*
-				// debug
-				std::cout<<"r="<<r<<", c="<<c<<", stride="<<stride<<"shrink="<<shrink<<"height="<<height<<std::endl;
-				
-				std::cout << "First ten elements of chns1:" << std::endl;
-				for (int j=0; j < 10; j++)
-					std::cout << " " << chns1[j];
-				std::cout << std::endl;
-				// */
+		// std::cin.get();
 
-				if (treeDepth == 1) 
-				{
-					// specialized case for treeDepth==1
-					for (int t = 0; t < nTrees; t++) 
-					{
-						uint32_t offset = t*nTreeNodes, k = offset, k0 = 0;
-						getChild(chns1, cids, fids, thrs, offset, k0, k);
-						h += hs[k]; if (h <= cascThr) break;
-					}
-				}	
-				else if (treeDepth == 2) 
-				{
-					// specialized case for treeDepth==2
-					for (int t = 0; t < nTrees; t++) {
-						/* in the original file:
-						r=0, c=0, stride=4, shrink=4, height=152
-						First ten elements of chns1: 0.022487 0.022487 0.022487 0.022487 0.022487 0.012699 0.007645 0.006215 0.003156 0.001374
+		// debug
+		// std::cout << "acfDetect, after loop" << std::endl;
 
-						offset=0, k0=0, k=0
-						k=0, fids[k]=2328, cids[fids[k]]=114328, chns1[cids[fids[k]]]=0.380177, thrs[k]=0.190968
-						offset=0, k0=2, k=2
-						k=2, fids[k]=3271, cids[fids[k]]=170551, chns1[cids[fids[k]]]=0.078499, thrs[k]=0.064298
-						offset=0, k0=6, k=6, hs[k]=0.530309, h=0.000000
-						offset=0, k0=6, k=6, hs[k]=0.530309, h=0.530309
+		double shift[2];
+		shift[0] = (modelHt-opts.modelDs[0])/2-opts.pPyramid.pad[0];
+		shift[1] = (modelWd-opts.modelDs[1])/2-opts.pPyramid.pad[1];
 
-						offset=7, k0=0, k=7
-						k=7, fids[k]=2301, cids[fids[k]]=114181, chns1[cids[fids[k]]]=0.280171, thrs[k]=0.063845
-						offset=7, k0=2, k=9
-						k=9, fids[k]=2697, cids[fids[k]]=141977, chns1[cids[fids[k]]]=0.009604, thrs[k]=0.303183
-						offset=7, k0=5, k=12, hs[k]=-0.439302, h=0.530309
-						offset=7, k0=5, k=12, hs[k]=-0.439302, h=0.091007
+		BB_Array bbs;
+		for(int j=0; j<m; j++ )
+		{
+			BoundingBox bb;
+			bb.firstPoint.x = cs[j]*stride;
+			bb.firstPoint.x = (bb.firstPoint.x+shift[1])/opts.pPyramid.scaleshw[j].x;
+			bb.firstPoint.y = rs[j]*stride;
+			bb.firstPoint.y = (bb.firstPoint.y+shift[0])/opts.pPyramid.scaleshw[j].y;
+			bb.height = modelHt/opts.pPyramid.scales[j];
+			bb.width = modelWd/opts.pPyramid.scales[j];
+			bb.score = hs1[j];
+			bbs.push_back(bb);
+			totalDetections++;
+			std::cout << "a boundingBox was added, totalDetections: " << totalDetections << ", j=" << j << ", m=" << m <<  std::endl;
+		}
 
-						offset=14, k0=0, k=14
-						k=14, fids[k]=2412, cids[fids[k]]=114772, chns1[cids[fids[k]]]=0.021188, thrs[k]=0.153221
-						offset=14, k0=1, k=15
-						k=15, fids[k]=4905, cids[fids[k]]=255825, chns1[cids[fids[k]]]=0.029096, thrs[k]=0.317917
-						offset=14, k0=3, k=17, hs[k]=-0.370339, h=0.091007
-						offset=14, k0=3, k=17, hs[k]=-0.370339, h=-0.279332
+		// causing segmentation fault
+		// bbs = bbNms(bbs, m);
 
-						offset=21, k0=0, k=21
-						k=21, fids[k]=1265, cids[fids[k]]=57625, chns1[cids[fids[k]]]=0.447796, thrs[k]=0.499741
-						offset=21, k0=1, k=22
-						k=22, fids[k]=773, cids[fids[k]]=29493, chns1[cids[fids[k]]]=0.328119, thrs[k]=0.324258
-						offset=21, k0=4, k=25, hs[k]=0.413041, h=-0.279332
-						offset=21, k0=4, k=25, hs[k]=0.413041, h=0.133709
+		detections.push_back(bbs);
 
-						offset=28, k0=0, k=28
-						k=28, fids[k]=2262, cids[fids[k]]=114022, chns1[cids[fids[k]]]=0.432883, thrs[k]=0.177437
-						offset=28, k0=2, k=30
-						k=30, fids[k]=2287, cids[fids[k]]=114167, chns1[cids[fids[k]]]=0.177121, thrs[k]=0.302899
-						offset=28, k0=5, k=33, hs[k]=0.354781, h=0.133709
-						offset=28, k0=5, k=33, hs[k]=0.354781, h=0.488490
-
-						offset=35, k0=0, k=35
-						k=35, fids[k]=1950, cids[fids[k]]=86670, chns1[cids[fids[k]]]=0.851567, thrs[k]=0.530565
-						offset=35, k0=2, k=37
-						k=37, fids[k]=1086, cids[fids[k]]=56726, chns1[cids[fids[k]]]=0.493040, thrs[k]=0.590269
-						offset=35, k0=5, k=40, hs[k]=-0.351664, h=0.488490
-						offset=35, k0=5, k=40, hs[k]=-0.351664, h=0.136826
-						*/
-						uint32 offset = t*nTreeNodes, k = offset, k0 = 0;
-						//std::cout << "offset=" << offset << ", k0=" << k0 << ", k=" << k << std::endl;
-						getChild(chns1, cids, fids, thrs, offset, k0, k);
-						//std::cout << "offset=" << offset << ", k0=" << k0 << ", k=" << k << std::endl;
-						getChild(chns1, cids, fids, thrs, offset, k0, k);
-						//std::cout << "offset=" << offset << ", k0=" << k0 << ", k=" << k << ", hs[k]=" << hs[k] << ", h=" << h << std::endl;
-						h += hs[k]; 
-						//std::cout << "offset=" << offset << ", k0=" << k0 << ", k=" << k << ", hs[k]=" << hs[k] << ", h=" << h << std::endl;
-						//std::cin.get();
-						if (h <= cascThr) break;
-					}
-				}
-				else if (treeDepth>2) 
-				{
-					// specialized case for treeDepth>2
-					for (int t = 0; t < nTrees; t++) 
-					{
-						uint32_t offset = t*nTreeNodes, k = offset, k0 = 0;
-						for (int i = 0; i<treeDepth; i++)
-							getChild(chns1, cids, fids, thrs, offset, k0, k);
-						h += hs[k]; if (h <= cascThr) break;
-					}
-				}
-				else 
-				{
-					// general case (variable tree depth)
-					for (int t = 0; t < nTrees; t++) 
-					{
-						uint32_t offset = t*nTreeNodes, k = offset, k0 = k;
-						while (child[k]) 
-						{
-							float ftr = chns1[cids[fids[k]]];
-							k = (ftr<thrs[k]) ? 1 : 0;
-							k0 = k = child[k0] - k + offset;
-						}
-						h += hs[k]; if (h <= cascThr) break;
-					}
-				}
-				if (h>cascThr) { 
-					std::cout << "detection! c=" << c  << ", r=" << r << ", h=" << h << ", cascThr=" << cascThr << std::endl;
-					std::cin.get();
-					cs.push_back(c); rs.push_back(r); hs1.push_back(h); 
-				}
-			}
-			delete [] cids;
-			m=cs.size();
-
-			// std::cin.get();
-
-			// debug
-			// std::cout << "acfDetect, after loop" << std::endl;
-
-			double shift[2];
-			shift[0] = (modelHt-opts.modelDs[0])/2-opts.pPyramid.pad[0];
-			shift[1] = (modelWd-opts.modelDs[1])/2-opts.pPyramid.pad[1];
-
-			BB_Array bbs;
-			for(int j=0; j<m; j++ )
-			{
-				BoundingBox bb;
-				bb.firstPoint.x = cs[j]*stride;
-				bb.firstPoint.x = (bb.firstPoint.x+shift[1])/opts.pPyramid.scaleshw[j].x;
-				bb.firstPoint.y = rs[j]*stride;
-				bb.firstPoint.y = (bb.firstPoint.y+shift[0])/opts.pPyramid.scaleshw[j].y;
-				bb.height = modelHt/opts.pPyramid.scales[j];
-				bb.width = modelWd/opts.pPyramid.scales[j];
-				bb.score = hs1[j];
-				bbs.push_back(bb);
-				totalDetections++;
-				// std::cout << "a boundingBox was added, totalDetections: " << totalDetections << std::endl;
-			}
-
-			bbs = bbNms(bbs, m);
-
-			detections.push_back(bbs);
-
-			// debug
-			// std::cout << "acfDetect, end of loop, i=" << i << ", computedScales=" << opts.pPyramid.computedScales << std::endl;
+		// debug
+		// std::cout << "acfDetect, end of loop, i=" << i << ", computedScales=" << opts.pPyramid.computedScales << std::endl;
 
 	}
 }
