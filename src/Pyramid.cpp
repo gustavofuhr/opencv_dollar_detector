@@ -1,4 +1,5 @@
 #include "Pyramid.h"
+#include <highgui.h>
 
 void Pyramid::readPyramid(cv::FileNode pyramidNode)
 {

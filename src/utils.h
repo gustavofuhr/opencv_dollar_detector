@@ -1,7 +1,7 @@
 #ifndef UTILS_H
 #define UTILS_H
 
-#include "opencv.hpp"
+#include <cv.h>
 #include "sse.hpp"
 #include <iomanip>
 #include <typeinfo> // for sse rgbConvert functions

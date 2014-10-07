@@ -1,7 +1,7 @@
 #ifndef CLF_H
 #define CLF_H
 
-#include "opencv.hpp"
+#include <cv.h>
 
 class Clf
 {
