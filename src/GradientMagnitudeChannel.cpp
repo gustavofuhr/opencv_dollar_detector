@@ -260,7 +260,7 @@ std::vector<cv::Mat> GradientMagnitudeChannel::mGradMag(cv::Mat I, int channel)
     // std::cout << "before gradMag, h=" << h << ", w=" << w << ", full=" << full << ", c=" << c << ", d=" << d << std::endl;
 
     // debug
-    // printElements(If, h, "If inside mGradMag");
+    printElements(If, h, "If inside mGradMag");
 
     // gradMag(I, M, O, h, w, d, full>0 );
 		// call to the actual function: gradMag(I, M, O, h, w, d, full>0 );
@@ -271,8 +271,8 @@ std::vector<cv::Mat> GradientMagnitudeChannel::mGradMag(cv::Mat I, int channel)
     // std::cout << "after gradMag" << std::endl;
 
     // debug
-    // printElements(M, h, "gradMag inside mGradMag");
-    // printElements(O, h, "Orientation inside mGradMag");
+    printElements(M, h, "gradMag inside mGradMag");
+    printElements(O, h, "Orientation inside mGradMag");
 
     // std::cin.get();
 

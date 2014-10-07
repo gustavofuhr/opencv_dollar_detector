@@ -115,7 +115,7 @@ void Detector::acfDetect(cv::Mat image)
 		std::cout << "ch1Size=" << ch1Size << std::endl;
 		// debug */
 
-		
+		/*
 		// debug: test contents of ch1
 		float* testFloat = (float*)malloc(ch1Size*sizeof(float));
 		memcpy(testFloat, ch1, ch1Size*sizeof(float));
@@ -126,7 +126,7 @@ void Detector::acfDetect(cv::Mat image)
 		float* ch2 = cvImage2floatArray(opts.pPyramid.computedChannels[i].gradientMagnitude, 1);
 		int ch2Size = opts.pPyramid.computedChannels[i].gradientMagnitude.rows * opts.pPyramid.computedChannels[i].gradientMagnitude.cols;
 
-		
+		/*
 		// debug: test contents of ch2
 		float* testFloat2 = (float*)malloc(ch2Size*sizeof(float));
 		memcpy(testFloat2, ch2, ch2Size*sizeof(float));
@@ -150,7 +150,7 @@ void Detector::acfDetect(cv::Mat image)
 			cv::imshow("ch3 source", testMat4);			
 			// */
 
-			
+			/*
 			// debug: test contents of ch3
 			float* testFloat3 = (float*)malloc(rows*cols*sizeof(float));
 			memcpy(testFloat3, &ch3[j*rows*cols], rows*cols*sizeof(float));
@@ -226,15 +226,15 @@ void Detector::acfDetect(cv::Mat image)
 		int rows = opts.pPyramid.computedChannels[i].image.rows;
 
 		printElements(chns, rows, "channel 0");
-		printElements(&chns[28272], rows, "channel 1");
-		printElements(&chns[28272*2], rows, "channel 2");
-		printElements(&chns[28272*3], rows, "channel 3");
-		printElements(&chns[28272*4], rows, "channel 4");
-		printElements(&chns[28272*5], rows, "channel 5");
-		printElements(&chns[28272*6], rows, "channel 6");
-		printElements(&chns[28272*7], rows, "channel 7");
-		printElements(&chns[28272*8], rows, "channel 8");
-		printElements(&chns[28272*9], rows, "channel 9");
+		printElements(&chns[height*width], rows, "channel 1");
+		printElements(&chns[height*width*2], rows, "channel 2");
+		printElements(&chns[height*width*3], rows, "channel 3");
+		printElements(&chns[height*width*4], rows, "channel 4");
+		printElements(&chns[height*width*5], rows, "channel 5");
+		printElements(&chns[height*width*6], rows, "channel 6");
+		printElements(&chns[height*width*7], rows, "channel 7");
+		printElements(&chns[height*width*8], rows, "channel 8");
+		printElements(&chns[height*width*9], rows, "channel 9");
 
 		std::cout << std::endl << "First twenty elements of thrs:" << std::endl;
 		for (int j=0; j < 20; j++)

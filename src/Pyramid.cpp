@@ -48,7 +48,7 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 	convertedImage = rgbConvert(I, pChns.pColor.colorSpaceType);
 	pChns.pColor.colorSpaceType = ORIG;
 
-	/*
+	
 	// debug: loads image converted inside matlab
 	convertedImage = cv::imread("../opencv_dollar_detector/frame0254_luv_single.png");
 	cv::cvtColor(convertedImage, convertedImage, CV_BGR2RGB);
@@ -336,7 +336,7 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 	int height = I.rows - (I.rows % pChns.shrink);
 	int width =  I.cols - (I.cols % pChns.shrink);
 
-	/*
+	
 	// debug
 	float *If = cvImage2floatArray(I, 3);
 	printElements(If, I.rows, "image before rgbConvert");
@@ -346,7 +346,7 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 	result.image = rgbConvert(I, pChns.pColor.colorSpaceType);
 	result.image = convolution(result.image, 3, pChns.pColor.smoothingRadius, 1, CONV_TRI);
 
-	/*
+	
 	// debug
 	float *If2 = cvImage2floatArray(result.image, 3);
 	printElements(If2, I.rows, "image after convolution");
@@ -378,11 +378,11 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 			// normalization constant is read inside the procedure
 			pChns.pGradMag.gradMagNorm(M, S, h, w);
 
-			/*
-			// debug: after normalization, S matrix is correct, M matrix has error smaller than 0.1
+			
+			// debug: after normalization, S matrix is correct but gradMag is wrong (but equal to compiled mex result, which is the wrong one)
 			printElements(M, h, "gradMag after normalization");
 			printElements(S, h, "S matrix");
-			//std::cin.get();
+			std::cin.get();
 			// debug */
 
 			result.gradientMagnitude = floatArray2cvImage(M, h, w, 1); // only one channel
