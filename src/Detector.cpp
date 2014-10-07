@@ -346,6 +346,15 @@ void Detector::acfDetect(cv::Mat image)
 		// std::cout << "acfDetect, end of loop, i=" << i << ", computedScales=" << opts.pPyramid.computedScales << std::endl;
 
 	}
+
+	for (int i = 0; i<detections.size(); ++i) {
+		for (int j = 0; j<detections[i].size(); ++j) {
+			std::cout << "i j " << i << " " << j << std::endl;
+			std::cout << "Detection fp: " << detections[i][j].firstPoint << std::endl;
+			std::cout << "Detection (w, h): " << detections[i][j].width << "  " << detections[i][j].height << std::endl;
+			std::cout << "Score: "  << detections[i][j].score << std::endl;
+		}
+	}
 }
 
 BB_Array Detector::bbNms(BB_Array bbs, int size)
