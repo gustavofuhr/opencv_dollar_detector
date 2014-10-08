@@ -340,7 +340,7 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 	
 	// debug
 	float *If = cvImage2floatArray(I, 3);
-	// printElements(If, I.rows, "image before rgbConvert");
+	printElements(If, I.rows, "image before rgbConvert");
 	// debug */
 
 	// compute color channels
@@ -350,7 +350,7 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 	
 	// debug
 	float *If2 = cvImage2floatArray(result.image, 3);
-	// printElements(If2, I.rows, "image after convolution");
+	printElements(If2, I.rows, "image after convolution");
 	// debug */
 
 	// h=h/shrink; w=w/shrink;
@@ -379,7 +379,7 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 			// normalization constant is read inside the procedure
 			pChns.pGradMag.gradMagNorm(M, S, h, w);
 
-			
+			/*
 			// debug: after normalization, S matrix is correct but gradMag is wrong (but equal to compiled mex result, which is the wrong one)
 			printElements(M, h, "gradMag after normalization");
 			printElements(S, h, "S matrix");

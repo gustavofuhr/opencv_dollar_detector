@@ -1,5 +1,3 @@
-//#include "cv.h"
-
 class BoundingBox
 {
 public:
@@ -7,6 +5,7 @@ public:
 	int height;
 	int width;
 	int score;
+	int scale;
 
 	// this was added to be able to sort BB_Array objects
 	bool operator< (const BoundingBox &other) const 

@@ -302,8 +302,8 @@ void Detector::acfDetect(cv::Mat image)
 			      }
 		    }
 		    if(h>cascThr) { 
-		    	std::cout << "detection!" << std::endl;
-		    	std::cin.get();
+		    	std::cout << "detection! scale=" << i << ", c=" << c << ", r=" << r << ", h=" << h << std::endl;
+		    	//std::cin.get();
 		    	cs.push_back(c); rs.push_back(r); hs1.push_back(h); 
 		    }
 		  }
@@ -312,7 +312,7 @@ void Detector::acfDetect(cv::Mat image)
 		free(chns);
 		m=cs.size();
 
-		// std::cin.get();
+		std::cin.get();
 
 		// debug
 		// std::cout << "acfDetect, after loop" << std::endl;
@@ -332,10 +332,15 @@ void Detector::acfDetect(cv::Mat image)
 			bb.height = modelHt/opts.pPyramid.scales[j];
 			bb.width = modelWd/opts.pPyramid.scales[j];
 			bb.score = hs1[j];
+			bb.scale = i;
 			bbs.push_back(bb);
 			totalDetections++;
 			std::cout << "a boundingBox was added, totalDetections: " << totalDetections << ", j=" << j << ", m=" << m <<  std::endl;
 		}
+
+		cs.clear();
+		rs.clear();
+		hs1.clear();
 
 		// causing segmentation fault
 		// bbs = bbNms(bbs, m);
@@ -353,6 +358,7 @@ void Detector::acfDetect(cv::Mat image)
 			std::cout << "Detection fp: " << detections[i][j].firstPoint << std::endl;
 			std::cout << "Detection (w, h): " << detections[i][j].width << "  " << detections[i][j].height << std::endl;
 			std::cout << "Score: "  << detections[i][j].score << std::endl;
+			std::cout << "Scale: "  << detections[i][j].scale << std::endl;
 		}
 	}
 }
