@@ -25,11 +25,15 @@ public:
 	int computedScales; //number of scales computed
 	Info* computedChannels; //[nScales x nTypes] cell array of computed channels
 	double* scales;
-	cv::Point* scaleshw;
+	double* scaleshw_x;
+	double* scaleshw_y;
 
 	void readPyramid(cv::FileNode);
 	void computeMultiScaleChannelFeaturePyramid(cv::Mat);
 	Info computeSingleScaleChannelFeatures(cv::Mat);
 	cv::Mat TriangleFilterConvolution(cv::Mat, int, int, int);
 	void getScales(int, int , int);
+
+	// debug
+	void readScalesFromXML(cv::FileNode pyramid);
 };

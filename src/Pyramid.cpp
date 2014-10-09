@@ -1,6 +1,26 @@
 #include "Pyramid.h"
 #include <highgui.h>
 
+void Pyramid::readScalesFromXML(cv::FileNode pyramid)
+{
+	cv::Mat scale01;
+	pyramid["scale01"] >> scale01;
+	float* scale1F = cvImage2floatArray(scale01, 1);
+	printElements(scale1F, scale01.rows, "scale 1 read from xml file");
+
+	cv::Mat scale02;
+	pyramid["scale02"] >> scale02;
+	float* scale2F = cvImage2floatArray(scale02, 1);
+	printElements(scale2F, scale02.rows, "scale 2 read from xml file");
+
+	cv::Mat scale03;
+	pyramid["scale03"] >> scale03;
+	float* scale3F = cvImage2floatArray(scale03, 1);
+	printElements(scale3F, scale03.rows, "scale 3 read from xml file");
+
+	std::cin.get();
+}
+
 void Pyramid::readPyramid(cv::FileNode pyramidNode)
 {
 	pChns.readChannelFeatures(pyramidNode["pChns"]);
@@ -552,14 +572,18 @@ void Pyramid::getScales(int h, int w, int shrink)
 				scales[scalesIndex++] = tempScales[i];
 			}
 
+		// this updates the value of computedScales, since some of them have been suppressed
 		computedScales = scalesIndex;
 		
-		scaleshw = (cv::Point*)malloc(computedScales * sizeof(cv::Point));
+		scaleshw_x = (double*)malloc(computedScales * sizeof(double));
+		scaleshw_y = (double*)malloc(computedScales * sizeof(double));
 
+		// scaleshw = 	[round(sz(1)*scales/shrink)*shrink/sz(1);
+  		//				round(sz(2)*scales/shrink)*shrink/sz(2)]';
 		for (int i=0; i<computedScales; i++)
 		{
-			scaleshw[i].x = round(w*scales[i]/shrink)*shrink/w;
-			scaleshw[i].y = round(h*scales[i]/shrink)*shrink/h;
+			scaleshw_x[i] = round(w*scales[i]/shrink)*shrink/w;
+			scaleshw_y[i] = round(h*scales[i]/shrink)*shrink/h;
 		}
 	}
 	else //error, height or width of the image are wrong

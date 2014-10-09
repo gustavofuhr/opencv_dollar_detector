@@ -70,6 +70,34 @@ void Detector::acfDetect(cv::Mat image)
 	// compute feature pyramid
 	opts.pPyramid.computeMultiScaleChannelFeaturePyramid(I);
 
+
+	// debug: test values of scales and scales hw
+	std::cout << "printing scales:" << std::endl;
+	for (int i=0; i < opts.pPyramid.computedScales; i++)
+		std::cout << i << ": " << opts.pPyramid.scales[i] << std::endl;
+
+	std::cout << std::endl << "printing scaleshw:" << std::endl;
+	for (int i=0; i < opts.pPyramid.computedScales; i++)
+		std::cout << i << ": (" << opts.pPyramid.scaleshw_x[i] << "," << opts.pPyramid.scaleshw_y[i] << ")" << std::endl;
+	// debug */
+
+
+	// debug: read pyramid from file
+	cv::FileStorage xml;
+	xml.open("../opencv_dollar_detector/pyramid.xml", cv::FileStorage::READ);
+	if (!xml.isOpened())
+	{
+		std::cerr << "Failed to open pyramid.xml" << std::endl;
+		std::cin.get();
+	}
+	else
+	{
+		//opts.pPyramid.readScalesFromXML(xml["pyramid"]);
+
+		//xml.release();
+	}
+	// debug */
+
 	const int shrink = opts.pPyramid.pChns.shrink;
 	const int modelHt = opts.modelDsPad[0];
 	const int modelWd = opts.modelDsPad[1];
@@ -169,26 +197,24 @@ void Detector::acfDetect(cv::Mat image)
 		memcpy(&chns[ch1Size], ch2, ch2Size);
 		memcpy(&chns[ch1Size+ch2Size], ch3, ch3Size);
 		// */
-
-		// total size: 282720
-		// std::cout << "total size: " << ch1Size+ch2Size+ch3Size << std::endl;
 		
-		/*
 		// debug: read chns from file
-	  	FILE *file = fopen("chns", "rb");
-	  	if (!file)
-	  	{
-	  		std::cout << "not able to read file";
-	  		std::cin.get();
-	  	}
-		for(int j = 0; j < ch1Size+ch2Size+ch3Size; j++)
-		{
-		    float f;
-		    fread(&f, sizeof(float), 1, file);
-		    // std::cout << "f=" << f << std::endl;
-		    chns[j] = f;
-		}
-		fclose(file);
+	  	cv::Mat scalei;
+	  	std::string scaleName;
+
+	  	scaleName += "scale";
+	  	if (i < 10)
+	  		scaleName += "0";
+	  	std::ostringstream scaleNumber;
+        scaleNumber << (i+1);
+	  	scaleName += scaleNumber.str();
+
+		xml["pyramid"][scaleName] >> scalei;
+		//float* floatScale = cvImage2floatArray(scalei, 1);
+		//printElements(floatScale, scalei.rows, scaleName + " read from xml file");
+		free(chns);
+		chns = (float*) malloc((ch1Size+ch2Size+ch3Size)*sizeof(float));
+		chns = cvImage2floatArray(scalei, 1);
 		// debug */
 
 		// in the original file: *chnsSize = mxGetDimensions(P.data{i});
@@ -312,31 +338,36 @@ void Detector::acfDetect(cv::Mat image)
 		free(chns);
 		m=cs.size();
 
-		std::cin.get();
+		//std::cin.get();
 
 		// debug
 		// std::cout << "acfDetect, after loop" << std::endl;
 
+		// shift=(modelDsPad-modelDs)/2-pad;
 		double shift[2];
 		shift[0] = (modelHt-opts.modelDs[0])/2-opts.pPyramid.pad[0];
 		shift[1] = (modelWd-opts.modelDs[1])/2-opts.pPyramid.pad[1];
+
+		std::cout << "stride=" << stride << ", shift=(" << shift[0] << "," << shift[1] << "), scaleshw[i]=(" << opts.pPyramid.scaleshw_x[i] << "," << opts.pPyramid.scaleshw_y[i] << ")" << std::endl;
 
 		BB_Array bbs;
 		for(int j=0; j<m; j++ )
 		{
 			BoundingBox bb;
 			bb.firstPoint.x = cs[j]*stride;
-			bb.firstPoint.x = (bb.firstPoint.x+shift[1])/opts.pPyramid.scaleshw[j].x;
+			bb.firstPoint.x = (bb.firstPoint.x+shift[1])/opts.pPyramid.scaleshw_x[i];
 			bb.firstPoint.y = rs[j]*stride;
-			bb.firstPoint.y = (bb.firstPoint.y+shift[0])/opts.pPyramid.scaleshw[j].y;
-			bb.height = modelHt/opts.pPyramid.scales[j];
-			bb.width = modelWd/opts.pPyramid.scales[j];
+			bb.firstPoint.y = (bb.firstPoint.y+shift[0])/opts.pPyramid.scaleshw_y[i];
+			bb.height = modelHt/opts.pPyramid.scales[i];
+			bb.width = modelWd/opts.pPyramid.scales[i];
 			bb.score = hs1[j];
 			bb.scale = i;
 			bbs.push_back(bb);
 			totalDetections++;
-			std::cout << "a boundingBox was added, totalDetections: " << totalDetections << ", j=" << j << ", m=" << m <<  std::endl;
+			std::cout << "totalDetections: "<<totalDetections << ", fp=("<<bb.firstPoint.x <<","<< bb.firstPoint.y<< "), height="<<bb.height << ", width="<<bb.width << ", score="<<bb.score << ", scale="<<bb.scale << std::endl;
 		}
+
+		std::cout << std::endl;
 
 		cs.clear();
 		rs.clear();
@@ -347,6 +378,8 @@ void Detector::acfDetect(cv::Mat image)
 
 		detections.push_back(bbs);
 
+		bbs.clear();
+
 		// debug
 		// std::cout << "acfDetect, end of loop, i=" << i << ", computedScales=" << opts.pPyramid.computedScales << std::endl;
 
@@ -354,13 +387,13 @@ void Detector::acfDetect(cv::Mat image)
 
 	for (int i = 0; i<detections.size(); ++i) {
 		for (int j = 0; j<detections[i].size(); ++j) {
-			std::cout << "i j " << i << " " << j << std::endl;
 			std::cout << "Detection fp: " << detections[i][j].firstPoint << std::endl;
 			std::cout << "Detection (w, h): " << detections[i][j].width << "  " << detections[i][j].height << std::endl;
 			std::cout << "Score: "  << detections[i][j].score << std::endl;
 			std::cout << "Scale: "  << detections[i][j].scale << std::endl;
 		}
 	}
+	xml.release();
 }
 
 BB_Array Detector::bbNms(BB_Array bbs, int size)

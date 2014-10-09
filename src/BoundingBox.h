@@ -4,7 +4,7 @@ public:
 	cv::Point firstPoint;
 	int height;
 	int width;
-	int score;
+	float score;
 	int scale;
 
 	// this was added to be able to sort BB_Array objects

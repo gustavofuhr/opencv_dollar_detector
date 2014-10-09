@@ -10,11 +10,13 @@ This is a work-in-progress port of the Dóllar pedestrian detector to OpenCV in 
 To Do List:
 ======================
 
-Current Total: 13
+Current Total: 15
 
 Detector.cpp:
 	acfDetect:
 		separate detection in a scale to a single function
+		test if detection works properly when loading pyramid from file
+		test if pyramid read from file is correct (print the images)
 	nmsMax:
 		line 248: sort bounding boxes
 		line 253: add test for greediness
