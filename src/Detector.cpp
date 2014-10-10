@@ -90,12 +90,6 @@ void Detector::acfDetect(cv::Mat image)
 		std::cerr << "Failed to open pyramid.xml" << std::endl;
 		std::cin.get();
 	}
-	else
-	{
-		//opts.pPyramid.readScalesFromXML(xml["pyramid"]);
-
-		//xml.release();
-	}
 	// debug */
 
 	const int shrink = opts.pPyramid.pChns.shrink;
@@ -197,6 +191,7 @@ void Detector::acfDetect(cv::Mat image)
 		memcpy(&chns[ch1Size], ch2, ch2Size);
 		memcpy(&chns[ch1Size+ch2Size], ch3, ch3Size);
 		// */
+		
 		
 		// debug: read chns from file
 	  	cv::Mat scalei;
@@ -348,9 +343,9 @@ void Detector::acfDetect(cv::Mat image)
 		shift[0] = (modelHt-opts.modelDs[0])/2-opts.pPyramid.pad[0];
 		shift[1] = (modelWd-opts.modelDs[1])/2-opts.pPyramid.pad[1];
 
+		// debug
 		std::cout << "stride=" << stride << ", shift=(" << shift[0] << "," << shift[1] << "), scaleshw[i]=(" << opts.pPyramid.scaleshw_x[i] << "," << opts.pPyramid.scaleshw_y[i] << ")" << std::endl;
 
-		BB_Array bbs;
 		for(int j=0; j<m; j++ )
 		{
 			BoundingBox bb;
@@ -362,11 +357,14 @@ void Detector::acfDetect(cv::Mat image)
 			bb.width = modelWd/opts.pPyramid.scales[i];
 			bb.score = hs1[j];
 			bb.scale = i;
-			bbs.push_back(bb);
+			detections.push_back(bb);
+
+			// debug
 			totalDetections++;
 			std::cout << "totalDetections: "<<totalDetections << ", fp=("<<bb.firstPoint.x <<","<< bb.firstPoint.y<< "), height="<<bb.height << ", width="<<bb.width << ", score="<<bb.score << ", scale="<<bb.scale << std::endl;
 		}
 
+		// debug
 		std::cout << std::endl;
 
 		cs.clear();
@@ -376,23 +374,28 @@ void Detector::acfDetect(cv::Mat image)
 		// causing segmentation fault
 		// bbs = bbNms(bbs, m);
 
-		detections.push_back(bbs);
-
-		bbs.clear();
-
 		// debug
 		// std::cout << "acfDetect, end of loop, i=" << i << ", computedScales=" << opts.pPyramid.computedScales << std::endl;
 
 	}
 
-	for (int i = 0; i<detections.size(); ++i) {
-		for (int j = 0; j<detections[i].size(); ++j) {
-			std::cout << "Detection fp: " << detections[i][j].firstPoint << std::endl;
-			std::cout << "Detection (w, h): " << detections[i][j].width << "  " << detections[i][j].height << std::endl;
-			std::cout << "Score: "  << detections[i][j].score << std::endl;
-			std::cout << "Scale: "  << detections[i][j].scale << std::endl;
-		}
+
+	// debug: print all detections
+	cv::Mat img = cv::imread("../opencv_dollar_detector/frame0254.png");
+	for (int i = 0; i<detections.size(); ++i) 
+	{
+		std::cout << "Detection fp: " << detections[i].firstPoint << std::endl;
+		std::cout << "Detection (w, h): " << detections[i].width << "  " << detections[i].height << std::endl;
+		std::cout << "Score: "  << detections[i].score << std::endl;
+		std::cout << "Scale: "  << detections[i].scale << std::endl;
+
+		detections[i].plot(img, cv::Scalar(0,1,0));
 	}
+	cv::imshow("all detections", img);
+	cv::waitKey();
+	// debug */
+
+	// debug
 	xml.release();
 }
 

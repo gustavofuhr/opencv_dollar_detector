@@ -1,3 +1,5 @@
+#include <cv.h>
+
 class BoundingBox
 {
 public:
@@ -6,6 +8,8 @@ public:
 	int width;
 	float score;
 	int scale;
+
+	void plot (cv::Mat &frame, cv::Scalar color);
 
 	// this was added to be able to sort BB_Array objects
 	bool operator< (const BoundingBox &other) const 
@@ -16,4 +20,3 @@ public:
 };
 
 typedef std::vector<BoundingBox> BB_Array;
-typedef std::vector<BB_Array> BB_Array_Array;

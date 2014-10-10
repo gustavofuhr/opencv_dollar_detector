@@ -2,6 +2,7 @@
 #define UTILS_H
 
 #include <cv.h>
+#include <highgui.h> //to use imread
 #include "sse.hpp"
 #include <iomanip>
 #include <typeinfo> // for sse rgbConvert functions

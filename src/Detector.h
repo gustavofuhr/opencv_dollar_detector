@@ -14,7 +14,7 @@ public:
 	Options opts; //opts contains the Pyramid
 	Clf clf;
 
-	BB_Array_Array detections;
+	BB_Array detections;
 	// debug
 	int totalDetections;
 

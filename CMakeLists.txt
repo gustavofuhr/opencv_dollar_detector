@@ -13,6 +13,7 @@ add_executable(opencv_dollar_detector
 ./src/Options.cpp
 ./src/PNms.cpp
 ./src/Clf.cpp
+./src/BoundingBox.cpp
 ./src/utils.cpp)
 include_directories("/usr/include/opencv2")
 include_directories("/usr/include/opencv2/highgui")
