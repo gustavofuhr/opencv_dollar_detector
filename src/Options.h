@@ -9,8 +9,8 @@ class Options
 {
 public:
 	Pyramid pPyramid;
-	double modelDs[2];
-	double modelDsPad[2];
+	int modelDs[2];
+	int modelDsPad[2];
 	PNms pNms;
 	int stride;
 	int cascadeThreshold;

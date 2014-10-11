@@ -78,7 +78,12 @@ void Detector::acfDetect(cv::Mat image)
 
 	std::cout << std::endl << "printing scaleshw:" << std::endl;
 	for (int i=0; i < opts.pPyramid.computedScales; i++)
-		std::cout << i << ": (" << opts.pPyramid.scaleshw_x[i] << "," << opts.pPyramid.scaleshw_y[i] << ")" << std::endl;
+		std::cout << i << ": (" << opts.pPyramid.scales_h[i] << "," << opts.pPyramid.scales_w[i] << ")" << std::endl;
+	// debug */
+
+
+	// debug: test size of uint32
+	std::cout << std::endl << "sizeof(uint32)=" << sizeof(uint32) << ", sizeof(uint32_t)=" << sizeof(uint32_t) << std::endl << std::endl; 
 	// debug */
 
 
@@ -185,7 +190,7 @@ void Detector::acfDetect(cv::Mat image)
 		// float *chns = (float*) mxGetData(prhs[0]);
 		chns = (float*) malloc((ch1Size+ch2Size+ch3Size)*sizeof(float));
 
-		
+		/*
 		// real memcpys, removed for testing
 		memcpy(chns, ch1, ch1Size);
 		memcpy(&chns[ch1Size], ch2, ch2Size);
@@ -198,7 +203,7 @@ void Detector::acfDetect(cv::Mat image)
 	  	std::string scaleName;
 
 	  	scaleName += "scale";
-	  	if (i < 10)
+	  	if (i < 9)
 	  		scaleName += "0";
 	  	std::ostringstream scaleNumber;
         scaleNumber << (i+1);
@@ -230,54 +235,40 @@ void Detector::acfDetect(cv::Mat image)
 	      		for( int r=0; r<modelHt/shrink; r++ )
 	        		cids[m++] = z*width*height + c*height + r;
 
-		/*
+		
 		// debug: prints values of several variables, all of these return correct results
 		// shrink=4, modelHt=128, modelWd=64, stride=4, cascThr=-1.000000, treeDepth=2
 		// height=152, width=186, nChns=10, nTreeNodes=7, nTrees=2048, height1=121, width1=171, nFtrs=5120
-		std::cout << "shrink=" << shrink << ", modelHt=" << modelHt << ", modelWd=" << modelWd << ", stride=" << stride << ", cascThr=" << cascThr << ", treeDepth=" << treeDepth << std::endl;
+		std::cout << "shrink=" << shrink << ", modelHt=" << modelHt << ", modelWd=" << modelWd << ", stride=" << stride << ", cascThr=" << cascThr << ", treeDepth=" << treeDepth <<  ", modelDs=(" <<
+			opts.modelDs[0] << "," << opts.modelDs[1] << ")" << std::endl;
 		std::cout << "height=" << height << ", width=" << width << ", nChns=" << nChns <<  ", nTreeNodes=" << nTreeNodes << ", nTrees=" << nTrees << ", height1=" << height1 << 
 			", width1=" << width1 << ", nFtrs=" << nFtrs << std::endl;
 		// debug */
-
-
-		// size of one image: 28272
 		
-		/*
+		
 		// debug: print input matrices
 		int rows = opts.pPyramid.computedChannels[i].image.rows;
 
-		printElements(chns, rows, "channel 0");
-		printElements(&chns[height*width], rows, "channel 1");
-		printElements(&chns[height*width*2], rows, "channel 2");
-		printElements(&chns[height*width*3], rows, "channel 3");
-		printElements(&chns[height*width*4], rows, "channel 4");
-		printElements(&chns[height*width*5], rows, "channel 5");
-		printElements(&chns[height*width*6], rows, "channel 6");
-		printElements(&chns[height*width*7], rows, "channel 7");
-		printElements(&chns[height*width*8], rows, "channel 8");
-		printElements(&chns[height*width*9], rows, "channel 9");
+		print_20_elements(chns, "channel 0");
+		print_100_elements(chns, rows, "channel 0");
+		print_100_elements(&chns[height*width], rows, "channel 1");
+		print_100_elements(&chns[height*width*2], rows, "channel 2");
+		print_100_elements(&chns[height*width*3], rows, "channel 3");
+		print_100_elements(&chns[height*width*4], rows, "channel 4");
+		print_100_elements(&chns[height*width*5], rows, "channel 5");
+		print_100_elements(&chns[height*width*6], rows, "channel 6");
+		print_100_elements(&chns[height*width*7], rows, "channel 7");
+		print_100_elements(&chns[height*width*8], rows, "channel 8");
+		print_100_elements(&chns[height*width*9], rows, "channel 9");
 
-		std::cout << std::endl << "First twenty elements of thrs:" << std::endl;
-		for (int j=0; j < 20; j++)
-			std::cout << j << ": " << thrs[j] << std::endl;
+		print_20_elements(thrs, "thrs");
+		print_20_elements(hs, "hs");
 
-		std::cout << std::endl << "First twenty elements of hs:" << std::endl;
-		for (int j=0; j < 20; j++)
-			std::cout << j << ": " << hs[j] << std::endl;
+		print_20i_elements(fids, "fids");
+		print_20i_elements(child, "child");
+		print_20i_elements(cids, "cids");
 
-		std::cout << std::endl << "First twenty elements of fids:" << std::endl;
-		for (int j=0; j < 20; j++)
-			std::cout << j << ": " << fids[j] << std::endl;
-
-		std::cout << std::endl << "First twenty elements of child:" << std::endl;
-		for (int j=0; j < 20; j++)
-			std::cout << j << ": " << child[j] << std::endl;
-
-		std::cout << std::endl << "First twenty elements of cids:" << std::endl;
-		for (int j=0; j < 20; j++)
-			std::cout << j << ": " << cids[j] << std::endl;
-
-		std::cin.get();
+		// std::cin.get();
 		// debug */
 
 		// apply classifier to each patch
@@ -333,28 +324,29 @@ void Detector::acfDetect(cv::Mat image)
 		free(chns);
 		m=cs.size();
 
-		//std::cin.get();
+		// std::cin.get();
 
 		// debug
 		// std::cout << "acfDetect, after loop" << std::endl;
 
 		// shift=(modelDsPad-modelDs)/2-pad;
 		double shift[2];
-		shift[0] = (modelHt-opts.modelDs[0])/2-opts.pPyramid.pad[0];
-		shift[1] = (modelWd-opts.modelDs[1])/2-opts.pPyramid.pad[1];
+		shift[0] = (modelHt-double(opts.modelDs[0]))/2-opts.pPyramid.pad[0];
+		shift[1] = (modelWd-double(opts.modelDs[1]))/2-opts.pPyramid.pad[1];
 
 		// debug
-		std::cout << "stride=" << stride << ", shift=(" << shift[0] << "," << shift[1] << "), scaleshw[i]=(" << opts.pPyramid.scaleshw_x[i] << "," << opts.pPyramid.scaleshw_y[i] << ")" << std::endl;
+		std::cout << "stride=" << stride << ", shift=(" << shift[0] << "," << shift[1] << "), scaleshw[i]=(" << opts.pPyramid.scales_h[i] << "," << opts.pPyramid.scales_w[i] << ")" <<
+		    ", scales[i]=" << opts.pPyramid.scales[i] << std::endl;
 
 		for(int j=0; j<m; j++ )
 		{
 			BoundingBox bb;
 			bb.firstPoint.x = cs[j]*stride;
-			bb.firstPoint.x = (bb.firstPoint.x+shift[1])/opts.pPyramid.scaleshw_x[i];
+			bb.firstPoint.x = (bb.firstPoint.x+shift[1])/opts.pPyramid.scales_w[i];
 			bb.firstPoint.y = rs[j]*stride;
-			bb.firstPoint.y = (bb.firstPoint.y+shift[0])/opts.pPyramid.scaleshw_y[i];
-			bb.height = modelHt/opts.pPyramid.scales[i];
-			bb.width = modelWd/opts.pPyramid.scales[i];
+			bb.firstPoint.y = (bb.firstPoint.y+shift[0])/opts.pPyramid.scales_h[i];
+			bb.height = opts.modelDs[0]/opts.pPyramid.scales[i];
+			bb.width = opts.modelDs[1]/opts.pPyramid.scales[i];
 			bb.score = hs1[j];
 			bb.scale = i;
 			detections.push_back(bb);
@@ -365,7 +357,9 @@ void Detector::acfDetect(cv::Mat image)
 		}
 
 		// debug
+		//std::cin.get();
 		std::cout << std::endl;
+		// debug */
 
 		cs.clear();
 		rs.clear();
@@ -389,7 +383,7 @@ void Detector::acfDetect(cv::Mat image)
 		std::cout << "Score: "  << detections[i].score << std::endl;
 		std::cout << "Scale: "  << detections[i].scale << std::endl;
 
-		detections[i].plot(img, cv::Scalar(0,1,0));
+		detections[i].plot(img, cv::Scalar(0,255,0));
 	}
 	cv::imshow("all detections", img);
 	cv::waitKey();

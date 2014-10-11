@@ -62,8 +62,14 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
       for( int r=0; r<modelHt/shrink; r++ )
         cids[m++] = z*width*height + c*height + r;
 
-  mexPrintf("\n\nshrink=%d, modelHt=%d, modelWd=%d, stride=%d, cascThr=%f, treeDepth=%d\n", shrink, modelHt, modelWd, stride, cascThr, treeDepth);
+  mexPrintf("\n\nsizeof(uint32)=%d\n", sizeof(uint32));
+
+  mexPrintf("\nshrink=%d, modelHt=%d, modelWd=%d, stride=%d, cascThr=%f, treeDepth=%d\n", shrink, modelHt, modelWd, stride, cascThr, treeDepth);
   mexPrintf("height=%d, width=%d, nChns=%d, nTreeNodes=%d, nTrees=%d, height1=%d, width1=%d, nFtrs=%d\n", height, width, nChns, nTreeNodes, nTrees, height1, width1, nFtrs);
+
+  mexPrintf("\nFirst twenty elements of ch0:\n");
+  for (int i=0; i < 20; i++)
+    mexPrintf("%d: %f\n", i, chns[i]);
 
   printElements(chns, height, "ch 0");
   printElements(&chns[height*width], height, "ch 1");
@@ -136,7 +142,10 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
         h += hs[k]; if( h<=cascThr ) break;
       }
     }
-    if(h>cascThr) { cs.push_back(c); rs.push_back(r); hs1.push_back(h); }
+    if(h>cascThr) { 
+      mexPrintf("detection! c=%d, r=%d, h=%f\n", c, r, h);
+      cs.push_back(c); rs.push_back(r); hs1.push_back(h); 
+    }
   }
   delete [] cids; m=cs.size();
 

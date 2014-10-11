@@ -6,17 +6,17 @@ void Pyramid::readScalesFromXML(cv::FileNode pyramid)
 	cv::Mat scale01;
 	pyramid["scale01"] >> scale01;
 	float* scale1F = cvImage2floatArray(scale01, 1);
-	printElements(scale1F, scale01.rows, "scale 1 read from xml file");
+	print_100_elements(scale1F, scale01.rows, "scale 1 read from xml file");
 
 	cv::Mat scale02;
 	pyramid["scale02"] >> scale02;
 	float* scale2F = cvImage2floatArray(scale02, 1);
-	printElements(scale2F, scale02.rows, "scale 2 read from xml file");
+	print_100_elements(scale2F, scale02.rows, "scale 2 read from xml file");
 
 	cv::Mat scale03;
 	pyramid["scale03"] >> scale03;
 	float* scale3F = cvImage2floatArray(scale03, 1);
-	printElements(scale3F, scale03.rows, "scale 3 read from xml file");
+	print_100_elements(scale3F, scale03.rows, "scale 3 read from xml file");
 
 	std::cin.get();
 }
@@ -360,7 +360,7 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 	
 	// debug
 	float *If = cvImage2floatArray(I, 3);
-	printElements(If, I.rows, "image before rgbConvert");
+	print_100_elements(If, I.rows, "image before rgbConvert");
 	// debug */
 
 	// compute color channels
@@ -370,7 +370,7 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 	
 	// debug
 	float *If2 = cvImage2floatArray(result.image, 3);
-	printElements(If2, I.rows, "image after convolution");
+	print_100_elements(If2, I.rows, "image after convolution");
 	// debug */
 
 	// h=h/shrink; w=w/shrink;
@@ -401,8 +401,8 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 
 			/*
 			// debug: after normalization, S matrix is correct but gradMag is wrong (but equal to compiled mex result, which is the wrong one)
-			printElements(M, h, "gradMag after normalization");
-			printElements(S, h, "S matrix");
+			print_100_elements(M, h, "gradMag after normalization");
+			print_100_elements(S, h, "S matrix");
 			std::cin.get();
 			// debug */
 
@@ -575,15 +575,15 @@ void Pyramid::getScales(int h, int w, int shrink)
 		// this updates the value of computedScales, since some of them have been suppressed
 		computedScales = scalesIndex;
 		
-		scaleshw_x = (double*)malloc(computedScales * sizeof(double));
-		scaleshw_y = (double*)malloc(computedScales * sizeof(double));
+		scales_h = (double*)malloc(computedScales * sizeof(double));
+		scales_w = (double*)malloc(computedScales * sizeof(double));
 
 		// scaleshw = 	[round(sz(1)*scales/shrink)*shrink/sz(1);
   		//				round(sz(2)*scales/shrink)*shrink/sz(2)]';
 		for (int i=0; i<computedScales; i++)
 		{
-			scaleshw_x[i] = round(w*scales[i]/shrink)*shrink/w;
-			scaleshw_y[i] = round(h*scales[i]/shrink)*shrink/h;
+			scales_w[i] = round(w*scales[i]/shrink)*shrink/w;
+			scales_h[i] = round(h*scales[i]/shrink)*shrink/h;
 		}
 	}
 	else //error, height or width of the image are wrong

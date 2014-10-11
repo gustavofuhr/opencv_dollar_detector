@@ -2,8 +2,6 @@
 #include "Info.h"
 #include "utils.h"
 
-#include <stdio.h>
-
 class Pyramid
 {
 public:
@@ -25,8 +23,8 @@ public:
 	int computedScales; //number of scales computed
 	Info* computedChannels; //[nScales x nTypes] cell array of computed channels
 	double* scales;
-	double* scaleshw_x;
-	double* scaleshw_y;
+	double* scales_w;
+	double* scales_h;
 
 	void readPyramid(cv::FileNode);
 	void computeMultiScaleChannelFeaturePyramid(cv::Mat);

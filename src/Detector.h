@@ -1,7 +1,6 @@
 #ifndef DETECTOR_H
 #define DETECTOR_H
 
-#include <vector>
 #include "Options.h"
 #include "Clf.h"
 #include "Info.h"

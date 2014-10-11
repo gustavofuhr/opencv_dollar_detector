@@ -32,7 +32,9 @@ cv::Mat rgbConvert(cv::Mat, int);
 cv::Mat padImage(cv::Mat source, int channels, int *pad, int padSize, int type);
 
 // debug prints
-void printElements(float* source, int rows, cv::String name);
+void print_20i_elements(uint32* source, cv::String name);
+void print_20_elements(float* source, cv::String name);
+void print_100_elements(float* source, int rows, cv::String name);
 void testFeatures(Info features, cv::String name);
 
 #endif

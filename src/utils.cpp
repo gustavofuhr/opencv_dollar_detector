@@ -688,7 +688,21 @@ cv::Mat padImage(cv::Mat source, int channels, int *pad, int padSize, int type)
 
 /************************************************************************************************************/
 
-void printElements(float* source, int rows, cv::String name)
+void print_20i_elements(uint32* source, cv::String name)
+{
+  std::cout << std::endl << "First twenty elements of " << name << std::endl;
+  for (int i=0; i < 20; i++)
+    std::cout << i << ":  " << source[i] << std::endl;
+}
+
+void print_20_elements(float* source, cv::String name)
+{
+  std::cout << std::endl << "First twenty elements of " << name << std::endl;
+  for (int i=0; i < 20; i++)
+    std::cout << i << ":  " << std::fixed << std::setprecision(5) << source[i] << std::endl;
+}
+
+void print_100_elements(float* source, int rows, cv::String name)
 {
 	std::cout << std::endl << "First one hundred elements of " << name << std::endl;
 	for (int i=0; i < 10; i++)
@@ -712,14 +726,14 @@ void testFeatures(Info features, cv::String name)
 	int rows = features.image.rows;
 	int cols = features.image.cols;
 
-	printElements(floatIm, rows, "ch 1 " + name);
-	printElements(&floatIm[rows*cols], rows, "ch 2 " + name);
-	printElements(&floatIm[2*rows*cols], rows, "ch 3 " + name);
-	printElements(floatMg, rows, "ch 4 " + name);
-	printElements(floatH1, rows, "ch 5 " + name);
-	printElements(floatH2, rows, "ch 6 " + name);
-	printElements(floatH3, rows, "ch 7 " + name);
-	printElements(floatH4, rows, "ch 8 " + name);
-	printElements(floatH5, rows, "ch 9 " + name);
-	printElements(floatH6, rows, "ch 10 " + name);
+	print_100_elements(floatIm, rows, "ch 1 " + name);
+	print_100_elements(&floatIm[rows*cols], rows, "ch 2 " + name);
+	print_100_elements(&floatIm[2*rows*cols], rows, "ch 3 " + name);
+	print_100_elements(floatMg, rows, "ch 4 " + name);
+	print_100_elements(floatH1, rows, "ch 5 " + name);
+	print_100_elements(floatH2, rows, "ch 6 " + name);
+	print_100_elements(floatH3, rows, "ch 7 " + name);
+	print_100_elements(floatH4, rows, "ch 8 " + name);
+	print_100_elements(floatH5, rows, "ch 9 " + name);
+	print_100_elements(floatH6, rows, "ch 10 " + name);
 }
