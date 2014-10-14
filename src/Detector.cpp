@@ -86,7 +86,7 @@ void Detector::acfDetect(cv::Mat image)
 	std::cout << std::endl << "sizeof(uint32)=" << sizeof(uint32) << ", sizeof(uint32_t)=" << sizeof(uint32_t) << std::endl << std::endl; 
 	// debug */
 
-
+	/*
 	// debug: read pyramid from file
 	cv::FileStorage xml;
 	xml.open("../opencv_dollar_detector/pyramid.xml", cv::FileStorage::READ);
@@ -128,76 +128,20 @@ void Detector::acfDetect(cv::Mat image)
 	// to apply multiple detector models you need to create multiple Detector objects. 
 	for (int i = 0; i < opts.pPyramid.computedScales; i++)
 	{
-		// debug
-		// std::cout << std::endl << "acfDetect, computedScales[" << i << "] = " << opts.pPyramid.computedScales << std::endl;
+		// in the original file: *chnsSize = mxGetDimensions(P.data{i});
+		// const int height = (int) chnsSize[0];
+  		// const int width = (int) chnsSize[1];
+  		// const int nChns = mxGetNumberOfDimensions(prhs[0])<=2 ? 1 : (int) chnsSize[2];
+		const int height = opts.pPyramid.computedChannels[i].image.rows;
+		const int width = opts.pPyramid.computedChannels[i].image.cols;
+
+		const int height1 = (int)ceil(float(height*shrink-modelHt+1)/stride);
+		const int width1 = (int)ceil(float(width*shrink-modelWd+1)/stride);
 
 		float* chns;
-		float* ch1 = cvImage2floatArray(opts.pPyramid.computedChannels[i].image, 3);
-		int ch1Size = opts.pPyramid.computedChannels[i].image.rows * opts.pPyramid.computedChannels[i].image.cols * 3;
-
-		// std::cout << "rows*cols=" << opts.pPyramid.computedChannels[i].image.rows * opts.pPyramid.computedChannels[i].image.cols << std::endl;
-
-		/*
-		// debug: prints "ch1Size=84816"
-		std::cout << "ch1Size=" << ch1Size << std::endl;
-		// debug */
-
-		/*
-		// debug: test contents of ch1
-		float* testFloat = (float*)malloc(ch1Size*sizeof(float));
-		memcpy(testFloat, ch1, ch1Size*sizeof(float));
-		cv::Mat testMat = floatArray2cvImage(testFloat, opts.pPyramid.computedChannels[i].image.rows, opts.pPyramid.computedChannels[i].image.cols, 3);
-		cv::imshow("content of ch1", testMat);
-		// debug */
+		chns = features2floatArray(opts.pPyramid.computedChannels[i], height, width, 3, 1, 6);
 		
-		float* ch2 = cvImage2floatArray(opts.pPyramid.computedChannels[i].gradientMagnitude, 1);
-		int ch2Size = opts.pPyramid.computedChannels[i].gradientMagnitude.rows * opts.pPyramid.computedChannels[i].gradientMagnitude.cols;
-
 		/*
-		// debug: test contents of ch2
-		float* testFloat2 = (float*)malloc(ch2Size*sizeof(float));
-		memcpy(testFloat2, ch2, ch2Size*sizeof(float));
-		cv::Mat testMat2 = floatArray2cvImage(testFloat2, opts.pPyramid.computedChannels[i].gradientMagnitude.rows, opts.pPyramid.computedChannels[i].gradientMagnitude.cols, 1);
-		cv::imshow("content of ch2", testMat2);
-		// debug */
-
-		int ch3Size = opts.pPyramid.computedChannels[i].gradientHistogram[0].rows*opts.pPyramid.computedChannels[i].gradientHistogram[0].cols * opts.pPyramid.pChns.pGradHist.nChannels;
-		float* ch3 = (float*)malloc(ch3Size*sizeof(float));
-
-		for (int j=0; j < opts.pPyramid.pChns.pGradHist.nChannels; j++)
-		{
-			int rows = opts.pPyramid.computedChannels[i].gradientHistogram[j].rows;
-			int cols = opts.pPyramid.computedChannels[i].gradientHistogram[j].cols;
-			memcpy(&ch3[j*rows*cols], cvImage2floatArray(opts.pPyramid.computedChannels[i].gradientHistogram[j], 1), rows*cols*sizeof(float));
-
-			/*
-			// debug: test source for this memcpy
-			float* testFloat4 = cvImage2floatArray(opts.pPyramid.computedChannels[i].gradientHistogram[j], 1);
-			cv::Mat testMat4 = floatArray2cvImage(testFloat4, rows, cols, 1);
-			cv::imshow("ch3 source", testMat4);			
-			// */
-
-			/*
-			// debug: test contents of ch3
-			float* testFloat3 = (float*)malloc(rows*cols*sizeof(float));
-			memcpy(testFloat3, &ch3[j*rows*cols], rows*cols*sizeof(float));
-			cv::Mat testMat3 = floatArray2cvImage(testFloat3, rows, cols, 1);
-			cv::imshow("content of ch3", testMat3);
-			cv::waitKey();
-			// debug */
-		}
-
-		// float *chns = (float*) mxGetData(prhs[0]);
-		chns = (float*) malloc((ch1Size+ch2Size+ch3Size)*sizeof(float));
-
-		/*
-		// real memcpys, removed for testing
-		memcpy(chns, ch1, ch1Size);
-		memcpy(&chns[ch1Size], ch2, ch2Size);
-		memcpy(&chns[ch1Size+ch2Size], ch3, ch3Size);
-		// */
-		
-		
 		// debug: read chns from file
 	  	cv::Mat scalei;
 	  	std::string scaleName;
@@ -217,16 +161,6 @@ void Detector::acfDetect(cv::Mat image)
 		chns = cvImage2floatArray(scalei, 1);
 		// debug */
 
-		// in the original file: *chnsSize = mxGetDimensions(P.data{i});
-		// const int height = (int) chnsSize[0];
-  		// const int width = (int) chnsSize[1];
-  		// const int nChns = mxGetNumberOfDimensions(prhs[0])<=2 ? 1 : (int) chnsSize[2];
-		const int height = opts.pPyramid.computedChannels[i].image.rows;
-		const int width = opts.pPyramid.computedChannels[i].image.cols;
-
-		const int height1 = (int)ceil(float(height*shrink-modelHt+1)/stride);
-		const int width1 = (int)ceil(float(width*shrink-modelWd+1)/stride);
-
 		// construct cids array
 	  	int nFtrs = modelHt/shrink*modelWd/shrink*nChns;
 	  	uint32 *cids = new uint32[nFtrs]; int m=0;
@@ -235,7 +169,7 @@ void Detector::acfDetect(cv::Mat image)
 	      		for( int r=0; r<modelHt/shrink; r++ )
 	        		cids[m++] = z*width*height + c*height + r;
 
-		
+		/*
 		// debug: prints values of several variables, all of these return correct results
 		// shrink=4, modelHt=128, modelWd=64, stride=4, cascThr=-1.000000, treeDepth=2
 		// height=152, width=186, nChns=10, nTreeNodes=7, nTrees=2048, height1=121, width1=171, nFtrs=5120
@@ -245,7 +179,7 @@ void Detector::acfDetect(cv::Mat image)
 			", width1=" << width1 << ", nFtrs=" << nFtrs << std::endl;
 		// debug */
 		
-		
+		/*
 		// debug: print input matrices
 		int rows = opts.pPyramid.computedChannels[i].image.rows;
 
@@ -268,7 +202,7 @@ void Detector::acfDetect(cv::Mat image)
 		print_20i_elements(child, "child");
 		print_20i_elements(cids, "cids");
 
-		// std::cin.get();
+		std::cin.get();
 		// debug */
 
 		// apply classifier to each patch
@@ -314,8 +248,9 @@ void Detector::acfDetect(cv::Mat image)
 			      }
 		    }
 		    if(h>cascThr) { 
+		    	// debug
 		    	std::cout << "detection! scale=" << i << ", c=" << c << ", r=" << r << ", h=" << h << std::endl;
-		    	//std::cin.get();
+
 		    	cs.push_back(c); rs.push_back(r); hs1.push_back(h); 
 		    }
 		  }
@@ -390,7 +325,7 @@ void Detector::acfDetect(cv::Mat image)
 	// debug */
 
 	// debug
-	xml.release();
+	// xml.release();
 }
 
 BB_Array Detector::bbNms(BB_Array bbs, int size)

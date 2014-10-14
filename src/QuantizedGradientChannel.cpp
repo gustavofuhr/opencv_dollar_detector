@@ -315,6 +315,9 @@ std::vector<cv::Mat> QuantizedGradientChannel::mGradHist(cv::Mat gradMag, cv::Ma
       for (int j=0; j < hb*wb; j++)
           tempH[j] = H[indexForH++];
 
+      // debug
+      print_100_elements(tempH, hb, "H after gradHist");
+
       cv::Mat tempMat = floatArray2cvImage(tempH, hb, wb, 1);
       result.push_back(tempMat);
 
@@ -324,6 +327,9 @@ std::vector<cv::Mat> QuantizedGradientChannel::mGradHist(cv::Mat gradMag, cv::Ma
       cv::waitKey();
       // */
     }
+    
+    // debug
+    // std::cin.get();
 	}
 
 	return result;

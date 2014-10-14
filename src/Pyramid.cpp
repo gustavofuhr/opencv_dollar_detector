@@ -69,12 +69,29 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 	convertedImage = rgbConvert(I, pChns.pColor.colorSpaceType);
 	pChns.pColor.colorSpaceType = ORIG;
 
-	
+	/*
 	// debug: loads image converted inside matlab
-	convertedImage = cv::imread("../opencv_dollar_detector/frame0254_luv_single.png");
-	cv::cvtColor(convertedImage, convertedImage, CV_BGR2RGB);
-	convertedImage.convertTo(convertedImage, CV_32FC3, 1.0/255.0);
-	//cv::cvtColor(convertedImage, convertedImage, CV_BGR2RGB);
+	cv::FileStorage xml;
+	xml.open("../opencv_dollar_detector/luvImage.xml", cv::FileStorage::READ);
+	if (!xml.isOpened())
+	{
+		std::cerr << "Failed to open luvImage.xml" << std::endl;
+		std::cin.get();
+	}
+	cv::Mat ch1, ch2, ch3;
+	std::vector<cv::Mat> channels;
+	xml["luvImage"]["ch1"] >> ch1;
+	xml["luvImage"]["ch2"] >> ch2;
+	xml["luvImage"]["ch3"] >> ch3;
+
+	channels.push_back(ch1);
+	channels.push_back(ch2);
+	channels.push_back(ch3);
+
+	cv::merge(channels, convertedImage);
+
+	//cv::imshow("image loaded from xml file", convertedImage);
+	//cv::waitKey();
 	// debug */
 
 	/*
@@ -360,7 +377,7 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 	
 	// debug
 	float *If = cvImage2floatArray(I, 3);
-	print_100_elements(If, I.rows, "image before rgbConvert");
+	print_100_elements(If, I.rows, "image inside chnsCompute before rgbConvert");
 	// debug */
 
 	// compute color channels
@@ -399,15 +416,14 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 			// normalization constant is read inside the procedure
 			pChns.pGradMag.gradMagNorm(M, S, h, w);
 
-			/*
+			
 			// debug: after normalization, S matrix is correct but gradMag is wrong (but equal to compiled mex result, which is the wrong one)
 			print_100_elements(M, h, "gradMag after normalization");
 			print_100_elements(S, h, "S matrix");
-			std::cin.get();
+			//std::cin.get();
 			// debug */
 
-			result.gradientMagnitude = floatArray2cvImage(M, h, w, 1); // only one channel
-		}	
+			result.gradientMagnitude = floatArray2cvImage(M, h, w, 1); 		}	
 	}		
 	else
 	{

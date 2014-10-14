@@ -37,4 +37,6 @@ void print_20_elements(float* source, cv::String name);
 void print_100_elements(float* source, int rows, cv::String name);
 void testFeatures(Info features, cv::String name);
 
+float* features2floatArray (Info features, int rows, int cols, int colorChannels, int magChannels, int histChannels);
+
 #endif

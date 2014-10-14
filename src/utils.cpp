@@ -368,7 +368,7 @@ cv::Mat resample(cv::Mat source, int ori_h, int ori_w, int new_h, int new_w, flo
 
 /************************************************************************************************************/
 // color space conversions using OpenCV functions
-
+/*
 cv::Mat rgbConvert(cv::Mat I, int colorSpace)
 {
     cv::Mat result;
@@ -394,7 +394,7 @@ cv::Mat rgbConvert(cv::Mat I, int colorSpace)
 
 /************************************************************************************************************/
 // colorspace conversions using Dóllar's mex file (rgbConvertMex.cpp)
-/*
+
 // Constants for rgb2luv conversion and lookup table for y-> l conversion
 template<class oT> oT* rgb2luv_setup( oT z, oT *mr, oT *mg, oT *mb,
   oT &minu, oT &minv, oT &un, oT &vn )
@@ -544,6 +544,7 @@ oT* rgbConvertImg( iT *I, int n, int d, int flag, oT nrm ) {
   bool useSse = n%4==0 && typeid(oT)==typeid(float);
   if( flag==2 && useSse )
     for(i=0; i<d/3; i++) rgb2luv_sse(I+i*n*3,(float*)(J+i*n*3),n,(float)nrm);
+    //for(i=0; i<d/3; i++) rgb2luv(I+i*n*3,(float*)(J+i*n*3),n,(float)nrm);
   else if( (flag==0 && d==1) || flag==1 ) normalize(I,J,n*d,nrm);
   else if( flag==0 ) for(i=0; i<d/3; i++) rgb2gray(I+i*n*3,J+i*n*1,n,nrm);
   else if( flag==2 ) for(i=0; i<d/3; i++) rgb2luv(I+i*n*3,J+i*n*3,n,nrm);
@@ -736,4 +737,30 @@ void testFeatures(Info features, cv::String name)
 	print_100_elements(floatH4, rows, "ch 8 " + name);
 	print_100_elements(floatH5, rows, "ch 9 " + name);
 	print_100_elements(floatH6, rows, "ch 10 " + name);
+}
+
+/************************************************************************************************************/
+
+float* features2floatArray (Info features, int rows, int cols, int colorChannels, int magChannels, int histChannels)
+{
+  int i, resultIndex=0;
+  int channels = colorChannels + magChannels + histChannels;
+  float* result = (float*)malloc(rows*cols*channels*sizeof(float));
+  float* tempImage = cvImage2floatArray(features.image, colorChannels);
+  float* tempMag = cvImage2floatArray(features.gradientMagnitude, magChannels);
+
+  for (i=0; i < rows*cols*colorChannels; i++)
+    result[resultIndex++] = tempImage[i];
+  for (i=0; i < rows*cols*magChannels; i++)
+    result[resultIndex++] = tempMag[i];
+
+  for (int j=0; j < histChannels; j++)
+  {
+    float* tempHist = (float*)malloc(rows*cols*sizeof(float));
+    tempHist = cvImage2floatArray(features.gradientHistogram[j], 1);
+    for (i=0; i < rows*cols; i++)
+      result[resultIndex++] = tempHist[i];
+  }
+
+  return result;
 }

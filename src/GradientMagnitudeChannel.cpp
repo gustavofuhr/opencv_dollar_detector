@@ -10,7 +10,7 @@ void GradientMagnitudeChannel::readGradientMagnitude(cv::FileNode gradMagNode)
   nChannels = gradMagNode["nChns"];
 }
 
-/*
+
 // compute x and y gradients for just one column (uses sse)
 void grad1( float *I, float *Gx, float *Gy, int h, int w, int x ) {
   int y, y1; float *Ip, *In, r; __m128 *_Ip, *_In, *_G, _r;
@@ -37,10 +37,10 @@ void grad1( float *I, float *Gx, float *Gy, int h, int w, int x ) {
 }
 // */
 
-
+/*
 // compute x and y gradients for just one column (no sse)
 void grad1( float *I, float *Gx, float *Gy, int h, int w, int x ) {
-  int y, y1; float *Ip, *In, r; __m128 *_Ip, *_In, *_G, _r;
+  int y, y1; float *Ip, *In, r;
   // compute column of Gx
   Ip=I-h; In=I+h; r=.5f;
   if(x==0) { r=1; Ip+=h; } else if(x==w-1) { r=1; In-=h; }
@@ -52,8 +52,7 @@ void grad1( float *I, float *Gx, float *Gy, int h, int w, int x ) {
     // debug
     if (y < 20 && x==0)
       std::cout << "y=" << y << ", r=" << r << ", In=" << *(In-1) << ", Ip=" << *(Ip-1) << ", Gx=" << *(Gx-1) << std::endl;
-    // */
-  }
+  } 
   
   // compute column of Gy
   #define GRADY(r) *Gy++=(*In++-*Ip++)*r;
@@ -61,9 +60,9 @@ void grad1( float *I, float *Gx, float *Gy, int h, int w, int x ) {
   // GRADY(1); Ip--; for(y=1; y<h-1; y++) GRADY(.5f); In--; GRADY(1);
   y1=((~((size_t) Gy) + 1) & 15)/4; if(y1==0) y1=4; if(y1>h-1) y1=h-1;
   GRADY(1); Ip--; for(y=1; y<y1; y++) GRADY(.5f);
-  _r = SET(.5f); _G=(__m128*) Gy;
-  for(; y+4<h-1; y+=4, Ip+=4, In+=4, Gy+=4)
-    *_G++=MUL(SUB(LDu(*In),LDu(*Ip)),_r);
+
+  for(; y<h; y++, Ip++, In++, Gy++)
+    *Gy = (*In-*Ip)*0.5f; 
   for(; y<h-1; y++) GRADY(.5f); In--; GRADY(1);
   #undef GRADY
 }
@@ -123,20 +122,6 @@ void gradMag( float *I, float *M, float *O, int h, int w, int d, bool full ) {
       }
 
       /*
-      //debug: non-SSE attempt, doesn't work   
-      for (y=0; y < h4; y++)
-      {
-        y1 = h4*c+y;
-        M2[y1] = ((Gx[y1])*(Gx[y1])) + ((Gx[y1])*(Gx[y1]));
-        if (c==0) continue;
-        m = (M2[y1] > M2[y])? 0xffffffff : 0x0;
-        M2[y] = (m & M2[y1]) | (~m & M2[y]);
-        Gx[y] = (m & Gx[y1]) | (~m & Gx[y]);
-        M2[y] = (m & Gy[y1]) | (~m & Gy[y]);
-      }
-      // */
-
-      /*
       // debug
       std::cout << std::endl << "Printing first twenty elements of Gx after for in channel " << c << ":" << std::endl;
       for (int i=0; i < 20; i++)
@@ -152,14 +137,14 @@ void gradMag( float *I, float *M, float *O, int h, int w, int d, bool full ) {
       if(O) _Gx[y] = MUL( MUL(_Gx[y],_m), SET(acMult) );
       if(O) _Gx[y] = XOR( _Gx[y], AND(_Gy[y], SET(-0.f)) );
     };
-
+    
     /*
     // debug
     std::cout << std::endl << "Printing first twenty elements of Gx after normalization:" << std::endl;
     for (int i=0; i < 20; i++)
       std::cout << i << ":  " << Gx[i] << std::endl;
     std::cout << std::endl;
-    // */
+    // debug */
 
     memcpy( M+x*h, M2, h*sizeof(float) );
     // compute and store gradient orientation (O) via table lookup
@@ -171,7 +156,7 @@ void gradMag( float *I, float *M, float *O, int h, int w, int d, bool full ) {
         // debug
         std::cout << "x=" << x << ", h=" << h << ", y=" << y << ", x*h+y=" << x*h+y << ", Gx[" << y << "]=" << Gx[y] << ", O[" << x*h+y << "]=" << O[x*h+y];
         std::cin.get();
-        // */
+        // debug */
     }
     if( O!=0 && full ) {
       y1=((~size_t(O+x*h)+1)&15)/4; y=0;
@@ -266,9 +251,6 @@ std::vector<cv::Mat> GradientMagnitudeChannel::mGradMag(cv::Mat I, int channel)
 		// call to the actual function: gradMag(I, M, O, h, w, d, full>0 );
 		// void gradMag(float*, float*, float*, int, int, int, bool);
     gradMag(If, M, O, h, w, d, full>0);
-
-    // debug
-    // std::cout << "after gradMag" << std::endl;
 
     // debug
     print_100_elements(M, h, "gradMag inside mGradMag");

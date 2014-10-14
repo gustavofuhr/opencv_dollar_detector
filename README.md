@@ -10,39 +10,42 @@ This is a work-in-progress port of the Dóllar pedestrian detector to OpenCV in 
 To Do List:
 ======================
 
-Current Total: 13
+Current Total: 14
+
+Opencv_Dollar_Detector.cpp:
+&nbsp;&nbsp;&nbsp;&nbsp;enable full use of datasets as parameters
+&nbsp;&nbsp;&nbsp;&nbsp;enable detection and feature calculation to be used in multiple images
 
 Detector.cpp:
-    acfDetect:
-        separate detection in a scale to a single function
-	nmsMax:
-		line 248: sort bounding boxes
-		line 253: add test for greediness
-		line 256: test if result[j] was discarded
-		line 291: discard the bounding box
-		line 296: adjust result
+&nbsp;&nbsp;&nbsp;&nbsp;acfDetect:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;separate detection in a scale to a single function
+&nbsp;&nbsp;&nbsp;&nbsp;nmsMax:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;line 248: sort bounding boxes
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;line 253: add test for greediness
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;line 256: test if result[j] was discarded
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;line 291: discard the bounding box
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;line 296: adjust result
 
 ColorChannel.cpp:
-	OK!
+&nbsp;&nbsp;&nbsp;&nbsp;OK!
 
 GradientMagnitudeChannel.cpp:
-	gradMag:
-		test why Orientation matrix gives wrong results, while Magnitude matrix seems OK.
+&nbsp;&nbsp;&nbsp;&nbsp;OK!
 	
 QuantizedGradientChannel.cpp:
-	OK!
+&nbsp;&nbsp;&nbsp;&nbsp;OK!
 
 Pyramid.cpp:
-	computeMultiScaleChannelFeaturePyramid:
-		change literal number of channels to nChannels whenever needed
-		line 113: the whole for statement needs work, write a substitution for is=is(2:3) 
-		line 140: compute lambdas
-		line 189: fix approximated (resampled) scales of H
-	computeSingleScaleChannelFeatures:
-		line 247: possibly add computation of custom channels
+&nbsp;&nbsp;&nbsp;&nbsp;computeMultiScaleChannelFeaturePyramid:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;change literal number of channels to nChannels whenever needed
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;line 113: the whole for statement needs work, write a substitution for is=is(2:3) 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;line 140: compute lambdas
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;line 189: fix approximated (resampled) scales of H
+&nbsp;&nbsp;&nbsp;&nbsp;computeSingleScaleChannelFeatures:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;line 247: possibly add computation of custom channels
 
 pNms.cpp:
-	check if it is necessary!
+&nbsp;&nbsp;&nbsp;&nbsp;check if it is necessary!
 
 utils.cpp:
-	OK!
+&nbsp;&nbsp;&nbsp;&nbsp;OK!
