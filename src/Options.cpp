@@ -28,7 +28,18 @@ void Options::readOptions(cv::FileNode optionsNode)
 	winsSave = optionsNode["winsSave"];
 	*/
 
-	suppressionType = (cv::String)optionsNode["pNms"]["type"];
+	cv::String temp = (cv::String)optionsNode["pNms"]["type"];
+	if (temp == "max")
+		suppressionType = MAX;
+	else if (temp == "maxg")
+		suppressionType = MAXG;
+	else if (temp == "ms")
+		suppressionType = MS;
+	else if (temp == "cover")
+		suppressionType = COVER;
+	else 
+		suppressionType = NONE;
+
 	overlapArea = optionsNode["pNms"]["overlap"];
 	overlapDenominator = (cv::String)optionsNode["pNms"]["ovrDnm"];
 	suppressionThreshold = 0.0;

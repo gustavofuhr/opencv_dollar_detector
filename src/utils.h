@@ -13,9 +13,10 @@
 
 typedef unsigned int uint32;
 
-enum method { CONV_BOX, CONV_TRI, CONV_11, CONV_TRI1, CONV_MAX};
-enum colorSpaceType {GRAY=0, RGB, LUV, HSV, ORIG};
+enum method { CONV_BOX, CONV_TRI, CONV_11, CONV_TRI1, CONV_MAX };
+enum colorSpaceType { GRAY=0, RGB, LUV, HSV, ORIG };
 enum paddingType { REPLICATE=1, SYMMETRIC, CIRCULAR };
+enum suppressionTypeID { NONE, MAX, MAXG, MS, COVER };
 
 // matrix conversions
 float* cvImage2floatArray(cv::Mat source, int channels);

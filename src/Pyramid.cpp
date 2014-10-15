@@ -1,26 +1,6 @@
 #include "Pyramid.h"
 #include <highgui.h>
 
-void Pyramid::readScalesFromXML(cv::FileNode pyramid)
-{
-	cv::Mat scale01;
-	pyramid["scale01"] >> scale01;
-	float* scale1F = cvImage2floatArray(scale01, 1);
-	print_100_elements(scale1F, scale01.rows, "scale 1 read from xml file");
-
-	cv::Mat scale02;
-	pyramid["scale02"] >> scale02;
-	float* scale2F = cvImage2floatArray(scale02, 1);
-	print_100_elements(scale2F, scale02.rows, "scale 2 read from xml file");
-
-	cv::Mat scale03;
-	pyramid["scale03"] >> scale03;
-	float* scale3F = cvImage2floatArray(scale03, 1);
-	print_100_elements(scale3F, scale03.rows, "scale 3 read from xml file");
-
-	std::cin.get();
-}
-
 void Pyramid::readPyramid(cv::FileNode pyramidNode)
 {
 	pChns.readChannelFeatures(pyramidNode["pChns"]);
@@ -51,6 +31,8 @@ void Pyramid::readPyramid(cv::FileNode pyramidNode)
 void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 {
 	cv::Mat convertedImage;
+	int colorChannels = pChns.pColor.nChannels;
+	int histogramChannels = pChns.pGradHist.nChannels;
 
 	// p.pad=round(p.pad/shrink)*shrink;
 	for (int i=0; i < padSize; i++)
@@ -129,18 +111,15 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 		if (h1 == I.rows && w1 == I.cols)
 			I1 = convertedImage;
 		else // I1=imResampleMex(I,sz1(1),sz1(2),1);
-			I1 = resample(convertedImage,convertedImage.rows,convertedImage.cols,h1,w1,1.0, 3);
+			I1 = resample(convertedImage,convertedImage.rows,convertedImage.cols,h1,w1,1.0, colorChannels);
 
 		// if(s==.5 && (nApprox>0 || nPerOct==1)), I=I1;
 		if (scales[i] == 0.5 && (approximatedScales>0 || scalesPerOctave == 1))
 			convertedImage = I1; 
 
 		computedChannels[i] = computeSingleScaleChannelFeatures(I1);
+		numberOfRealScales++;
 	}
-	numberOfRealScales = i;
-
-	// debug
-	std::cout << "after real scales" << std::endl;
 
 	int is[computedScales/(approximatedScales+1)]; //needs a better name
 	int isIndex = 0;
@@ -224,9 +203,6 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 					iR = (j+1)*(approximatedScales+1);
 			}
 
-			// debug
-			// std::cout << std::endl << "approximating, i=" << i << ", scales[iR]=" << scales[iR] << ", iR=" << iR << ", h1=" << h1 << ", w1=" << w1 << std::endl;
-
 			ratio[0] = pow(scales[i]/scales[iR],-lambdas[0]);
 			computedChannels[i].image = resample(computedChannels[iR].image, computedChannels[iR].image.rows, computedChannels[iR].image.cols, h1, w1, ratio[0], 3);
 		
@@ -235,17 +211,11 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 			
 			ratio[2] = pow(scales[i]/scales[iR],-lambdas[2]);
 
-			for (int k=0; k < pChns.pGradHist.nChannels; k++)
+			for (int k=0; k < histogramChannels; k++)
 			{
 				int h = computedChannels[iR].gradientHistogram[k].rows;
 				int w = computedChannels[iR].gradientHistogram[k].cols;
 				computedChannels[i].gradientHistogram.push_back(resample(computedChannels[iR].gradientHistogram[k], h, w, h1, w1, ratio[2], 1));
-
-				/*
-				// debug 
-				std::cout << "approx gradHist for scale[" << i << "], rows=" << h << ", cols=" 
-				<< w << ", type=" << computedChannels[i].gradientHistogram[k].type() << ", ratio=" << ratio[2] << std::endl;
-				// debug */
 			}
 
 			/*
@@ -282,7 +252,7 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 			// cv::waitKey();
 			
 			// debug
-			// std::cout << "end of i=" << i << ", scales[iR]=" << scales[iR] << ", iR=" << iR << ", h1=" << h1 << ", w1=" << w1 << std::endl;
+			std::cout << "end of i=" << i << ", scales[iR]=" << scales[iR] << ", iR=" << iR << ", h1=" << h1 << ", w1=" << w1 << std::endl;
 		}
 	}
 

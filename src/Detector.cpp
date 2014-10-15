@@ -1,6 +1,6 @@
 #include "Detector.h"
 
-//i dont know if its gonna be needed but this is start
+// i dont know if its gonna be needed but this is start
 void Detector::exportDetectorModel(cv::String fileName)
 {
 	cv::FileStorage xml;
@@ -41,8 +41,16 @@ void Detector::importDetectorModel(cv::String fileName)
 	else
 	{
 		opts.readOptions(xml["detector"]["opts"]);
-
-		clf.readClf(xml["detector"]["clf"]);		
+	
+		xml["detector"]["clf"]["fids"] >> fids;
+		xml["detector"]["clf"]["child"] >> child;
+		xml["detector"]["clf"]["thrs"] >> thrs;
+		xml["detector"]["clf"]["hs"] >> hs;
+		xml["detector"]["clf"]["weights"] >> weights;
+		xml["detector"]["clf"]["depth"] >> depth;
+		xml["detector"]["clf"]["errs"] >> errs;
+		xml["detector"]["clf"]["losses"] >> losses;		
+		xml["detector"]["clf"]["treeDepth"] >> treeDepth;	
 
 		xml.release();
 	}
@@ -50,7 +58,7 @@ void Detector::importDetectorModel(cv::String fileName)
 
 //std::cout << "k=" << k << ", fids[k]=" << fids[k] << ", cids[fids[k]]=" << cids[fids[k]] << ", chns1[cids[fids[k]]]=" << chns1[cids[fids[k]]] << ", thrs[k]=" << thrs[k] << std::endl;
 
-//this procedure was just copied verbatim
+// this procedure was just copied verbatim
 inline void getChild(float *chns1, uint32 *cids, uint32 *fids, float *thrs, uint32 offset, uint32 &k0, uint32 &k)
 {
   float ftr = chns1[cids[fids[k]]];
@@ -65,26 +73,8 @@ void Detector::acfDetect(cv::Mat image)
 	cv::Mat I;
 	image.convertTo(I, CV_32FC3, 1.0/255.0);
 
-	totalDetections = 0;
-
 	// compute feature pyramid
 	opts.pPyramid.computeMultiScaleChannelFeaturePyramid(I);
-
-
-	// debug: test values of scales and scales hw
-	std::cout << "printing scales:" << std::endl;
-	for (int i=0; i < opts.pPyramid.computedScales; i++)
-		std::cout << i << ": " << opts.pPyramid.scales[i] << std::endl;
-
-	std::cout << std::endl << "printing scaleshw:" << std::endl;
-	for (int i=0; i < opts.pPyramid.computedScales; i++)
-		std::cout << i << ": (" << opts.pPyramid.scales_h[i] << "," << opts.pPyramid.scales_w[i] << ")" << std::endl;
-	// debug */
-
-
-	// debug: test size of uint32
-	std::cout << std::endl << "sizeof(uint32)=" << sizeof(uint32) << ", sizeof(uint32_t)=" << sizeof(uint32_t) << std::endl << std::endl; 
-	// debug */
 
 	/*
 	// debug: read pyramid from file
@@ -103,24 +93,24 @@ void Detector::acfDetect(cv::Mat image)
 	const int stride = opts.stride;
 	const float cascThr = opts.cascadeThreshold;
 
-	float *thrs = cvImage2floatArray(clf.thrs, 1);
-	float *hs = cvImage2floatArray(clf.hs, 1);
+	float *thrs = cvImage2floatArray(this->thrs, 1);
+	float *hs = cvImage2floatArray(this->hs, 1);
 	
 	cv::Mat tempFids;
-	cv::transpose(clf.fids, tempFids);
+	cv::transpose(this->fids, tempFids);
 	uint32 *fids = (uint32*) tempFids.data;
 	
 	cv::Mat tempChild;
-	cv::transpose(clf.child, tempChild);
+	cv::transpose(this->child, tempChild);
 	uint32 *child = (uint32*) tempChild.data;
 
 	// const mwSize *fidsSize = mxGetDimensions(mxGetField(trees,0,"fids"));
 	// const int nTreeNodes = (int) fidsSize[0];
  	// const int nTrees = (int) fidsSize[1];
-	const int nTreeNodes = clf.fids.rows;
-	const int nTrees = clf.fids.cols;
+	const int nTreeNodes = this->fids.rows;
+	const int nTrees = this->fids.cols;
 	
-	const int treeDepth = clf.treeDepth;
+	const int treeDepth = this->treeDepth;
 	const int nChns = opts.pPyramid.pChns.pColor.nChannels + opts.pPyramid.pChns.pGradMag.nChannels + opts.pPyramid.pChns.pGradHist.nChannels; 
 
 
@@ -247,22 +237,12 @@ void Detector::acfDetect(cv::Mat image)
 			        h += hs[k]; if( h<=cascThr ) break;
 			      }
 		    }
-		    if(h>cascThr) { 
-		    	// debug
-		    	std::cout << "detection! scale=" << i << ", c=" << c << ", r=" << r << ", h=" << h << std::endl;
-
-		    	cs.push_back(c); rs.push_back(r); hs1.push_back(h); 
-		    }
+		    if(h>cascThr) { cs.push_back(c); rs.push_back(r); hs1.push_back(h); }
 		  }
 		}
 		delete [] cids;
 		free(chns);
 		m=cs.size();
-
-		// std::cin.get();
-
-		// debug
-		// std::cout << "acfDetect, after loop" << std::endl;
 
 		// shift=(modelDsPad-modelDs)/2-pad;
 		double shift[2];
@@ -285,10 +265,6 @@ void Detector::acfDetect(cv::Mat image)
 			bb.score = hs1[j];
 			bb.scale = i;
 			detections.push_back(bb);
-
-			// debug
-			totalDetections++;
-			std::cout << "totalDetections: "<<totalDetections << ", fp=("<<bb.firstPoint.x <<","<< bb.firstPoint.y<< "), height="<<bb.height << ", width="<<bb.width << ", score="<<bb.score << ", scale="<<bb.scale << std::endl;
 		}
 
 		// debug
@@ -306,13 +282,11 @@ void Detector::acfDetect(cv::Mat image)
 
 
 	// debug: print all detections
-	cv::Mat img = cv::imread("../opencv_dollar_detector/frame0254.png");
+	cv::Mat img = image.clone();
 	for (int i = 0; i<detections.size(); ++i) 
 	{
-		std::cout << "Detection fp: " << detections[i].firstPoint << std::endl;
-		std::cout << "Detection (w, h): " << detections[i].width << "  " << detections[i].height << std::endl;
-		std::cout << "Score: "  << detections[i].score << std::endl;
-		std::cout << "Scale: "  << detections[i].scale << std::endl;
+		std::cout << "Detection fp: " << detections[i].firstPoint << ", (w, h): " << detections[i].width << "  " << detections[i].height << std::endl;
+		std::cout << "Score: "  << detections[i].score << ", Scale: "  << detections[i].scale << std::endl;
 
 		detections[i].plot(img, cv::Scalar(0,255,0));
 	}
@@ -320,10 +294,10 @@ void Detector::acfDetect(cv::Mat image)
 	cv::waitKey();
 	// debug */
 
-	detections = bbNms(detections);
+	detections = nonMaximalSuppression(detections);
 
 	// debug: print all detections
-	cv::Mat img2 = cv::imread("../opencv_dollar_detector/frame0254.png");
+	cv::Mat img2 = image.clone();
 	for (int i = 0; i<detections.size(); ++i) 
 	{
 		std::cout << "Detection fp: " << detections[i].firstPoint << ", (w, h): " << detections[i].width << "  " << detections[i].height << std::endl;
@@ -340,7 +314,7 @@ void Detector::acfDetect(cv::Mat image)
 }
 
 // for each i suppress all j st j>i and area-overlap>overlap
-BB_Array Detector::nmsMax(BB_Array source, bool greedy)
+BB_Array nmsMax(BB_Array source, bool greedy, double overlapArea, cv::String overlapDenominator)
 {
 	BB_Array result;
 	BB_Array sortedArray;
@@ -386,16 +360,16 @@ BB_Array Detector::nmsMax(BB_Array source, bool greedy)
 					{
 						double o = iw * ih;
 						double u;
-						if (opts.overlapDenominator == "union")
+						if (overlapDenominator == "union")
 							u = sortedArray[i].height*sortedArray[i].width + sortedArray[j].height*sortedArray[j].width-o;
-						else if (opts.overlapDenominator == "min")
+						else if (overlapDenominator == "min")
 						{
 							u = sortedArray[i].height*sortedArray[i].width;
 							if (sortedArray[i].height*sortedArray[i].width > sortedArray[j].height*sortedArray[j].width)
 								u = sortedArray[j].height*sortedArray[j].width;
 						}
 						o = o/u;
-						if (o > opts.overlapArea) // sortedArray[j] is no longer needed (is discarded)
+						if (o > overlapArea) // sortedArray[j] is no longer needed (is discarded)
 							discarded[j] = true;
 					}
 				}
@@ -411,20 +385,14 @@ BB_Array Detector::nmsMax(BB_Array source, bool greedy)
 	return result;
 }
 
-BB_Array Detector::bbNms(BB_Array bbs)
+BB_Array Detector::nonMaximalSuppression(BB_Array bbs)
 {
 	BB_Array result;
-	int j;
 
 	//keep just the bounding boxes with scores higher than the threshold
 	for (int i=0; i < bbs.size(); i++)
-	{
 		if (bbs[i].score > opts.suppressionThreshold)
-		{
 			result.push_back(bbs[i]);
-			j++;
-		}
-	}
 
 	// bbNms would apply resize to the bounding boxes now
 	// but our models dont use that, so it will be suppressed
@@ -435,12 +403,25 @@ BB_Array Detector::bbNms(BB_Array bbs)
 	
 	// if there are too many bounding boxes,
 	// he splits into two arrays and recurses, merging afterwards
-	// this will be done if needed
+	// this will be done if necessary
 	
 	// run actual nms on given bbs
 	// other types might be added later
-	if (opts.suppressionType == "maxg")
-		result = nmsMax(result, true);
+	switch (opts.suppressionType)
+	{
+		case MAX:
+			result = nmsMax(result, false, opts.overlapArea, opts.overlapDenominator);
+		break;
+		case MAXG:
+			result = nmsMax(result, true, opts.overlapArea, opts.overlapDenominator);
+		break;
+		case MS:
+			// not yet implemented
+		break;
+		case COVER:
+			// not yet implemented
+		break;	
+	}
 
 	return result;
 }

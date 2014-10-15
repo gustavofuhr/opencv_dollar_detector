@@ -12,7 +12,7 @@ public:
 	int stride;
 	int cascadeThreshold;
 
-	cv::String suppressionType;
+	int suppressionType;
 	double overlapArea; // area of overlap for bbs
 	cv::String overlapDenominator; // area of overlap denominator ('union' or 'min')
 	float suppressionThreshold;

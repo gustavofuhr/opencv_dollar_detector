@@ -31,7 +31,4 @@ public:
 	Info computeSingleScaleChannelFeatures(cv::Mat);
 	cv::Mat TriangleFilterConvolution(cv::Mat, int, int, int);
 	void getScales(int, int , int);
-
-	// debug
-	void readScalesFromXML(cv::FileNode pyramid);
 };

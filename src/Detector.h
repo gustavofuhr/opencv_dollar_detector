@@ -2,7 +2,6 @@
 #define DETECTOR_H
 
 #include "Options.h"
-#include "Clf.h"
 #include "Info.h"
 #include "BoundingBox.h"
 #include "utils.h"
@@ -11,17 +10,24 @@ class Detector
 {
 public:
 	Options opts; //opts contains the Pyramid
-	Clf clf;
+
+	//Clf clf;
+	cv::Mat fids;
+	cv::Mat thrs;
+	cv::Mat child;
+	cv::Mat hs;
+	cv::Mat weights;
+	cv::Mat depth;
+	cv::Mat errs;
+	cv::Mat losses;
+	int treeDepth;
 
 	BB_Array detections;
-	// debug
-	int totalDetections;
 
 	void exportDetectorModel(cv::String);
 	void importDetectorModel(cv::String);
 	void acfDetect(cv::Mat);
-	BB_Array bbNms(BB_Array bbs);
-	BB_Array nmsMax(BB_Array source, bool greedy);
+	BB_Array nonMaximalSuppression(BB_Array bbs);
 };
 
 #endif
