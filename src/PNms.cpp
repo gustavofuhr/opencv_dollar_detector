@@ -5,4 +5,6 @@ void PNms::readPNms(cv::FileNode pNmsNode)
 	type = (cv::String)pNmsNode["type"];
 	overlap = pNmsNode["overlap"];
 	ovrDnm = (cv::String)pNmsNode["ovrDnm"];
+	threshold=0.0;
+	threshold = pNmsNode["threshold"];
 }

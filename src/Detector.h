@@ -20,8 +20,8 @@ public:
 	void exportDetectorModel(cv::String);
 	void importDetectorModel(cv::String);
 	void acfDetect(cv::Mat);
-	BB_Array bbNms(BB_Array bbs, int size);
-	BB_Array nmsMax (BB_Array source, int size, bool greedy);
+	BB_Array bbNms(BB_Array bbs);
+	BB_Array nmsMax(BB_Array source, bool greedy);
 };
 
 #endif

@@ -7,7 +7,7 @@ public:
 	cv::String type;
 	double overlap; // area of overlap for bbs
 	cv::String ovrDnm; // area of overlap denominator ('union' or 'min')
-	int threshold;
+	float threshold;
 
 	void readPNms(cv::FileNode);
 };

@@ -10,21 +10,17 @@ This is a work-in-progress port of the Dóllar pedestrian detector to OpenCV in 
 To Do List:
 ======================
 
-Current Total: 14
+Current Total: 10
 
 Opencv_Dollar_Detector.cpp:  
-&nbsp;&nbsp;&nbsp;&nbsp;enable full use of datasets as parameters  
+&nbsp;&nbsp;&nbsp;&nbsp;enable full use of data sets as parameters  
 &nbsp;&nbsp;&nbsp;&nbsp;enable detection and feature calculation to be used in multiple images  
 
 Detector.cpp:  
 &nbsp;&nbsp;&nbsp;&nbsp;acfDetect:  
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;separate detection in a scale to a single function  
-&nbsp;&nbsp;&nbsp;&nbsp;nmsMax:  
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;line 248: sort bounding boxes  
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;line 253: add test for greediness  
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;line 256: test if result[j] was discarded  
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;line 291: discard the bounding box  
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;line 296: adjust result  
+&nbsp;&nbsp;&nbsp;&nbsp;bbNms:  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;possibly relocate suppression to other class  
 
 ColorChannel.cpp:  
 &nbsp;&nbsp;&nbsp;&nbsp;OK!  
@@ -45,7 +41,7 @@ Pyramid.cpp:
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;line 247: possibly add computation of custom channels  
 
 pNms.cpp:  
-&nbsp;&nbsp;&nbsp;&nbsp;check if it is necessary! 
+&nbsp;&nbsp;&nbsp;&nbsp;maybe merge all of this into another file (BoundingBox?)
 
 utils.cpp:  
 &nbsp;&nbsp;&nbsp;&nbsp;OK!  

@@ -300,12 +300,8 @@ void Detector::acfDetect(cv::Mat image)
 		rs.clear();
 		hs1.clear();
 
-		// causing segmentation fault
-		// bbs = bbNms(bbs, m);
-
 		// debug
 		// std::cout << "acfDetect, end of loop, i=" << i << ", computedScales=" << opts.pPyramid.computedScales << std::endl;
-
 	}
 
 
@@ -320,7 +316,22 @@ void Detector::acfDetect(cv::Mat image)
 
 		detections[i].plot(img, cv::Scalar(0,255,0));
 	}
-	cv::imshow("all detections", img);
+	cv::imshow("detections before suppression", img);
+	cv::waitKey();
+	// debug */
+
+	detections = bbNms(detections);
+
+	// debug: print all detections
+	cv::Mat img2 = cv::imread("../opencv_dollar_detector/frame0254.png");
+	for (int i = 0; i<detections.size(); ++i) 
+	{
+		std::cout << "Detection fp: " << detections[i].firstPoint << ", (w, h): " << detections[i].width << "  " << detections[i].height << std::endl;
+		std::cout << "Score: "  << detections[i].score << ", Scale: "  << detections[i].scale << std::endl;
+
+		detections[i].plot(img2, cv::Scalar(0,255,0));
+	}
+	cv::imshow("detections after suppression", img2);
 	cv::waitKey();
 	// debug */
 
@@ -328,14 +339,87 @@ void Detector::acfDetect(cv::Mat image)
 	// xml.release();
 }
 
-BB_Array Detector::bbNms(BB_Array bbs, int size)
+// for each i suppress all j st j>i and area-overlap>overlap
+BB_Array Detector::nmsMax(BB_Array source, bool greedy)
+{
+	BB_Array result;
+	BB_Array sortedArray;
+	bool discarded[source.size()];
+
+	for (int i=0; i < source.size(); i++)
+	{
+		sortedArray.push_back(source[i]);
+		discarded[i] = false;
+	}
+ 
+	std::sort(sortedArray.begin(), sortedArray.begin()+sortedArray.size());
+	
+	for (int i = 0; i < sortedArray.size(); i++)
+	{
+		if (!greedy || !discarded[i]) // continue only if its not greedy or result[i] was not yet discarded
+		{
+			for (int j = i+1; j < sortedArray.size(); j++)
+			{
+				if (discarded[j] == false) // continue this iteration only if result[j] was not yet discarded
+				{
+					double xei, xej, xmin, xsMax, iw;
+					double yei, yej, ymin, ysMax, ih;
+					xei = sortedArray[i].firstPoint.x + sortedArray[i].width;
+					xej = sortedArray[j].firstPoint.x + sortedArray[j].width;
+					xmin = xej;			
+					if (xei < xej)
+						xmin = xei;
+					xsMax = sortedArray[i].firstPoint.x;
+					if (sortedArray[j].firstPoint.x > sortedArray[i].firstPoint.x)
+						xsMax = sortedArray[j].firstPoint.x;
+					iw = xmin - xsMax;
+					yei = sortedArray[i].firstPoint.y + sortedArray[i].height;
+					yej = sortedArray[j].firstPoint.y + sortedArray[j].height;
+					ymin = yej;			
+					if (yei < yej)
+						ymin = yei;
+					ysMax = sortedArray[i].firstPoint.y;
+					if (sortedArray[j].firstPoint.y > sortedArray[i].firstPoint.y)
+						ysMax = sortedArray[j].firstPoint.y;
+					ih = ymin - ysMax;
+					if (iw > 0 && ih > 0)
+					{
+						double o = iw * ih;
+						double u;
+						if (opts.pNms.ovrDnm == "union")
+							u = sortedArray[i].height*sortedArray[i].width + sortedArray[j].height*sortedArray[j].width-o;
+						else if (opts.pNms.ovrDnm == "min")
+						{
+							u = sortedArray[i].height*sortedArray[i].width;
+							if (sortedArray[i].height*sortedArray[i].width > sortedArray[j].height*sortedArray[j].width)
+								u = sortedArray[j].height*sortedArray[j].width;
+						}
+						o = o/u;
+						if (o > opts.pNms.overlap) // sortedArray[j] is no longer needed (is discarded)
+							discarded[j] = true;
+					}
+				}
+			}	
+		}
+	}
+	
+	// result keeps only the bounding boxes that were not discarded
+	for (int i=0; i < sortedArray.size(); i++)
+		if (!discarded[i])
+			result.push_back(sortedArray[i]);
+
+	return result;
+}
+
+BB_Array Detector::bbNms(BB_Array bbs)
 {
 	BB_Array result;
 	int j;
 
 	//keep just the bounding boxes with scores higher than the threshold
-	for (int i=0; i < size; i++)
+	for (int i=0; i < bbs.size(); i++)
 	{
+		std::cout << "bbs[" << i << "].score=" << bbs[i].score << ", threshold=" << opts.pNms.threshold << std::endl;
 		if (bbs[i].score > opts.pNms.threshold)
 		{
 			result.push_back(bbs[i]);
@@ -357,66 +441,7 @@ BB_Array Detector::bbNms(BB_Array bbs, int size)
 	// run actual nms on given bbs
 	// other types might be added later
 	if (opts.pNms.type == "maxg")
-		result = nmsMax(result, size, true);
-
-	return result;
-}
-
-// for each i suppress all j st j>i and area-overlap>overlap
-BB_Array Detector::nmsMax(BB_Array source, int size, bool greedy)
-{
-	BB_Array result;
-	BB_Array temp = source;
-	
-	// sort the result array by score
-	// std::sort(std::begin(temp), std::end(temp));
-	
-	for (int i = 0; i < size; i++)
-	{
-		// continue only if its not greedy or result[i] was not yet discarded
-		for (int j = i+1; j < size; j++)
-		{
-			// continue this loop only if result[j] was not yet discarded
-			double xei, xej, xmin, xsMax, iw;
-			double yei, yej, ymin, ysMax, ih;
-			xei = source[i].firstPoint.x + source[i].width;
-			xej = source[j].firstPoint.x + source[j].width;
-			xmin = xej;			
-			if (xei < xej)
-				xmin = xei;
-			xsMax = source[i].firstPoint.x;
-			if (source[j].firstPoint.x > source[i].firstPoint.x)
-				xsMax = source[j].firstPoint.x;
-			iw = xmin - xsMax;
-			yei = source[i].firstPoint.y + source[i].height;
-			yej = source[j].firstPoint.y + source[j].height;
-			ymin = yej;			
-			if (yei < yej)
-				ymin = yei;
-			ysMax = source[i].firstPoint.y;
-			if (source[j].firstPoint.y > source[i].firstPoint.y)
-				ysMax = source[j].firstPoint.y;
-			ih = ymin - ysMax;
-			if (iw > 0 && ih > 0)
-			{
-				double o = iw * ih;
-				double u;
-				if (opts.pNms.ovrDnm == "union")
-					u = source[i].height*source[i].width + source[j].height*source[j].width-o;
-				else if (opts.pNms.ovrDnm == "min")
-				{
-					u = source[i].height*source[i].width;
-					if (source[i].height*source[i].width > source[j].height*source[j].width)
-						u = source[j].height*source[j].width;
-				}
-				o = o/u;
-				if (o > opts.pNms.overlap);
-					// source[j] is no longer needed (is discarded)
-			}
-		}	
-	}
-	
-	// result keeps only the bounding boxes that were not discarded
+		result = nmsMax(result, true);
 
 	return result;
 }
