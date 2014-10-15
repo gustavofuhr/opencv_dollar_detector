@@ -139,11 +139,8 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 	}
 	numberOfRealScales = i;
 
-	// gradient and histogram channels are all wrong here
-	// testFeatures(computedChannels[0], "after chnsCompute");
-	//std::cin.get();
-
-
+	// debug
+	std::cout << "after real scales" << std::endl;
 
 	int is[computedScales/(approximatedScales+1)]; //needs a better name
 	int isIndex = 0;
@@ -288,6 +285,9 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 			// std::cout << "end of i=" << i << ", scales[iR]=" << scales[iR] << ", iR=" << iR << ", h1=" << h1 << ", w1=" << w1 << std::endl;
 		}
 	}
+
+	// debug
+	std::cout << "after approx scales" << std::endl;
 
 	int tempPad[padSize];
 	for (int i=0; i < padSize; i++)

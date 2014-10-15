@@ -16,7 +16,6 @@ public:
 	cv::String padWith;
 
 	void readGradientHistogram(cv::FileNode);
-	//comes from gradientMex.cpp, the return still needs a type
 	std::vector<cv::Mat> mGradHist(cv::Mat, cv::Mat, int);
 };
 

@@ -10,7 +10,7 @@ This is a work-in-progress port of the Dóllar pedestrian detector to OpenCV in 
 To Do List:
 ======================
 
-Current Total: 10
+Current Total: 7
 
 Opencv_Dollar_Detector.cpp:  
 &nbsp;&nbsp;&nbsp;&nbsp;enable full use of data sets as parameters  
@@ -34,14 +34,10 @@ QuantizedGradientChannel.cpp:
 Pyramid.cpp:  
 &nbsp;&nbsp;&nbsp;&nbsp;computeMultiScaleChannelFeaturePyramid:  
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;change literal number of channels to nChannels whenever needed  
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;line 113: the whole for statement needs work, write a substitution for is=is(2:3)  
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;line 140: compute lambdas  
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;line 189: fix approximated (resampled) scales of H  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;add calculation of lambdas  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;investigate segmentation fault in scale approximation for images of other dimensions from previously tested 
 &nbsp;&nbsp;&nbsp;&nbsp;computeSingleScaleChannelFeatures:  
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;line 247: possibly add computation of custom channels  
-
-pNms.cpp:  
-&nbsp;&nbsp;&nbsp;&nbsp;maybe merge all of this into another file (BoundingBox?)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;possibly add computation of custom channels  
 
 utils.cpp:  
 &nbsp;&nbsp;&nbsp;&nbsp;OK!  

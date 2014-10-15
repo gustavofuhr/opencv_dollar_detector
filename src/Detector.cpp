@@ -386,16 +386,16 @@ BB_Array Detector::nmsMax(BB_Array source, bool greedy)
 					{
 						double o = iw * ih;
 						double u;
-						if (opts.pNms.ovrDnm == "union")
+						if (opts.overlapDenominator == "union")
 							u = sortedArray[i].height*sortedArray[i].width + sortedArray[j].height*sortedArray[j].width-o;
-						else if (opts.pNms.ovrDnm == "min")
+						else if (opts.overlapDenominator == "min")
 						{
 							u = sortedArray[i].height*sortedArray[i].width;
 							if (sortedArray[i].height*sortedArray[i].width > sortedArray[j].height*sortedArray[j].width)
 								u = sortedArray[j].height*sortedArray[j].width;
 						}
 						o = o/u;
-						if (o > opts.pNms.overlap) // sortedArray[j] is no longer needed (is discarded)
+						if (o > opts.overlapArea) // sortedArray[j] is no longer needed (is discarded)
 							discarded[j] = true;
 					}
 				}
@@ -419,8 +419,7 @@ BB_Array Detector::bbNms(BB_Array bbs)
 	//keep just the bounding boxes with scores higher than the threshold
 	for (int i=0; i < bbs.size(); i++)
 	{
-		std::cout << "bbs[" << i << "].score=" << bbs[i].score << ", threshold=" << opts.pNms.threshold << std::endl;
-		if (bbs[i].score > opts.pNms.threshold)
+		if (bbs[i].score > opts.suppressionThreshold)
 		{
 			result.push_back(bbs[i]);
 			j++;
@@ -440,7 +439,7 @@ BB_Array Detector::bbNms(BB_Array bbs)
 	
 	// run actual nms on given bbs
 	// other types might be added later
-	if (opts.pNms.type == "maxg")
+	if (opts.suppressionType == "maxg")
 		result = nmsMax(result, true);
 
 	return result;

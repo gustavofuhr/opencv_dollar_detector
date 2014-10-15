@@ -10,7 +10,8 @@ int main(int argc, char** argv)
 	//cv::String fileString = "../opencv_dollar_detector/calculate_all_scales_detector.xml";
 	d.importDetectorModel(fileString);
 	
-	image = cv::imread("../opencv_dollar_detector/frame0254.png");
+	// image = cv::imread("../opencv_dollar_detector/frame0254.png");
+	image = cv::imread("../opencv_dollar_detector/person_011.bmp");
 
 	d.acfDetect(image);
 

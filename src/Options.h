@@ -2,8 +2,6 @@
 #define OPTIONS_H
 
 #include "Pyramid.h"
-#include "PNms.h"
-#include "PBoost.h"
 
 class Options
 {
@@ -11,12 +9,18 @@ public:
 	Pyramid pPyramid;
 	int modelDs[2];
 	int modelDsPad[2];
-	PNms pNms;
 	int stride;
 	int cascadeThreshold;
+
+	cv::String suppressionType;
+	double overlapArea; // area of overlap for bbs
+	cv::String overlapDenominator; // area of overlap denominator ('union' or 'min')
+	float suppressionThreshold;
+
+	/* //seems like none of these are used
 	double cascadeCalibration;
 	int nWeak[4];
-	PBoost pBoost;
+	//PBoost pBoost;
 	int seed;
 	cv::String name;
 	cv::String posGtDir;
@@ -33,6 +37,7 @@ public:
 	int nAccNeg;
 	int pJitterFlip;
 	int winsSave;
+	*/
 
 	void readOptions(cv::FileNode);
 };
