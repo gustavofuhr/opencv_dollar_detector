@@ -56,7 +56,18 @@ void Detector::importDetectorModel(cv::String fileName)
 	}
 }
 
-//std::cout << "k=" << k << ", fids[k]=" << fids[k] << ", cids[fids[k]]=" << cids[fids[k]] << ", chns1[cids[fids[k]]]=" << chns1[cids[fids[k]]] << ", thrs[k]=" << thrs[k] << std::endl;
+void showDetections(cv::Mat I, BB_Array detections, cv::String windowName)
+{
+	cv::Mat img = I.clone();
+	for (int j = 0; j<detections.size(); j++) 
+	{
+		std::cout << "Detection fp: " << detections[j].firstPoint << ", (w, h): " << detections[j].width << "  " << detections[j].height;
+		std::cout << ", Score: "  << detections[j].score << ", Scale: "  << detections[j].scale << std::endl;
+
+		detections[j].plot(img, cv::Scalar(0,255,0));
+	}
+	cv::imshow(windowName, img);
+}
 
 // this procedure was just copied verbatim
 inline void getChild(float *chns1, uint32 *cids, uint32 *fids, float *thrs, uint32 offset, uint32 &k0, uint32 &k)
@@ -66,53 +77,10 @@ inline void getChild(float *chns1, uint32 *cids, uint32 *fids, float *thrs, uint
   k0=k+=k0*2; k+=offset;
 }
 
-//bb = acfDetect1(P.data{i},Ds{j}.clf,shrink,modelDsPad(1),modelDsPad(2),opts.stride,opts.cascThr);
-void Detector::acfDetect(cv::Mat image)
+BB_Array Detector::applyDetectorToFrame(int shrink, int modelHt, int modelWd, int stride, float cascThr, float *thrs, float *hs, 
+										uint32 *fids, uint32 *child, int nTreeNodes, int nTrees, int treeDepth, int nChns)
 {
-	// this is necessary, so we don't apply this transformation multiple times which would break the image inside chnsPyramid
-	cv::Mat I;
-	image.convertTo(I, CV_32FC3, 1.0/255.0);
-
-	// compute feature pyramid
-	opts.pPyramid.computeMultiScaleChannelFeaturePyramid(I);
-
-	/*
-	// debug: read pyramid from file
-	cv::FileStorage xml;
-	xml.open("../opencv_dollar_detector/pyramid.xml", cv::FileStorage::READ);
-	if (!xml.isOpened())
-	{
-		std::cerr << "Failed to open pyramid.xml" << std::endl;
-		std::cin.get();
-	}
-	// debug */
-
-	const int shrink = opts.pPyramid.pChns.shrink;
-	const int modelHt = opts.modelDsPad[0];
-	const int modelWd = opts.modelDsPad[1];
-	const int stride = opts.stride;
-	const float cascThr = opts.cascadeThreshold;
-
-	float *thrs = cvImage2floatArray(this->thrs, 1);
-	float *hs = cvImage2floatArray(this->hs, 1);
-	
-	cv::Mat tempFids;
-	cv::transpose(this->fids, tempFids);
-	uint32 *fids = (uint32*) tempFids.data;
-	
-	cv::Mat tempChild;
-	cv::transpose(this->child, tempChild);
-	uint32 *child = (uint32*) tempChild.data;
-
-	// const mwSize *fidsSize = mxGetDimensions(mxGetField(trees,0,"fids"));
-	// const int nTreeNodes = (int) fidsSize[0];
- 	// const int nTrees = (int) fidsSize[1];
-	const int nTreeNodes = this->fids.rows;
-	const int nTrees = this->fids.cols;
-	
-	const int treeDepth = this->treeDepth;
-	const int nChns = opts.pPyramid.pChns.pColor.nChannels + opts.pPyramid.pChns.pGradMag.nChannels + opts.pPyramid.pChns.pGradHist.nChannels; 
-
+	BB_Array result;
 
 	// this became a simple loop because we will apply just one detector here, 
 	// to apply multiple detector models you need to create multiple Detector objects. 
@@ -122,11 +90,11 @@ void Detector::acfDetect(cv::Mat image)
 		// const int height = (int) chnsSize[0];
   		// const int width = (int) chnsSize[1];
   		// const int nChns = mxGetNumberOfDimensions(prhs[0])<=2 ? 1 : (int) chnsSize[2];
-		const int height = opts.pPyramid.computedChannels[i].image.rows;
-		const int width = opts.pPyramid.computedChannels[i].image.cols;
+		int height = opts.pPyramid.computedChannels[i].image.rows;
+		int width = opts.pPyramid.computedChannels[i].image.cols;
 
-		const int height1 = (int)ceil(float(height*shrink-modelHt+1)/stride);
-		const int width1 = (int)ceil(float(width*shrink-modelWd+1)/stride);
+		int height1 = (int)ceil(float(height*shrink-modelHt+1)/stride);
+		int width1 = (int)ceil(float(width*shrink-modelWd+1)/stride);
 
 		float* chns;
 		chns = features2floatArray(opts.pPyramid.computedChannels[i], height, width, 3, 1, 6);
@@ -264,7 +232,7 @@ void Detector::acfDetect(cv::Mat image)
 			bb.width = opts.modelDs[1]/opts.pPyramid.scales[i];
 			bb.score = hs1[j];
 			bb.scale = i;
-			detections.push_back(bb);
+			result.push_back(bb);
 		}
 
 		// debug
@@ -280,37 +248,65 @@ void Detector::acfDetect(cv::Mat image)
 		// std::cout << "acfDetect, end of loop, i=" << i << ", computedScales=" << opts.pPyramid.computedScales << std::endl;
 	}
 
+	return result;
+}
 
-	// debug: print all detections
-	cv::Mat img = image.clone();
-	for (int i = 0; i<detections.size(); ++i) 
+//bb = acfDetect1(P.data{i},Ds{j}.clf,shrink,modelDsPad(1),modelDsPad(2),opts.stride,opts.cascThr);
+void Detector::acfDetect(std::vector<cv::Mat> images)
+{
+	int shrink = opts.pPyramid.pChns.shrink;
+	int modelHt = opts.modelDsPad[0];
+	int modelWd = opts.modelDsPad[1];
+	int stride = opts.stride;
+	float cascThr = opts.cascadeThreshold;
+
+	float *thrs = cvImage2floatArray(this->thrs, 1);
+	float *hs = cvImage2floatArray(this->hs, 1);
+	
+	cv::Mat tempFids;
+	cv::transpose(this->fids, tempFids);
+	uint32 *fids = (uint32*) tempFids.data;
+	
+	cv::Mat tempChild;
+	cv::transpose(this->child, tempChild);
+	uint32 *child = (uint32*) tempChild.data;
+
+	// const mwSize *fidsSize = mxGetDimensions(mxGetField(trees,0,"fids"));
+	// const int nTreeNodes = (int) fidsSize[0];
+ 	// const int nTrees = (int) fidsSize[1];
+	int nTreeNodes = this->fids.rows;
+	int nTrees = this->fids.cols;
+	
+	int treeDepth = this->treeDepth;
+	int nChns = opts.pPyramid.pChns.pColor.nChannels + opts.pPyramid.pChns.pGradMag.nChannels + opts.pPyramid.pChns.pGradHist.nChannels; 
+
+	for (int i=0; i < images.size(); i++)
 	{
-		std::cout << "Detection fp: " << detections[i].firstPoint << ", (w, h): " << detections[i].width << "  " << detections[i].height << std::endl;
-		std::cout << "Score: "  << detections[i].score << ", Scale: "  << detections[i].scale << std::endl;
+		std::cout << "i=" << i << "images.size()=" << images.size() << std::endl;
 
-		detections[i].plot(img, cv::Scalar(0,255,0));
+		// this is necessary, so we don't apply this transformation multiple times which would break the image inside chnsPyramid
+		cv::Mat I;
+		images[i].convertTo(I, CV_32FC3, 1.0/255.0);
+
+		// compute feature pyramid
+		opts.pPyramid.computeMultiScaleChannelFeaturePyramid(I);
+
+		BB_Array frameDetections = applyDetectorToFrame(shrink, modelHt, modelWd, stride, cascThr, thrs, hs, fids, child, nTreeNodes, nTrees, treeDepth, nChns);
+		detections.push_back(frameDetections);
+		// frameDetections.clear(); //doesn't seem to make a difference
+
+		cv::imshow("source image", I);
+
+		showDetections(I, detections[i], "detections before suppression");
+
+		detections[i] = nonMaximalSuppression(detections[i]);
+
+		showDetections(I, detections[i], "detections after suppression");
+		cv::waitKey();
+
+		// debug
+		// xml.release();
 	}
-	cv::imshow("detections before suppression", img);
-	cv::waitKey();
-	// debug */
-
-	detections = nonMaximalSuppression(detections);
-
-	// debug: print all detections
-	cv::Mat img2 = image.clone();
-	for (int i = 0; i<detections.size(); ++i) 
-	{
-		std::cout << "Detection fp: " << detections[i].firstPoint << ", (w, h): " << detections[i].width << "  " << detections[i].height << std::endl;
-		std::cout << "Score: "  << detections[i].score << ", Scale: "  << detections[i].scale << std::endl;
-
-		detections[i].plot(img2, cv::Scalar(0,255,0));
-	}
-	cv::imshow("detections after suppression", img2);
-	cv::waitKey();
-	// debug */
-
-	// debug
-	// xml.release();
 }
 
 // for each i suppress all j st j>i and area-overlap>overlap

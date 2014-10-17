@@ -2,7 +2,6 @@
 
 int main() 
 {
-	cv::Mat image;
 	Detector d;
 	Info result;
 
@@ -10,10 +9,16 @@ int main()
 	//cv::String fileString = "../opencv_dollar_detector/calculate_all_scales_detector.xml";
 	d.importDetectorModel(fileString);
 	
-	image = cv::imread("../opencv_dollar_detector/frame0254.png");
-	// image = cv::imread("../opencv_dollar_detector/person_011.bmp");
+	cv::Mat image = cv::imread("../opencv_dollar_detector/frame0254.png");
+	cv::Mat image2 = cv::imread("../opencv_dollar_detector/person_011.bmp");
+	cv::Mat image3 = cv::imread("../opencv_dollar_detector/per00001.ppm");
+	
+	std::vector<cv::Mat> dataSet;
+	dataSet.push_back(image);
+	dataSet.push_back(image2);
+	dataSet.push_back(image3);	
 
-	d.acfDetect(image);
+	d.acfDetect(dataSet);
 
 	return 0;
 }

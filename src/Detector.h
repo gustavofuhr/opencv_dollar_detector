@@ -22,11 +22,13 @@ public:
 	cv::Mat losses;
 	int treeDepth;
 
-	BB_Array detections;
+	BB_Array_Array detections;
 
 	void exportDetectorModel(cv::String);
 	void importDetectorModel(cv::String);
-	void acfDetect(cv::Mat);
+	BB_Array applyDetectorToFrame(int shrink, int modelHt, int modelWd, int stride, float cascThr, float *thrs, float *hs, 
+										uint32 *fids, uint32 *child, int nTreeNodes, int nTrees, int treeDepth, int nChns);
+	void acfDetect(std::vector<cv::Mat> images);
 	BB_Array nonMaximalSuppression(BB_Array bbs);
 };
 

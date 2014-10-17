@@ -48,6 +48,7 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 
 	// convert I to appropriate color space (or simply normalize)
 	// I=rgbConvert(I,cs); pChns.pColor.colorSpace='orig';
+	int previousColorSpaceType = pChns.pColor.colorSpaceType; // saves the value to be reloaded afterwards
 	convertedImage = rgbConvert(I, pChns.pColor.colorSpaceType);
 	pChns.pColor.colorSpaceType = ORIG;
 
@@ -94,7 +95,7 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 	
 	int h1, w1;
 	cv::Mat I1;
-	int numberOfRealScales;
+	int numberOfRealScales=0;
 	int i;
 
 	// compute image pyramid [real scales]
@@ -203,6 +204,9 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 					iR = (j+1)*(approximatedScales+1);
 			}
 
+			// debug
+			std::cout << "approximating scales[" << i << "]=" << scales[i] << ", h1=" << h1 << ", w1=" << w1 << ", iR=" << iR << ", realScales=" << numberOfRealScales << std::endl;
+
 			ratio[0] = pow(scales[i]/scales[iR],-lambdas[0]);
 			computedChannels[i].image = resample(computedChannels[iR].image, computedChannels[iR].image.rows, computedChannels[iR].image.cols, h1, w1, ratio[0], 3);
 		
@@ -252,7 +256,7 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 			// cv::waitKey();
 			
 			// debug
-			std::cout << "end of i=" << i << ", scales[iR]=" << scales[iR] << ", iR=" << iR << ", h1=" << h1 << ", w1=" << w1 << std::endl;
+			std::cout << "end of i=" << i << ", scales[iR]=" << scales[iR] << ", iR=" << iR << ", h1=" << h1 << ", w1=" << w1 << std::endl << std::endl;
 		}
 	}
 
@@ -328,6 +332,8 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 		// debug */
 
 	}
+
+	pChns.pColor.colorSpaceType = previousColorSpaceType;
 }
 
 //translation of the chnsCompute.m file
