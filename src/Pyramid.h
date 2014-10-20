@@ -18,13 +18,17 @@ public:
 	int concatenateChannels; //if true, concatenate channels
 	int completeInput; //if true does not check/set default vals in pPyramid
 
-	//output parameters
+	// output attributes
 	int channelTypes; //number of channel types
 	int computedScales; //number of scales computed
 	Info* computedChannels; //[nScales x nTypes] cell array of computed channels
 	double* scales;
 	double* scales_w;
 	double* scales_h;
+
+	// time attributes
+	double totalTimeForRealScales;
+	double totalTimeForApproxScales;
 
 	void readPyramid(cv::FileNode);
 	void computeMultiScaleChannelFeaturePyramid(cv::Mat);

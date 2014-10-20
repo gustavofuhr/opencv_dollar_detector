@@ -1,23 +1,22 @@
 opencv_dollar_detector
 ======================
 
-&nbsp;&nbsp;&nbsp;&nbsp;This is a work-in-progress port of the Dóllar pedestrian detector to OpenCV in C++ by Charles Arnoud, oriented by Cláudio Rosito Jüng and with the help of Gustavo Führ.  
+This is a work-in-progress port of the Dóllar pedestrian detector to OpenCV in C++ by Charles Arnoud, under the mentorship of Cláudio Rosito Jüng and with the help of Gustavo Führ.  
 
 
 Current Status  
 ======================  
 
-&nbsp;&nbsp;&nbsp;&nbsp;Detection working for multiple images, but data set reading is not yet implemented. Still has a lot of prints used for debug.  
+Detection working for multiple images, but process is being killed for lack of memory when used in a big data set. 
 
 
 To Do List:  
 ======================  
 
-Current Total: 7  
+Current Total: 6  
 
 Opencv_Dollar_Detector.cpp:  
-&nbsp;&nbsp;&nbsp;&nbsp;enable use of data sets as parameters  
-&nbsp;&nbsp;&nbsp;&nbsp;add some way to calculate time elapsed in detection  
+&nbsp;&nbsp;&nbsp;&nbsp;maybe change the way time is being calculated  
 
 Detector.cpp:  
 &nbsp;&nbsp;&nbsp;&nbsp;nonMaximalSuppression:  

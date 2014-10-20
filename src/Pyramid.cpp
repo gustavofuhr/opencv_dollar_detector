@@ -25,6 +25,9 @@ void Pyramid::readPyramid(cv::FileNode pyramidNode)
 	smoothRadius = pyramidNode["smooth"];
 	concatenateChannels = pyramidNode["concat"];
 	completeInput = pyramidNode["complete"];
+
+	totalTimeForRealScales = 0;
+	totalTimeForApproxScales = 0;
 }
 
 //translation of the chnsPyramid.m file
@@ -33,6 +36,7 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 	cv::Mat convertedImage;
 	int colorChannels = pChns.pColor.nChannels;
 	int histogramChannels = pChns.pGradHist.nChannels;
+	clock_t start, end;
 
 	// p.pad=round(p.pad/shrink)*shrink;
 	for (int i=0; i < padSize; i++)
@@ -98,6 +102,8 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 	int numberOfRealScales=0;
 	int i;
 
+	start = clock();
+
 	// compute image pyramid [real scales]
 	for (i=0; i < computedScales; i = i+approximatedScales+1)
 	{
@@ -105,9 +111,6 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 		// sz1=round(sz*s/shrink)*shrink;
 		h1 = round(I.rows*scales[i]/pChns.shrink)*pChns.shrink;
 		w1 = round(I.cols*scales[i]/pChns.shrink)*pChns.shrink;
-
-		// debug
-		// std::cout << std::endl << "now computing scales[" << i << "] = " << scales[i] << ", shrink=" << pChns.shrink << ", h1=" << h1 << ", w1=" << w1 << std::endl;
 
 		if (h1 == I.rows && w1 == I.cols)
 			I1 = convertedImage;
@@ -121,6 +124,9 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 		computedChannels[i] = computeSingleScaleChannelFeatures(I1);
 		numberOfRealScales++;
 	}
+
+	end = clock();
+	totalTimeForRealScales = totalTimeForRealScales + (double(end - start) / CLOCKS_PER_SEC);
 
 	int is[computedScales/(approximatedScales+1)]; //needs a better name
 	int isIndex = 0;
@@ -176,6 +182,8 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 		//this will be revisited at a later time
 	}
 
+	start = clock();
+
 	/*
 	% compute image pyramid [approximated scales]
 	for i=isA
@@ -203,9 +211,6 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 				if (i > floor((j*(approximatedScales+1)+(j+1)*(approximatedScales+1))/2))
 					iR = (j+1)*(approximatedScales+1);
 			}
-
-			// debug
-			std::cout << "approximating scales[" << i << "]=" << scales[i] << ", h1=" << h1 << ", w1=" << w1 << ", iR=" << iR << ", realScales=" << numberOfRealScales << std::endl;
 
 			ratio[0] = pow(scales[i]/scales[iR],-lambdas[0]);
 			computedChannels[i].image = resample(computedChannels[iR].image, computedChannels[iR].image.rows, computedChannels[iR].image.cols, h1, w1, ratio[0], 3);
@@ -254,14 +259,11 @@ void Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 
 			// debug
 			// cv::waitKey();
-			
-			// debug
-			std::cout << "end of i=" << i << ", scales[iR]=" << scales[iR] << ", iR=" << iR << ", h1=" << h1 << ", w1=" << w1 << std::endl << std::endl;
 		}
 	}
 
-	// debug
-	std::cout << "after approx scales" << std::endl;
+	end = clock();
+	totalTimeForApproxScales = totalTimeForApproxScales + (double(end - start) / CLOCKS_PER_SEC);
 
 	int tempPad[padSize];
 	for (int i=0; i < padSize; i++)
@@ -350,21 +352,9 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 	int height = I.rows - (I.rows % pChns.shrink);
 	int width =  I.cols - (I.cols % pChns.shrink);
 
-	
-	// debug
-	float *If = cvImage2floatArray(I, 3);
-	print_100_elements(If, I.rows, "image inside chnsCompute before rgbConvert");
-	// debug */
-
 	// compute color channels
 	result.image = rgbConvert(I, pChns.pColor.colorSpaceType);
 	result.image = convolution(result.image, 3, pChns.pColor.smoothingRadius, 1, CONV_TRI);
-
-	
-	// debug
-	float *If2 = cvImage2floatArray(result.image, 3);
-	print_100_elements(If2, I.rows, "image after convolution");
-	// debug */
 
 	// h=h/shrink; w=w/shrink;
 	height = height/pChns.shrink;
@@ -391,13 +381,6 @@ Info Pyramid::computeSingleScaleChannelFeatures(cv::Mat I)
 
 			// normalization constant is read inside the procedure
 			pChns.pGradMag.gradMagNorm(M, S, h, w);
-
-			
-			// debug: after normalization, S matrix is correct but gradMag is wrong (but equal to compiled mex result, which is the wrong one)
-			print_100_elements(M, h, "gradMag after normalization");
-			print_100_elements(S, h, "S matrix");
-			//std::cin.get();
-			// debug */
 
 			result.gradientMagnitude = floatArray2cvImage(M, h, w, 1); 		}	
 	}		

@@ -36,7 +36,7 @@ void Detector::importDetectorModel(cv::String fileName)
 
 	if (!xml.isOpened())
 	{
-		std::cerr << "Failed to open " << fileName << std::endl;
+		std::cerr << " # Failed to open " << fileName << std::endl;
 	}
 	else
 	{
@@ -52,6 +52,8 @@ void Detector::importDetectorModel(cv::String fileName)
 		xml["detector"]["clf"]["losses"] >> losses;		
 		xml["detector"]["clf"]["treeDepth"] >> treeDepth;	
 
+		timeSpentInDetection = 0;
+
 		xml.release();
 	}
 }
@@ -60,12 +62,8 @@ void showDetections(cv::Mat I, BB_Array detections, cv::String windowName)
 {
 	cv::Mat img = I.clone();
 	for (int j = 0; j<detections.size(); j++) 
-	{
-		std::cout << "Detection fp: " << detections[j].firstPoint << ", (w, h): " << detections[j].width << "  " << detections[j].height;
-		std::cout << ", Score: "  << detections[j].score << ", Scale: "  << detections[j].scale << std::endl;
-
 		detections[j].plot(img, cv::Scalar(0,255,0));
-	}
+
 	cv::imshow(windowName, img);
 }
 
@@ -217,10 +215,6 @@ BB_Array Detector::applyDetectorToFrame(int shrink, int modelHt, int modelWd, in
 		shift[0] = (modelHt-double(opts.modelDs[0]))/2-opts.pPyramid.pad[0];
 		shift[1] = (modelWd-double(opts.modelDs[1]))/2-opts.pPyramid.pad[1];
 
-		// debug
-		std::cout << "stride=" << stride << ", shift=(" << shift[0] << "," << shift[1] << "), scaleshw[i]=(" << opts.pPyramid.scales_h[i] << "," << opts.pPyramid.scales_w[i] << ")" <<
-		    ", scales[i]=" << opts.pPyramid.scales[i] << std::endl;
-
 		for(int j=0; j<m; j++ )
 		{
 			BoundingBox bb;
@@ -235,24 +229,16 @@ BB_Array Detector::applyDetectorToFrame(int shrink, int modelHt, int modelWd, in
 			result.push_back(bb);
 		}
 
-		// debug
-		//std::cin.get();
-		std::cout << std::endl;
-		// debug */
-
 		cs.clear();
 		rs.clear();
 		hs1.clear();
-
-		// debug
-		// std::cout << "acfDetect, end of loop, i=" << i << ", computedScales=" << opts.pPyramid.computedScales << std::endl;
 	}
 
 	return result;
 }
 
 //bb = acfDetect1(P.data{i},Ds{j}.clf,shrink,modelDsPad(1),modelDsPad(2),opts.stride,opts.cascThr);
-void Detector::acfDetect(std::vector<cv::Mat> images)
+void Detector::acfDetect(std::vector<std::string> imageNames, std::string dataSetDirectoryName, int firstFrame, int lastFrame)
 {
 	int shrink = opts.pPyramid.pChns.shrink;
 	int modelHt = opts.modelDsPad[0];
@@ -280,32 +266,49 @@ void Detector::acfDetect(std::vector<cv::Mat> images)
 	int treeDepth = this->treeDepth;
 	int nChns = opts.pPyramid.pChns.pColor.nChannels + opts.pPyramid.pChns.pGradMag.nChannels + opts.pPyramid.pChns.pGradHist.nChannels; 
 
-	for (int i=0; i < images.size(); i++)
+	for (int i = firstFrame; i < imageNames.size() && i < lastFrame; i++)
 	{
-		std::cout << "i=" << i << "images.size()=" << images.size() << std::endl;
+		clock_t frameStart = clock();
 
-		// this is necessary, so we don't apply this transformation multiple times which would break the image inside chnsPyramid
+		// this is necessary, so we don't apply this transformation multiple times, which would break the image inside chnsPyramid
+		cv::Mat image = cv::imread(dataSetDirectoryName + '/' + imageNames[i]);
 		cv::Mat I;
-		images[i].convertTo(I, CV_32FC3, 1.0/255.0);
+		image.convertTo(I, CV_32FC3, 1.0/255.0);
 
 		// compute feature pyramid
 		opts.pPyramid.computeMultiScaleChannelFeaturePyramid(I);
 
+		clock_t detectionStart = clock();
 		BB_Array frameDetections = applyDetectorToFrame(shrink, modelHt, modelWd, stride, cascThr, thrs, hs, fids, child, nTreeNodes, nTrees, treeDepth, nChns);
 		detections.push_back(frameDetections);
-		// frameDetections.clear(); //doesn't seem to make a difference
+		frameDetections.clear(); //doesn't seem to make a difference
+		clock_t detectionEnd = clock();
+		timeSpentInDetection = timeSpentInDetection + (double(detectionEnd - detectionStart) / CLOCKS_PER_SEC);
 
+		// experimental: do i need to clear these?
+		for (int j=0; j < opts.pPyramid.computedScales; j++)
+		{
+			opts.pPyramid.computedChannels[j].image.release();
+			opts.pPyramid.computedChannels[j].gradientMagnitude.release();
+			opts.pPyramid.computedChannels[j].gradientHistogram.clear();
+		}
+		image.release();
+		I.release();
+		// experimental */
+
+		/*
+		// debug: shows detections 
 		cv::imshow("source image", I);
-
 		showDetections(I, detections[i], "detections before suppression");
-
 		detections[i] = nonMaximalSuppression(detections[i]);
-
 		showDetections(I, detections[i], "detections after suppression");
 		cv::waitKey();
+		// debug */
 
-		// debug
-		// xml.release();
+		clock_t frameEnd = clock();
+		double elapsed_secs = double(frameEnd - frameStart) / CLOCKS_PER_SEC;
+
+		std::cout << "Frame " << i << " was processed in " << elapsed_secs << " seconds.\n"; 
 	}
 }
 

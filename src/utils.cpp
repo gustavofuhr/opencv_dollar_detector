@@ -764,3 +764,38 @@ float* features2floatArray (Info features, int rows, int cols, int colorChannels
 
   return result;
 }
+
+/************************************************************************************************************/
+
+std::vector<std::string> getDataSetFileNames(std::string directory)
+{
+  std::vector<std::string> result, temp;
+  dirent* de;
+  DIR* dp;
+
+  dp = opendir(directory.empty() ? "." : directory.c_str());
+
+  if (dp)
+  {
+    de = readdir(dp);
+    while (de != NULL)
+    {
+      temp.push_back(std::string(de->d_name));
+      de = readdir(dp);
+    }
+    closedir(dp);
+
+    for (int i=0; i < temp.size(); i++)
+    {
+      if (temp[i].at(0) != '.')
+        result.push_back(temp[i]);
+    }
+
+    std::sort(result.begin(), result.end());
+  }
+
+
+  return result;
+}
+
+/************************************************************************************************************/

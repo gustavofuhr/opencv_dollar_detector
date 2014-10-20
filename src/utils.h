@@ -6,6 +6,7 @@
 #include "sse.hpp"
 #include <iomanip>
 #include <typeinfo> // for sse rgbConvert functions
+#include <dirent.h>
 
 #include "Info.h"
 
@@ -39,5 +40,7 @@ void print_100_elements(float* source, int rows, cv::String name);
 void testFeatures(Info features, cv::String name);
 
 float* features2floatArray (Info features, int rows, int cols, int colorChannels, int magChannels, int histChannels);
+
+std::vector<std::string> getDataSetFileNames(std::string directory);
 
 #endif

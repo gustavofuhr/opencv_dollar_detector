@@ -241,23 +241,11 @@ std::vector<cv::Mat> GradientMagnitudeChannel::mGradMag(cv::Mat I, int channel)
     // if(nl>=2) pl[1] = mxCreateMatrix3(h,w,1,mxSINGLE_CLASS,0,(void**)&O);
     O = (float*)malloc(h*w*1*sizeof(float));
 
-    // debug: prints before gradMag, h=576, w=720, full=0, c=0, d=3
-    // std::cout << "before gradMag, h=" << h << ", w=" << w << ", full=" << full << ", c=" << c << ", d=" << d << std::endl;
-
-    // debug
-    print_100_elements(If, h, "If inside mGradMag");
-
     // gradMag(I, M, O, h, w, d, full>0 );
 		// call to the actual function: gradMag(I, M, O, h, w, d, full>0 );
 		// void gradMag(float*, float*, float*, int, int, int, bool);
     gradMag(If, M, O, h, w, d, full>0);
-
-    // debug
-    print_100_elements(M, h, "gradMag inside mGradMag");
-    print_100_elements(O, h, "Orientation inside mGradMag");
-
-    // std::cin.get();
-
+    
 		//next, we assign the values of M and O to the matrix thats going to be returned
     cv::Mat matM;
     matM = floatArray2cvImage(M, h, w, 1); // only one channel

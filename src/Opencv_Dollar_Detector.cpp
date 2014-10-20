@@ -1,24 +1,46 @@
 #include "Opencv_Dollar_Detector.h"
 
-int main() 
+int main(int argc, char *argv[]) 
 {
-	Detector d;
-	Info result;
+	if (argc < 2)
+	{
+		std::cout << " # Argument Error: this program expects at least two arguments (detector file name and data set directory)." << std::endl;
+		return 1;
+	}
+	else
+	{
+		clock_t start = clock();
+		int firstFrame=0, lastFrame=666666666;
 
-	cv::String fileString = "../opencv_dollar_detector/detector.xml";
-	//cv::String fileString = "../opencv_dollar_detector/calculate_all_scales_detector.xml";
-	d.importDetectorModel(fileString);
-	
-	cv::Mat image = cv::imread("../opencv_dollar_detector/frame0254.png");
-	cv::Mat image2 = cv::imread("../opencv_dollar_detector/person_011.bmp");
-	cv::Mat image3 = cv::imread("../opencv_dollar_detector/per00001.ppm");
-	
-	std::vector<cv::Mat> dataSet;
-	dataSet.push_back(image);
-	dataSet.push_back(image2);
-	dataSet.push_back(image3);	
+		// reads index of the first and last frames 
+		if (argc > 3)
+		{
+			firstFrame = atoi(argv[3]);
+			lastFrame = atoi(argv[4]);
+		}
 
-	d.acfDetect(dataSet);
+		Detector d;
+		Info result;
 
-	return 0;
+		// loads all detector settings from the provided xml file
+		cv::String detectorFileName = argv[1];
+		d.importDetectorModel(detectorFileName);
+
+		// gets names for all the files inside the data set folder
+		std::string dataSetDirectory = argv[2];
+		std::vector<std::string> imageNames = getDataSetFileNames(dataSetDirectory);
+
+		// apply the detection on all images
+		d.acfDetect(imageNames, dataSetDirectory, firstFrame, lastFrame);
+
+		clock_t end = clock();
+		double elapsed_secs = double(end - start) / CLOCKS_PER_SEC;
+
+		std::cout << "\nTotal processing time was " << elapsed_secs << " seconds.\n";
+		std::cout << "Time elapsed calculating features: " << d.opts.pPyramid.totalTimeForRealScales << std::endl;
+		std::cout << "Time elapsed approximating features: " << d.opts.pPyramid.totalTimeForApproxScales << std::endl;
+		std::cout << "Time elapsed during detections: " << d.timeSpentInDetection << std::endl;
+
+		return 0;
+	}
 }
