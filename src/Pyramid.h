@@ -32,7 +32,7 @@ public:
 
 	void readPyramid(cv::FileNode);
 	void computeMultiScaleChannelFeaturePyramid(cv::Mat);
-	Info computeSingleScaleChannelFeatures(cv::Mat);
+	Info computeSingleScaleChannelFeatures(float* I, int rows, int cols);
 	cv::Mat TriangleFilterConvolution(cv::Mat, int, int, int);
 	void getScales(int, int , int);
 };

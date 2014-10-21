@@ -7,13 +7,13 @@ This is a work-in-progress port of the Dóllar pedestrian detector to OpenCV in 
 Current Status  
 ======================  
 
-Detection working for multiple images, but process is being killed for lack of memory when used in a big data set. 
+Detection working for multiple images, but process is being killed for lack of memory when applied to a big data set. 
 
 
 To Do List:  
 ======================  
 
-Current Total: 6  
+Current Total: 7  
 
 Opencv_Dollar_Detector.cpp:  
 &nbsp;&nbsp;&nbsp;&nbsp;maybe change the way time is being calculated  
@@ -33,6 +33,7 @@ QuantizedGradientChannel.cpp:
 &nbsp;&nbsp;&nbsp;&nbsp;OK!  
 
 Pyramid.cpp:  
+&nbsp;&nbsp;&nbsp;&nbsp;use matrices I, M, O, S, H as float* inside this class, transform them afterwards  
 &nbsp;&nbsp;&nbsp;&nbsp;computeMultiScaleChannelFeaturePyramid:  
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;add calculation of lambdas  
 &nbsp;&nbsp;&nbsp;&nbsp;computeSingleScaleChannelFeatures:  

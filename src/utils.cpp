@@ -148,33 +148,22 @@ void convTri1( float *I, float *O, int h, int w, int d, float p, int s ) {
   alFree(T);
 }
 
-cv::Mat convolution(cv::Mat source, int channels, int radius, int s, int flag)
+float* convolution(float* source, int rows, int cols, int channels, int radius, int s, int flag)
 {
-	float* O = (float*)malloc(source.rows/s*source.cols/s*channels*sizeof(float));
-	float* I;
-
-	if (channels == 1 || channels == 3)
-		I = cvImage2floatArray(source, channels);
-	else
-		I = (float*)source.data;
+	float* O = (float*)malloc(rows/s*cols/s*channels*sizeof(float));
 
 	switch(flag)
 	{
 		case CONV_TRI: 	
-					convTri(I, O, source.rows, source.cols, channels, radius, s);
-					break;
+					convTri(source, O, rows, cols, channels, radius, s);
+		break;
 		case CONV_TRI1: 
 					int p = 12/radius/(radius+2)-2;
-					convTri1(I, O, source.rows, source.cols, channels, p, s);
-					break;
+					convTri1(source, O, rows, cols, channels, p, s);
+		break;
 	}
-	cv::Mat result;
-	if (channels == 1 || channels == 3)
-		result = floatArray2cvImage(O, source.rows, source.cols, channels); 
-	else // maybe i'll need to convert the result matrix to float type after the assignment
-		result.data = (uchar*)O;
 
-	return result;
+	return O;
 }
 
 /************************************************************************************************************/
@@ -300,70 +289,18 @@ void imResample(float *A, float *B, int ha, int hb, int wa, int wb, int d, float
 }
 
 // I1=imResampleMex(I,sz1(1),sz1(2),1);
-cv::Mat resample(cv::Mat source, int ori_h, int ori_w, int new_h, int new_w, float nrm, int channels)
+float* resample(float* source, int ori_h, int ori_w, int new_h, int new_w, float nrm, int channels)
 {
-
-	// debug
-	//std::cout << "inside resample" << std::endl;
-
-	/*
-	// experimental
-	int type;	
-	if (channels == 1)
-		type = CV_32FC1;
-	else
-		type = CV_32FC3;
-	cv::Mat result(new_h, new_w, type);
-	// */
-
-	cv::Mat result;
-	// check if previous allocation changes anything here!
-	float* I;
-
-	// debug
-	//std::cout << "inside resample, before conversion number one" << std::endl;
-	// */
-
-	// experimental
-	I = cvImage2floatArray(source, channels);
-
-	// debug
-	//std::cout << "inside resample, after conversion number one" << std::endl;
-
 	float *O = (float*)malloc(new_h*new_w*channels*sizeof(float));
-
-	/*
-	//debug: test input
-	cv::Mat testMat = floatArray2cvImage(I, source.rows, source.cols, channels);
-	cv::imshow("resample input", source);
-	cv::imshow("resample input2", testMat);
-	// debug */
-
-	// debug
-	// std::cout << "before imResample, ori_h = " << ori_h << ", new_h = " << new_h << ", ori_w = " << ori_w << ", new_w = " << new_w << std::endl;
 
 	// resample((float*)A, (float*)B, ns[0], ms[0], ns[1], ms[1], nCh, nrm);
 	// ns = (int*) mxGetDimensions(prhs[0]);
 	// nCh=(nDims==2) ? 1 : ns[2];
 	// nrm=(double)mxGetScalar(prhs[3]);
 	// ms[0]=(int)mxGetScalar(prhs[1]); ms[1]=(int)mxGetScalar(prhs[2]); ms[2]=nCh;
-	imResample(I, O, ori_h, new_h, ori_w, new_w, channels, nrm);
-
-	// debug
-	// std::cout << "inside resample, after imResample" << std::endl;
-
-	// experimental
-	result = floatArray2cvImage(O, new_h, new_w, channels);
-
-	/*
-	// debug: test output
-	cv::imshow("resample output", result);
-	// debug */
-
-	// debug
-	// std::cout << "leaving resample" << std::endl;
+	imResample(source, O, ori_h, new_h, ori_w, new_w, channels, nrm);
 	
-	return result;
+	return O;
 }
 
 /************************************************************************************************************/
@@ -553,11 +490,10 @@ oT* rgbConvertImg( iT *I, int n, int d, int flag, oT nrm ) {
   return J;
 }
 
-cv::Mat rgbConvert(cv::Mat source, int colorSpace)
+float* rgbConvert(float* source, int h, int w, int channels, int colorSpace)
 {
-	cv::Mat result;
+	float* result;
 
-	float* I = cvImage2floatArray(source, 3);
 	void* O;
 
 	// flag = find(strcmpi(colorSpace,{'gray','rgb','luv','hsv','orig'}))-1;
@@ -568,21 +504,21 @@ cv::Mat rgbConvert(cv::Mat source, int colorSpace)
 		flag = RGB;
 
 	// dims = (const int*) mxGetDimensions(pr[0]); n=dims[0]*dims[1];
-	int n = source.rows * source.cols;
+	int n = h * w;
 
 	// nDims = mxGetNumberOfDimensions(pr[0]); d=(nDims==2) ? 1 : dims[2];
-	int d = 3;
+	int d = channels;
 
 	// std::cout << "before rgbConvertImg" << std::endl;
 
 	// J = (void*) rgbConvert( (float*) I, n, d, flag, 1.0 );
 	// O = rgbConvertImg(I, n, d, flag, 1.0f);
-	O = (void*) rgbConvertImg( (float*) I, n, d, flag, 1.0f );
+	O = (void*) rgbConvertImg(source, n, d, flag, 1.0f);
 
 	//std::cout << "after rgbConvertImg" << std::endl;
 
 
-	result = floatArray2cvImage((float*)O, source.rows, source.cols, 3);
+	result = (float*) O;
 
 	return result;
 }

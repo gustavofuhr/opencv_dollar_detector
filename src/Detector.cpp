@@ -285,6 +285,7 @@ void Detector::acfDetect(std::vector<std::string> imageNames, std::string dataSe
 		clock_t detectionEnd = clock();
 		timeSpentInDetection = timeSpentInDetection + (double(detectionEnd - detectionStart) / CLOCKS_PER_SEC);
 
+		/*
 		// experimental: do i need to clear these?
 		for (int j=0; j < opts.pPyramid.computedScales; j++)
 		{
@@ -296,7 +297,7 @@ void Detector::acfDetect(std::vector<std::string> imageNames, std::string dataSe
 		I.release();
 		// experimental */
 
-		/*
+		
 		// debug: shows detections 
 		cv::imshow("source image", I);
 		showDetections(I, detections[i], "detections before suppression");
