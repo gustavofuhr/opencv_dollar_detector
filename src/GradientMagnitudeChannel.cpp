@@ -184,7 +184,7 @@ void GradientMagnitudeChannel::gradMagNorm(float *M, float *S, int h, int w) {
 
 // M=gradientMex('gradientMag',I,channel,full); ou [M,O] = gradientMex('gradientMag',I,channel,full);
 // if(!strcmp(action,"gradientMag")) mGradMag(nl,pl,nr,pr);
-std::vector<cv::Mat> GradientMagnitudeChannel::mGradMag(cv::Mat I, int channel)
+std::vector<float*> GradientMagnitudeChannel::mGradMag(float* source, int rows, int cols, int channel)
 {
   /*
   int h, w, d, c, full; 
@@ -214,24 +214,24 @@ std::vector<cv::Mat> GradientMagnitudeChannel::mGradMag(cv::Mat I, int channel)
   // if (nDims == 2) d = 1; else d = dims[2];
   // c = pr[1];
 
-  int h = I.rows, w = I.cols, c = channel, d = 3; 
+
+  int h = rows, w = cols, c = channel, d = 3; 
   float *M, *O=0;
-  std::vector<cv::Mat> resultMatrix;
+  float *I = source;
+  std::vector<float*> result;
 
   /*
   if(h<2 || w<2) mexErrMsgTxt("I must be at least 2x2.");
   c = (int) mxGetScalar(pr[1]); 
   full = (int) mxGetScalar(pr[2]);
   */
-	if (I.rows>=2 && I.cols>=2)
+	if (h>=2 && w>=2)
 	{
-    float* If;
-    If = cvImage2floatArray(I, 3);
-
     // if( c>0 && c<=d ) { I += h*w*(c-1); d=1; }
 		if (c>0 && c<=d)
 		{
-			If += h*w*(c-1); 
+      // does this modify the input?
+			I += h*w*(c-1); 
       d=1;
 		}
 
@@ -244,16 +244,11 @@ std::vector<cv::Mat> GradientMagnitudeChannel::mGradMag(cv::Mat I, int channel)
     // gradMag(I, M, O, h, w, d, full>0 );
 		// call to the actual function: gradMag(I, M, O, h, w, d, full>0 );
 		// void gradMag(float*, float*, float*, int, int, int, bool);
-    gradMag(If, M, O, h, w, d, full>0);
+    gradMag(I, M, O, h, w, d, full>0);
     
-		//next, we assign the values of M and O to the matrix thats going to be returned
-    cv::Mat matM;
-    matM = floatArray2cvImage(M, h, w, 1); // only one channel
-    resultMatrix.push_back(matM);
-    
-    cv::Mat matO;
-    matO = floatArray2cvImage(O, h, w, 1); // only one channel
-    resultMatrix.push_back(matO);
+		// next, we assign the values of M and O to the matrix thats going to be returned
+    result.push_back(M);
+    result.push_back(O);
 	}
 	else
 	{
@@ -261,5 +256,5 @@ std::vector<cv::Mat> GradientMagnitudeChannel::mGradMag(cv::Mat I, int channel)
     std::cout << " # mGradMag error: provided matrix should have two dimensions!" << std::endl;
 	}
 
-	return resultMatrix;
+	return result;
 }

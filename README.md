@@ -13,7 +13,7 @@ Detection working for multiple images, but process is being killed for lack of m
 To Do List:  
 ======================  
 
-Current Total: 7  
+Current Total: 10  
 
 Opencv_Dollar_Detector.cpp:  
 &nbsp;&nbsp;&nbsp;&nbsp;maybe change the way time is being calculated  
@@ -27,7 +27,8 @@ ColorChannel.cpp:
 &nbsp;&nbsp;&nbsp;&nbsp;OK!  
 
 GradientMagnitudeChannel.cpp:  
-&nbsp;&nbsp;&nbsp;&nbsp;OK!  
+&nbsp;&nbsp;&nbsp;&nbsp;check if variable d is correct inside mGradMag  
+&nbsp;&nbsp;&nbsp;&nbsp;check if mGradMag is not modifying the input  
 
 QuantizedGradientChannel.cpp:  
 &nbsp;&nbsp;&nbsp;&nbsp;OK!  
@@ -40,7 +41,8 @@ Pyramid.cpp:
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;possibly add computation of custom channels  
 
 Pyramid.cpp:  
-&nbsp;&nbsp;&nbsp;&nbsp;decide what to do with the channelTypes variable    
+&nbsp;&nbsp;&nbsp;&nbsp;decide what to do with the channelTypes variable   
+&nbsp;&nbsp;&nbsp;&nbsp;fix crop inside chnsCompute 
 
 utils.cpp:  
 &nbsp;&nbsp;&nbsp;&nbsp;OK!  

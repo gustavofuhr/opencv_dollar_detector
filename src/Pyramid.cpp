@@ -380,12 +380,12 @@ Info Pyramid::computeSingleScaleChannelFeatures(float* I, int rows, int cols)
 
 	if (pChns.pGradHist.enabled)
 	{
-		std::vector<cv::Mat> tempResult = pChns.pGradMag.mGradMag(result.image,0);
+		std::vector<float*> tempResult = pChns.pGradMag.mGradMag(convertedImage1, result.image.rows, result.image.cols, 0);
 
 		if (tempResult.size() > 0)
-			result.gradientMagnitude = tempResult[0];
+			result.gradientMagnitude = floatArray2cvImage(tempResult[0], result.image.rows, result.image.cols, 1);
 		if (tempResult.size() > 1)
-			gradOrientation = tempResult[1];
+			gradOrientation = floatArray2cvImage(tempResult[1], result.image.rows, result.image.cols, 1);
 
 		if (pChns.pGradMag.normalizationRadius != 0)
 		{
@@ -405,7 +405,7 @@ Info Pyramid::computeSingleScaleChannelFeatures(float* I, int rows, int cols)
 	{
 		if (pChns.pGradMag.enabled)
 		{
-			result.gradientMagnitude = (pChns.pGradMag.mGradMag(result.image, 0))[0];		
+			result.gradientMagnitude = floatArray2cvImage((pChns.pGradMag.mGradMag(convertedImage1, result.image.rows, result.image.cols, 0))[0], result.image.rows, result.image.cols, 1);		
 
 			if (pChns.pGradMag.normalizationRadius != 0)
 			{
@@ -457,11 +457,10 @@ Info Pyramid::computeSingleScaleChannelFeatures(float* I, int rows, int cols)
 
 	/*
 	// debug: print results for every channel
-	cv::imshow("0 - testing rgbConvert", result.image);
-	cv::imshow("1 - testing convolution", result.image);
-	cv::imshow("2 - testing gradientMagnitude", result.gradientMagnitude);
-	cv::imshow("3 - testing gradientOrientation", gradOrientation);
-	cv::imshow("4 - testing gradientHistogram", result.gradientHistogram[0]);
+	cv::imshow("Color Channel", result.image);
+	cv::imshow("Gradient Magnitude Channel", result.gradientMagnitude);
+	cv::imshow("Gradient Orientation", gradOrientation);
+	cv::imshow("Gradient Histogram Channel", result.gradientHistogram[0]);
 	cv::waitKey();		
 	// debug */
 
@@ -478,12 +477,6 @@ void Pyramid::getScales(int h, int w, int shrink)
 	int minSize, bgDim, smDim;
 	double minSizeRatio;
 	double *tempScales;
-
-	/*
-	nPerOct = 8, nOctUp = 0, minDs = (100,41), shrink = 4, sz = (576,720)
-	scales[0]=0
-	scales[1]=3
-	*/
 	
 	if (h!=0 && w!=0)
 	{
@@ -493,8 +486,6 @@ void Pyramid::getScales(int h, int w, int shrink)
 			minSizeRatio = float(w) / minImgSize[1];
 
 		// nScales = floor(nPerOct*(nOctUp+log2(min(sz./minDs)))+1);
-		// nScales = floor(8*(0+log2(min(576/100, 720/41)))+1);
-		// in the current tests, returns 21 inside MATLAB. In here, returns 21 too
 		computedScales = floor(scalesPerOctave*(upsampledOctaves+log2(minSizeRatio))+1);		
 
 		double s0, s1;

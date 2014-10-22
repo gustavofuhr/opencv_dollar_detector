@@ -15,7 +15,7 @@ public:
 	cv::String padWith;
 
 	void readGradientMagnitude(cv::FileNode);
-	std::vector<cv::Mat> mGradMag(cv::Mat, int);
+	std::vector<float*> mGradMag(float* source, int rows, int cols, int channel);
 	void gradMagNorm(float *M, float *S, int h, int w); 
 };
 
