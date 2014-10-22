@@ -63,6 +63,30 @@ cv::Mat floatArray2cvImage(float* source, int rows, int cols, int channels)
 	return result;
 }
 
+float* features2floatArray (Info features, int rows, int cols, int colorChannels, int magChannels, int histChannels)
+{
+  int i, resultIndex=0;
+  int channels = colorChannels + magChannels + histChannels;
+  float* result = (float*)malloc(rows*cols*channels*sizeof(float));
+  float* tempImage = cvImage2floatArray(features.image, colorChannels);
+  float* tempMag = cvImage2floatArray(features.gradientMagnitude, magChannels);
+
+  for (i=0; i < rows*cols*colorChannels; i++)
+    result[resultIndex++] = tempImage[i];
+  for (i=0; i < rows*cols*magChannels; i++)
+    result[resultIndex++] = tempMag[i];
+
+  for (int j=0; j < histChannels; j++)
+  {
+    float* tempHist = (float*)malloc(rows*cols*sizeof(float));
+    tempHist = cvImage2floatArray(features.gradientHistogram[j], 1);
+    for (i=0; i < rows*cols; i++)
+      result[resultIndex++] = tempHist[i];
+  }
+
+  return result;
+}
+
 /************************************************************************************************************/
 // Convolutions
 
@@ -673,32 +697,6 @@ void testFeatures(Info features, cv::String name)
 	print_100_elements(floatH4, rows, "ch 8 " + name);
 	print_100_elements(floatH5, rows, "ch 9 " + name);
 	print_100_elements(floatH6, rows, "ch 10 " + name);
-}
-
-/************************************************************************************************************/
-
-float* features2floatArray (Info features, int rows, int cols, int colorChannels, int magChannels, int histChannels)
-{
-  int i, resultIndex=0;
-  int channels = colorChannels + magChannels + histChannels;
-  float* result = (float*)malloc(rows*cols*channels*sizeof(float));
-  float* tempImage = cvImage2floatArray(features.image, colorChannels);
-  float* tempMag = cvImage2floatArray(features.gradientMagnitude, magChannels);
-
-  for (i=0; i < rows*cols*colorChannels; i++)
-    result[resultIndex++] = tempImage[i];
-  for (i=0; i < rows*cols*magChannels; i++)
-    result[resultIndex++] = tempMag[i];
-
-  for (int j=0; j < histChannels; j++)
-  {
-    float* tempHist = (float*)malloc(rows*cols*sizeof(float));
-    tempHist = cvImage2floatArray(features.gradientHistogram[j], 1);
-    for (i=0; i < rows*cols; i++)
-      result[resultIndex++] = tempHist[i];
-  }
-
-  return result;
 }
 
 /************************************************************************************************************/

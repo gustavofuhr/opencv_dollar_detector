@@ -21,7 +21,6 @@ public:
 	// output attributes
 	int channelTypes; //number of channel types
 	int computedScales; //number of scales computed
-	Info* computedChannels; //[nScales x nTypes] cell array of computed channels
 	double* scales;
 	double* scales_w;
 	double* scales_h;
@@ -31,7 +30,7 @@ public:
 	double totalTimeForApproxScales;
 
 	void readPyramid(cv::FileNode);
-	void computeMultiScaleChannelFeaturePyramid(cv::Mat);
+	Info* computeMultiScaleChannelFeaturePyramid(cv::Mat I);
 	Info computeSingleScaleChannelFeatures(float* I, int rows, int cols);
 	cv::Mat TriangleFilterConvolution(cv::Mat, int, int, int);
 	void getScales(int, int , int);

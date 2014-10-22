@@ -17,6 +17,7 @@ Current Total: 10
 
 Opencv_Dollar_Detector.cpp:  
 &nbsp;&nbsp;&nbsp;&nbsp;maybe change the way time is being calculated  
+&nbsp;&nbsp;&nbsp;&nbsp;fix all instances where locally allocated arrays are returned (causing memory leak, oops) 
 
 Detector.cpp:  
 &nbsp;&nbsp;&nbsp;&nbsp;nonMaximalSuppression:  
@@ -42,7 +43,6 @@ Pyramid.cpp:
 
 Pyramid.cpp:  
 &nbsp;&nbsp;&nbsp;&nbsp;decide what to do with the channelTypes variable   
-&nbsp;&nbsp;&nbsp;&nbsp;fix crop inside chnsCompute 
 
 utils.cpp:  
 &nbsp;&nbsp;&nbsp;&nbsp;OK!  

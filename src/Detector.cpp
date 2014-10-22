@@ -75,7 +75,7 @@ inline void getChild(float *chns1, uint32 *cids, uint32 *fids, float *thrs, uint
   k0=k+=k0*2; k+=offset;
 }
 
-BB_Array Detector::applyDetectorToFrame(int shrink, int modelHt, int modelWd, int stride, float cascThr, float *thrs, float *hs, 
+BB_Array Detector::applyDetectorToFrame(Info* pyramid, int shrink, int modelHt, int modelWd, int stride, float cascThr, float *thrs, float *hs, 
 										uint32 *fids, uint32 *child, int nTreeNodes, int nTrees, int treeDepth, int nChns)
 {
 	BB_Array result;
@@ -88,14 +88,14 @@ BB_Array Detector::applyDetectorToFrame(int shrink, int modelHt, int modelWd, in
 		// const int height = (int) chnsSize[0];
   		// const int width = (int) chnsSize[1];
   		// const int nChns = mxGetNumberOfDimensions(prhs[0])<=2 ? 1 : (int) chnsSize[2];
-		int height = opts.pPyramid.computedChannels[i].image.rows;
-		int width = opts.pPyramid.computedChannels[i].image.cols;
+		int height = pyramid[i].image.rows;
+		int width = pyramid[i].image.cols;
 
 		int height1 = (int)ceil(float(height*shrink-modelHt+1)/stride);
 		int width1 = (int)ceil(float(width*shrink-modelWd+1)/stride);
 
 		float* chns;
-		chns = features2floatArray(opts.pPyramid.computedChannels[i], height, width, 3, 1, 6);
+		chns = features2floatArray(pyramid[i], height, width, 3, 1, 6);
 		
 		/*
 		// debug: read chns from file
@@ -270,16 +270,17 @@ void Detector::acfDetect(std::vector<std::string> imageNames, std::string dataSe
 	{
 		clock_t frameStart = clock();
 
-		// this is necessary, so we don't apply this transformation multiple times, which would break the image inside chnsPyramid
+		// this conversion is necessary, so we don't apply this transformation multiple times, which would break the image inside chnsPyramid
 		cv::Mat image = cv::imread(dataSetDirectoryName + '/' + imageNames[i]);
 		cv::Mat I;
 		image.convertTo(I, CV_32FC3, 1.0/255.0);
 
 		// compute feature pyramid
-		opts.pPyramid.computeMultiScaleChannelFeaturePyramid(I);
+		Info* framePyramid;
+		framePyramid = opts.pPyramid.computeMultiScaleChannelFeaturePyramid(I);
 
 		clock_t detectionStart = clock();
-		BB_Array frameDetections = applyDetectorToFrame(shrink, modelHt, modelWd, stride, cascThr, thrs, hs, fids, child, nTreeNodes, nTrees, treeDepth, nChns);
+		BB_Array frameDetections = applyDetectorToFrame(framePyramid, shrink, modelHt, modelWd, stride, cascThr, thrs, hs, fids, child, nTreeNodes, nTrees, treeDepth, nChns);
 		detections.push_back(frameDetections);
 		frameDetections.clear(); //doesn't seem to make a difference
 		clock_t detectionEnd = clock();
@@ -297,7 +298,7 @@ void Detector::acfDetect(std::vector<std::string> imageNames, std::string dataSe
 		I.release();
 		// experimental */
 
-		
+		/*
 		// debug: shows detections 
 		cv::imshow("source image", I);
 		showDetections(I, detections[i], "detections before suppression");

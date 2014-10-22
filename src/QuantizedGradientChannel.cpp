@@ -238,13 +238,13 @@ void fhog( float *M, float *O, float *H, int h, int w, int binSize,
 //Compute oriented gradient histograms
 //H=gradHist(M,O,[...]) - see gradientHist.m
 //H=gradientHist(M,O,binSize,p.nOrients,p.softBin,p.useHog,p.clipHog,full);
-std::vector<cv::Mat> QuantizedGradientChannel::mGradHist(cv::Mat gradMag, cv::Mat gradOri, int full)
+std::vector<float*> QuantizedGradientChannel::mGradHist(float* gradMag, float* gradOri, int rows, int cols, int full)
 {
   /*
     int h, w, d, hb, wb, nChns, binSize, nOrients, softBin, useHog;
     bool full; float *M, *O, *H, clipHog;
   */
-	int h = gradMag.rows, w = gradMag.cols, hb, wb;
+	int h = rows, w = cols, hb, wb;
 
 
   /*
@@ -253,20 +253,8 @@ std::vector<cv::Mat> QuantizedGradientChannel::mGradHist(cv::Mat gradMag, cv::Ma
   */
   float *M, *O, *H;
 
-  M = cvImage2floatArray(gradMag, 1);
-  O = cvImage2floatArray(gradOri, 1);
-
-	//next there's a bunch of tests to see which parameters were given and which are to be default, i wont put that here for now at least
-  /*
-    if( mxGetM(pr[1])!=h || mxGetN(pr[1])!=w || d!=1 ||
-      mxGetClassID(pr[1])!=mxSINGLE_CLASS ) mexErrMsgTxt("M or O is bad.");
-    binSize  = (nr>=3) ? (int)   mxGetScalar(pr[2])    : 8;
-    nOrients = (nr>=4) ? (int)   mxGetScalar(pr[3])    : 9;
-    softBin  = (nr>=5) ? (int)   mxGetScalar(pr[4])    : 1;
-    useHog   = (nr>=6) ? (int)   mxGetScalar(pr[5])    : 0;
-    clipHog  = (nr>=7) ? (float) mxGetScalar(pr[6])    : 0.2f;
-    full     = (nr>=8) ? (bool) (mxGetScalar(pr[7])>0) : false;
-  */
+  M = gradMag;
+  O = gradOri;
 
   hb = h/binSize; wb = w/binSize;
 
@@ -285,7 +273,7 @@ std::vector<cv::Mat> QuantizedGradientChannel::mGradHist(cv::Mat gradMag, cv::Ma
   cv::waitKey();
   // */
 
-  std::vector<cv::Mat> result;
+  std::vector<float*> result;
 
   // if( nOrients==0 ) return;
 	if (orientationChannels == 0)
@@ -315,8 +303,7 @@ std::vector<cv::Mat> QuantizedGradientChannel::mGradHist(cv::Mat gradMag, cv::Ma
       for (int j=0; j < hb*wb; j++)
           tempH[j] = H[indexForH++];
 
-      cv::Mat tempMat = floatArray2cvImage(tempH, hb, wb, 1);
-      result.push_back(tempMat);
+      result.push_back(tempH);
     }
 	}
 

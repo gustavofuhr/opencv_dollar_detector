@@ -16,7 +16,7 @@ public:
 	cv::String padWith;
 
 	void readGradientHistogram(cv::FileNode);
-	std::vector<cv::Mat> mGradHist(cv::Mat, cv::Mat, int);
+	std::vector<float*> mGradHist(float* gradMag, float* gradOri, int rows, int cols, int full);
 };
 
 #endif
