@@ -22,6 +22,7 @@ enum suppressionTypeID { NONE, MAX, MAXG, MS, COVER };
 // matrix conversions
 float* cvImage2floatArray(cv::Mat source, int channels);
 cv::Mat floatArray2cvImage(float* source, int rows, int cols, int channels);
+float* features2floatArray (Info features, int rows, int cols, int colorChannels, int magChannels, int histChannels);
 
 // Dóllar's allocation functions
 void* alMalloc( size_t size, int alignment );
@@ -33,13 +34,13 @@ float* resample(float* source, int ori_h, int ori_w, int new_h, int new_w, float
 float* rgbConvert(float* source, int h, int w, int channels, int colorSpace);
 cv::Mat padImage(cv::Mat source, int channels, int *pad, int padSize, int type);
 
+/*
 // debug prints
 void print_20i_elements(uint32* source, cv::String name);
 void print_20_elements(float* source, cv::String name);
 void print_100_elements(float* source, int rows, cv::String name);
 void testFeatures(Info features, cv::String name);
-
-float* features2floatArray (Info features, int rows, int cols, int colorChannels, int magChannels, int histChannels);
+*/
 
 std::vector<std::string> getDataSetFileNames(std::string directory);
 

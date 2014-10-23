@@ -53,7 +53,21 @@ Info* Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 	// convert I to appropriate color space (or simply normalize)
 	// I=rgbConvert(I,cs); pChns.pColor.colorSpace='orig';
 	float* convertedImage;
-	float* floatImg = cvImage2floatArray(I, colorChannels);
+
+	int imgIndex=0;
+	float* floatImg = (float*)malloc(I.rows*I.cols*colorChannels*sizeof(float));
+	std::vector<cv::Mat> rgb;
+  	cv::split(I, rgb);
+  	for (int j=0; j < rgb.size(); j++)
+  	{
+    	cv::Mat tempMat;
+    	cv::transpose(rgb[j], tempMat);
+    	float* tempFloat = (float*)tempMat.data;
+    	for (int i=0; i < I.rows*I.cols; i++)
+      		floatImg[imgIndex++] = tempFloat[i];
+  	}
+
+	//float* floatImg = cvImage2floatArray(I, colorChannels);
 	int previousColorSpaceType = pChns.pColor.colorSpaceType; // saves the value to be reloaded afterwards
 	convertedImage = rgbConvert(floatImg, I.rows, I.cols, colorChannels, pChns.pColor.colorSpaceType);
 	pChns.pColor.colorSpaceType = ORIG;
@@ -189,60 +203,44 @@ Info* Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 					iR = (j+1)*(approximatedScales+1);
 			}
 
+			// resample color channels
 			ratio[0] = pow(scales[i]/scales[iR],-lambdas[0]);
-			float* tempInput = cvImage2floatArray(computedChannels[iR].image, colorChannels);
-			float* tempOutput = resample(tempInput, computedChannels[iR].image.rows, computedChannels[iR].image.cols, h1, w1, ratio[0], colorChannels);
+			int imgIndex2=0;
+			float* floatImg2 = (float*)malloc(computedChannels[iR].image.rows*computedChannels[iR].image.cols*colorChannels*sizeof(float));
+			std::vector<cv::Mat> rgb2;
+		  	cv::split(computedChannels[iR].image, rgb2);
+		  	for (int j=0; j < rgb2.size(); j++)
+		  	{
+		    	cv::Mat tempMat2;
+		    	cv::transpose(rgb2[j], tempMat2);
+		    	float* tempFloat2 = (float*)tempMat2.data;
+		    	for (int k=0; k < computedChannels[iR].image.rows*computedChannels[iR].image.cols; k++)
+		      		floatImg2[imgIndex2++] = tempFloat2[k];
+		  	}
+			float* tempOutput = resample(floatImg2, computedChannels[iR].image.rows, computedChannels[iR].image.cols, h1, w1, ratio[0], colorChannels);
 			computedChannels[i].image = floatArray2cvImage(tempOutput, h1, w1, colorChannels);
 		
+			// resample gradMag channel
 			ratio[1] = pow(scales[i]/scales[iR],-lambdas[1]);
-			float* tempInput1 = cvImage2floatArray(computedChannels[iR].gradientMagnitude, 1);
-			float* tempOutput1 = resample(tempInput1, computedChannels[iR].gradientMagnitude.rows, computedChannels[iR].gradientMagnitude.cols, h1, w1, ratio[1], 1);
+			cv::Mat tempMag;
+			cv::transpose(computedChannels[iR].gradientMagnitude, tempMag);
+			float *floatMag = (float*)tempMag.data;
+			float* tempOutput1 = resample(floatMag, computedChannels[iR].gradientMagnitude.rows, computedChannels[iR].gradientMagnitude.cols, h1, w1, ratio[1], 1);
 			computedChannels[i].gradientMagnitude = floatArray2cvImage(tempOutput1, h1, w1, 1);
 			
+			// resample histogram channels
 			ratio[2] = pow(scales[i]/scales[iR],-lambdas[2]);
-
 			for (int k=0; k < histogramChannels; k++)
 			{
 				int h = computedChannels[iR].gradientHistogram[k].rows;
 				int w = computedChannels[iR].gradientHistogram[k].cols;
 
-				float* tempInput2 = cvImage2floatArray(computedChannels[iR].gradientHistogram[k], 1);
-				float* tempOutput2 = resample(tempInput2, h, w, h1, w1, ratio[2], 1);
+				cv::Mat tempHist;
+				cv::transpose(computedChannels[iR].gradientHistogram[k], tempHist);
+				float *floatHist = (float*)tempHist.data;
+				float* tempOutput2 = resample(floatHist, h, w, h1, w1, ratio[2], 1);
 				computedChannels[i].gradientHistogram.push_back(floatArray2cvImage(tempOutput2, h1, w1, 1));
 			}
-
-			/*
-			// debug: test results of image and gradMag channel approximations
-			cv::imshow("iR image", computedChannels[iR].image);
-			cv::imshow("iR gradMag", computedChannels[iR].gradientMagnitude);
-
-			std::cout << "approx image for scale[" << i << "], rows=" << computedChannels[i].image.rows << ", cols=" 
-			<< computedChannels[i].image.cols << ", type=" << computedChannels[i].image.type() << ", ratio=" << ratio[0] << std::endl;
-			cv::imshow("approx image", computedChannels[i].image);
-
-			std::cout << "approx gradMag for scale[" << i << "], rows=" << computedChannels[i].gradientMagnitude.rows << ", cols=" 
-			<< computedChannels[i].gradientMagnitude.cols << ", type=" << computedChannels[i].gradientMagnitude.type() << ", ratio=" << ratio[1] << std::endl;
-			cv::imshow("approx gradMag", computedChannels[i].gradientMagnitude);
-			// debug */
-
-			/*
-			// debug: test results of gradHist approximations
-			cv::imshow("iR gradHist0", computedChannels[iR].gradientHistogram[0]);
-			cv::imshow("app gradHist0", computedChannels[i].gradientHistogram[0]);
-			cv::imshow("iR gradHist1", computedChannels[iR].gradientHistogram[1]);
-			cv::imshow("app gradHist1", computedChannels[i].gradientHistogram[1]);
-			cv::imshow("iR gradHist2", computedChannels[iR].gradientHistogram[2]);
-			cv::imshow("app gradHist2", computedChannels[i].gradientHistogram[2]);
-			cv::imshow("iR gradHist3", computedChannels[iR].gradientHistogram[3]);
-			cv::imshow("app gradHist3", computedChannels[i].gradientHistogram[3]);
-			cv::imshow("iR gradHist4", computedChannels[iR].gradientHistogram[4]);
-			cv::imshow("app gradHist4", computedChannels[i].gradientHistogram[4]);
-			cv::imshow("iR gradHist5", computedChannels[iR].gradientHistogram[5]);
-			cv::imshow("app gradHist5", computedChannels[i].gradientHistogram[5]);
-			// */
-
-			// debug
-			// cv::waitKey();
 		}
 	}
 	end = clock();
@@ -273,35 +271,38 @@ Info* Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 		int h = computedChannels[i].image.rows;
 		int w = computedChannels[i].image.cols;
 
-		float* tempInput = cvImage2floatArray(computedChannels[i].image, 3);
-		float* tempOutput = convolution(tempInput, h, w, 3, pChns.pColor.smoothingRadius, 1, CONV_TRI);	
+		//float* floatImg3 = cvImage2floatArray(computedChannels[i].image, 3);
+		//this is the only substitution that changes some of the results, maybe there's an error here
+		int imgIndex3=0;
+		float* floatImg3 = (float*)malloc(h*w*colorChannels*sizeof(float));
+		std::vector<cv::Mat> rgb3;
+	  	cv::split(computedChannels[i].image, rgb3);
+	  	for (int j=0; j < rgb3.size(); j++)
+	  	{
+	    	cv::Mat tempMat3;
+	    	cv::transpose(rgb3[j], tempMat3);
+	    	float* tempFloat3 = (float*)tempMat3.data;
+	    	for (int k=0; k < h*w; k++)
+	      		floatImg3[imgIndex3++] = tempFloat3[k];
+	  	}
+	  	// */
+		float* tempOutput = convolution(floatImg3, h, w, 3, pChns.pColor.smoothingRadius, 1, CONV_TRI);	
 		computedChannels[i].image = floatArray2cvImage(tempOutput, h, w, 3);
 
-		float* tempInput1 = cvImage2floatArray(computedChannels[i].gradientMagnitude, 1);
-		float* tempOutput1 = convolution(tempInput1, h, w, 1, pChns.pColor.smoothingRadius, 1, CONV_TRI);	
+		cv::Mat tempMag;
+		cv::transpose(computedChannels[i].gradientMagnitude, tempMag);
+		float *floatMag = (float*)tempMag.data;
+		float* tempOutput1 = convolution(floatMag, h, w, 1, pChns.pColor.smoothingRadius, 1, CONV_TRI);	
 		computedChannels[i].gradientMagnitude = floatArray2cvImage(tempOutput1, h, w, 1);
 
 		for (int j=0; j < pChns.pGradHist.nChannels; j++)
 		{
-			float* tempInput2 = cvImage2floatArray(computedChannels[i].gradientHistogram[j], 1);
-			float* tempOutput2 = convolution(tempInput2, h, w, 1, pChns.pColor.smoothingRadius, 1, CONV_TRI);
+			cv::Mat tempHist;
+			cv::transpose(computedChannels[i].gradientHistogram[j], tempHist);
+			float *floatHist = (float*)tempHist.data;
+			float* tempOutput2 = convolution(floatHist, h, w, 1, pChns.pColor.smoothingRadius, 1, CONV_TRI);
 			computedChannels[i].gradientHistogram[j] = floatArray2cvImage(tempOutput2, h, w, 1);
 		}
-
-
-		// debug: test values inside computedChannels
-		// color channels are still correct here
-		// testFeatures(computedChannels[0], "after convolution");
-		//std::cin.get();
-		// debug*/
-
-		/*
-		// debug: images after convolution
-		cv::imshow("conv image", computedChannels[i].image);
-		cv::imshow("conv gradMag", computedChannels[i].gradientMagnitude);
-		cv::imshow("conv gradHist", computedChannels[i].gradientHistogram[1]);
-		cv::waitKey();
-		// debug */	
 
 		if (pad[0]!=0 || pad[1]!=0)
 		{
@@ -314,19 +315,6 @@ Info* Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 			for (int j=0; j < pChns.pGradHist.nChannels; j++)
 				computedChannels[i].gradientHistogram[j] = padImage(computedChannels[i].gradientHistogram[j], 1, tempPad, padSize, 0);
 		}
-
-		// debug: test values inside computedChannels
-		// testFeatures(computedChannels[0], "after padding");
-		//std::cin.get();
-		// debug*/
-
-		/*
-		// debug 
-		std::cout << "scale[" << i << "], imgSize=(" << computedChannels[i].image.rows << "," << computedChannels[i].image.cols << 
-			"), magSize=(" << computedChannels[i].gradientMagnitude.rows << "," << computedChannels[i].gradientMagnitude.cols << 
-			"), hisSize=(" << computedChannels[i].gradientHistogram[0].rows << "," << computedChannels[i].gradientHistogram[0].cols << ")" << std::endl;
-		// debug */
-
 	}
 
 	pChns.pColor.colorSpaceType = previousColorSpaceType;

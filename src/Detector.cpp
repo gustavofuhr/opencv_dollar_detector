@@ -24,10 +24,9 @@ void Detector::exportDetectorModel(cv::String fileName)
 	xml.release();
 }
 
-//reads the detector model from the xml model
-//for now, it must be like this since the current model
-//was not written by this program this will change after we are 
-//set on a class structure
+// reads the detector model from the xml model
+// for now, it must be like this since the current model was not written by this program 
+// this will change after we are set on a class structure
 void Detector::importDetectorModel(cv::String fileName)
 {
 	cv::FileStorage xml;
@@ -246,8 +245,13 @@ void Detector::acfDetect(std::vector<std::string> imageNames, std::string dataSe
 	int stride = opts.stride;
 	float cascThr = opts.cascadeThreshold;
 
-	float *thrs = cvImage2floatArray(this->thrs, 1);
-	float *hs = cvImage2floatArray(this->hs, 1);
+	cv::Mat tempThrs;
+	cv::transpose(this->thrs, tempThrs);
+	float *thrs = (float*)tempThrs.data;
+
+	cv::Mat tempHs;
+	cv::transpose(this->hs, tempHs);
+	float *hs = (float*)tempHs.data;
 	
 	cv::Mat tempFids;
 	cv::transpose(this->fids, tempFids);
@@ -298,7 +302,7 @@ void Detector::acfDetect(std::vector<std::string> imageNames, std::string dataSe
 		I.release();
 		// experimental */
 
-		/*
+		
 		// debug: shows detections 
 		cv::imshow("source image", I);
 		showDetections(I, detections[i], "detections before suppression");
@@ -319,7 +323,8 @@ BB_Array nmsMax(BB_Array source, bool greedy, double overlapArea, cv::String ove
 {
 	BB_Array result;
 	BB_Array sortedArray;
-	bool discarded[source.size()];
+	// bool discarded[source.size()];
+	bool *discarded = (bool*)malloc(source.size()*sizeof(bool));
 
 	for (int i=0; i < source.size(); i++)
 	{
@@ -382,6 +387,8 @@ BB_Array nmsMax(BB_Array source, bool greedy, double overlapArea, cv::String ove
 	for (int i=0; i < sortedArray.size(); i++)
 		if (!discarded[i])
 			result.push_back(sortedArray[i]);
+
+	free(discarded);
 
 	return result;
 }

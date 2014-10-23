@@ -35,38 +35,6 @@ void grad1( float *I, float *Gx, float *Gy, int h, int w, int x ) {
   for(; y<h-1; y++) GRADY(.5f); In--; GRADY(1);
   #undef GRADY
 }
-// */
-
-/*
-// compute x and y gradients for just one column (no sse)
-void grad1( float *I, float *Gx, float *Gy, int h, int w, int x ) {
-  int y, y1; float *Ip, *In, r;
-  // compute column of Gx
-  Ip=I-h; In=I+h; r=.5f;
-  if(x==0) { r=1; Ip+=h; } else if(x==w-1) { r=1; In-=h; }
-  for( y=0; y<h; y++ ) 
-  {
-    *Gx++=(*In++-*Ip++)*r;
-
-    /*
-    // debug
-    if (y < 20 && x==0)
-      std::cout << "y=" << y << ", r=" << r << ", In=" << *(In-1) << ", Ip=" << *(Ip-1) << ", Gx=" << *(Gx-1) << std::endl;
-  } 
-  
-  // compute column of Gy
-  #define GRADY(r) *Gy++=(*In++-*Ip++)*r;
-  Ip=I; In=Ip+1;
-  // GRADY(1); Ip--; for(y=1; y<h-1; y++) GRADY(.5f); In--; GRADY(1);
-  y1=((~((size_t) Gy) + 1) & 15)/4; if(y1==0) y1=4; if(y1>h-1) y1=h-1;
-  GRADY(1); Ip--; for(y=1; y<y1; y++) GRADY(.5f);
-
-  for(; y<h; y++, Ip++, In++, Gy++)
-    *Gy = (*In-*Ip)*0.5f; 
-  for(; y<h-1; y++) GRADY(.5f); In--; GRADY(1);
-  #undef GRADY
-}
-// */
 
 // build lookup table a[] s.t. a[x*n]~=acos(x) for x in [-1,1]
 float* acosTable() {

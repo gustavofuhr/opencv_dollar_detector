@@ -39,6 +39,7 @@ float* cvImage2floatArray(cv::Mat source, int channels)
 
 	return result;
 }
+// */
 
 cv::Mat floatArray2cvImage(float* source, int rows, int cols, int channels)
 {
@@ -68,20 +69,31 @@ float* features2floatArray (Info features, int rows, int cols, int colorChannels
   int i, resultIndex=0;
   int channels = colorChannels + magChannels + histChannels;
   float* result = (float*)malloc(rows*cols*channels*sizeof(float));
-  float* tempImage = cvImage2floatArray(features.image, colorChannels);
-  float* tempMag = cvImage2floatArray(features.gradientMagnitude, magChannels);
 
-  for (i=0; i < rows*cols*colorChannels; i++)
-    result[resultIndex++] = tempImage[i];
+  std::vector<cv::Mat> rgb;
+  cv::split(features.image, rgb);
+  for (int j=0; j < rgb.size(); j++)
+  {
+    cv::Mat tempMat;
+    cv::transpose(rgb[j], tempMat);
+    float* tempFloat = (float*)tempMat.data;
+    for (i=0; i < rows*cols; i++)
+      result[resultIndex++] = tempFloat[i];
+  }
+
+  cv::Mat tempMag;
+  cv::transpose(features.gradientMagnitude, tempMag);
+  float *floatMag = (float*)tempMag.data;
   for (i=0; i < rows*cols*magChannels; i++)
-    result[resultIndex++] = tempMag[i];
+    result[resultIndex++] = floatMag[i];
 
   for (int j=0; j < histChannels; j++)
   {
-    float* tempHist = (float*)malloc(rows*cols*sizeof(float));
-    tempHist = cvImage2floatArray(features.gradientHistogram[j], 1);
+    cv::Mat tempHist;
+    cv::transpose(features.gradientHistogram[j], tempHist);
+    float *floatHist = (float*)tempHist.data;
     for (i=0; i < rows*cols; i++)
-      result[resultIndex++] = tempHist[i];
+      result[resultIndex++] = floatHist[i];
   }
 
   return result;
@@ -636,7 +648,21 @@ cv::Mat padImage(cv::Mat source, int channels, int *pad, int padSize, int type)
 	float *O, *I;
 	O = (float*) malloc((newRows)*(newCols)*channels*sizeof(float));
 
-	I = cvImage2floatArray(source, channels);
+	// I = cvImage2floatArray(source, channels);
+
+  int imgIndex=0;
+  I = (float*)malloc(source.rows*source.cols*channels*sizeof(float));
+  std::vector<cv::Mat> splitChannels;
+  cv::split(source, splitChannels);
+  for (int j=0; j < splitChannels.size(); j++)
+  {
+    cv::Mat tempMat;
+    cv::transpose(splitChannels[j], tempMat);
+    float* tempFloat = (float*)tempMat.data;
+    for (int k=0; k < source.rows*source.cols; k++)
+        I[imgIndex++] = tempFloat[k];
+  }
+  // */
 
 	double val = (double)type;
 
@@ -648,7 +674,7 @@ cv::Mat padImage(cv::Mat source, int channels, int *pad, int padSize, int type)
 }
 
 /************************************************************************************************************/
-
+/*
 void print_20i_elements(uint32* source, cv::String name)
 {
   std::cout << std::endl << "First twenty elements of " << name << std::endl;
