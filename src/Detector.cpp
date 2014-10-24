@@ -93,8 +93,9 @@ BB_Array Detector::applyDetectorToFrame(std::vector<Info> pyramid, int shrink, i
 		int height1 = (int)ceil(float(height*shrink-modelHt+1)/stride);
 		int width1 = (int)ceil(float(width*shrink-modelWd+1)/stride);
 
-		float* chns;
-		chns = features2floatArray(pyramid[i], height, width, 3, 1, 6);
+		int channels = opts.pPyramid.pChns.pColor.nChannels + opts.pPyramid.pChns.pGradMag.nChannels + opts.pPyramid.pChns.pGradHist.nChannels;
+		float* chns = (float*)malloc(height*width*channels*sizeof(float));
+		features2floatArray(pyramid[i], chns, height, width,  opts.pPyramid.pChns.pColor.nChannels, opts.pPyramid.pChns.pGradMag.nChannels, opts.pPyramid.pChns.pGradHist.nChannels);
 		
 		/*
 		// debug: read chns from file
@@ -302,7 +303,7 @@ void Detector::acfDetect(std::vector<std::string> imageNames, std::string dataSe
 		I.release();
 		// experimental */
 
-		/*
+		
 		// debug: shows detections 
 		cv::imshow("source image", I);
 		showDetections(I, detections[i], "detections before suppression");

@@ -64,11 +64,39 @@ cv::Mat floatArray2cvImage(float* source, int rows, int cols, int channels)
   return result;
 }
 
-float* features2floatArray (Info features, int rows, int cols, int colorChannels, int magChannels, int histChannels)
+/*
+// gives correct results early, but breaks images after real scales
+cv::Mat floatArray2cvImage(float* source, int rows, int cols, int channels)
+{
+  int type; 
+  if (channels == 1)
+    type = CV_32FC1;
+  else
+    type = CV_32FC3;
+
+  cv::Mat result(rows, cols, type);
+  std::vector<float> tempFloat(rows*cols*channels);
+
+  //float* tempFloat = (float*)malloc(rows*cols*channels*sizeof(float));
+  int tempIndex=0;
+
+  for (int channel=0; channel < channels; channel++)
+    for (int column=0; column < cols; column++)
+      for (int row=0; row < rows; row++)
+        tempFloat[column*channels + row*cols*channels + channel] = source[tempIndex++];
+
+  result.data = (uchar*)&tempFloat[0];
+
+  cv::imshow("test", result);
+  cv::waitKey();
+
+  return result;
+}
+// */
+
+void features2floatArray (Info features, float* result, int rows, int cols, int colorChannels, int magChannels, int histChannels)
 {
   int i, resultIndex=0;
-  int channels = colorChannels + magChannels + histChannels;
-  float* result = (float*)malloc(rows*cols*channels*sizeof(float));
 
   std::vector<cv::Mat> rgb;
   cv::split(features.image, rgb);
@@ -95,8 +123,6 @@ float* features2floatArray (Info features, int rows, int cols, int colorChannels
     for (i=0; i < rows*cols; i++)
       result[resultIndex++] = floatHist[i];
   }
-
-  return result;
 }
 
 /************************************************************************************************************/
@@ -671,58 +697,6 @@ cv::Mat padImage(cv::Mat source, int channels, int *pad, int padSize, int type)
 	result = floatArray2cvImage(O, newRows, newCols, channels);
 
 	return result;
-}
-
-/************************************************************************************************************/
-/*
-void print_20i_elements(uint32* source, cv::String name)
-{
-  std::cout << std::endl << "First twenty elements of " << name << std::endl;
-  for (int i=0; i < 20; i++)
-    std::cout << i << ":  " << source[i] << std::endl;
-}
-
-void print_20_elements(float* source, cv::String name)
-{
-  std::cout << std::endl << "First twenty elements of " << name << std::endl;
-  for (int i=0; i < 20; i++)
-    std::cout << i << ":  " << std::fixed << std::setprecision(5) << source[i] << std::endl;
-}
-
-void print_100_elements(float* source, int rows, cv::String name)
-{
-	std::cout << std::endl << "First one hundred elements of " << name << std::endl;
-	for (int i=0; i < 10; i++)
-	{
-		for (int j=0; j < 10; j++)
-			std::cout << "  " << std::fixed << std::setprecision(5) << source[i+j*rows];
-		std::cout << std::endl;
-	}
-}
-
-void testFeatures(Info features, cv::String name)
-{
-	float *floatIm = cvImage2floatArray(features.image, 3);
-	float *floatMg = cvImage2floatArray(features.gradientMagnitude, 1);
-	float *floatH1 = cvImage2floatArray(features.gradientHistogram[0], 1);
-	float *floatH2 = cvImage2floatArray(features.gradientHistogram[1], 1);
-	float *floatH3 = cvImage2floatArray(features.gradientHistogram[2], 1);
-	float *floatH4 = cvImage2floatArray(features.gradientHistogram[3], 1);
-	float *floatH5 = cvImage2floatArray(features.gradientHistogram[4], 1);
-	float *floatH6 = cvImage2floatArray(features.gradientHistogram[5], 1);
-	int rows = features.image.rows;
-	int cols = features.image.cols;
-
-	print_100_elements(floatIm, rows, "ch 1 " + name);
-	print_100_elements(&floatIm[rows*cols], rows, "ch 2 " + name);
-	print_100_elements(&floatIm[2*rows*cols], rows, "ch 3 " + name);
-	print_100_elements(floatMg, rows, "ch 4 " + name);
-	print_100_elements(floatH1, rows, "ch 5 " + name);
-	print_100_elements(floatH2, rows, "ch 6 " + name);
-	print_100_elements(floatH3, rows, "ch 7 " + name);
-	print_100_elements(floatH4, rows, "ch 8 " + name);
-	print_100_elements(floatH5, rows, "ch 9 " + name);
-	print_100_elements(floatH6, rows, "ch 10 " + name);
 }
 
 /************************************************************************************************************/
