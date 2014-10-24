@@ -31,9 +31,8 @@ void Pyramid::readPyramid(cv::FileNode pyramidNode)
 }
 
 // translation of the chnsPyramid.m file
-Info* Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
+std::vector<Info> Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 {
-	Info* computedChannels; //[nScales x nTypes] cell array of computed channels
 	int colorChannels = pChns.pColor.nChannels;
 	int histogramChannels = pChns.pGradHist.nChannels;
 	clock_t start, end;
@@ -86,7 +85,7 @@ Info* Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 	// [scales,scaleshw]=getScales(nPerOct,nOctUp,minDs,shrink,sz);
 	getScales(I.rows, I.cols, pChns.shrink);
 
-	computedChannels = new Info[computedScales];
+	std::vector<Info> computedChannels(computedScales); 
 	
 	int h1, w1;
 	float* I1;
@@ -111,7 +110,9 @@ Info* Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 		if (scales[i] == 0.5 && (approximatedScales>0 || scalesPerOctave == 1))
 			convertedImage = I1; 
 
-		computedChannels[i] = computeSingleScaleChannelFeatures(I1, h1, w1);
+		// computedChannels[i] = computeSingleScaleChannelFeatures(I1, h1, w1);
+		std::vector<Info>::iterator it = computedChannels.begin();
+		computedChannels.insert(it+i, computeSingleScaleChannelFeatures(I1, h1, w1));
 		numberOfRealScales++;
 	}
 	end = clock();

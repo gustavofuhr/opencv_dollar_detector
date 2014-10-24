@@ -43,25 +43,25 @@ float* cvImage2floatArray(cv::Mat source, int channels)
 
 cv::Mat floatArray2cvImage(float* source, int rows, int cols, int channels)
 {
-	int type;	
-	if (channels == 1)
-		type = CV_32FC1;
-	else
-		type = CV_32FC3;
+  int type; 
+  if (channels == 1)
+    type = CV_32FC1;
+  else
+    type = CV_32FC3;
 
-	cv::Mat result(rows, cols, type);
+  cv::Mat result(rows, cols, type);
 
-	float* tempFloat = (float*)malloc(rows*cols*channels*sizeof(float));
-	int tempIndex=0;
+  float* tempFloat = (float*)malloc(rows*cols*channels*sizeof(float));
+  int tempIndex=0;
 
-	for (int channel=0; channel < channels; channel++)
-		for (int column=0; column < cols; column++)
-			for (int row=0; row < rows; row++)
-				tempFloat[column*channels + row*cols*channels + channel] = source[tempIndex++];
+  for (int channel=0; channel < channels; channel++)
+    for (int column=0; column < cols; column++)
+      for (int row=0; row < rows; row++)
+        tempFloat[column*channels + row*cols*channels + channel] = source[tempIndex++];
 
-	result.data = (uchar*)tempFloat;
+  result.data = (uchar*)tempFloat;
 
-	return result;
+  return result;
 }
 
 float* features2floatArray (Info features, int rows, int cols, int colorChannels, int magChannels, int histChannels)

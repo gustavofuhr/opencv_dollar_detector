@@ -74,7 +74,7 @@ inline void getChild(float *chns1, uint32 *cids, uint32 *fids, float *thrs, uint
   k0=k+=k0*2; k+=offset;
 }
 
-BB_Array Detector::applyDetectorToFrame(Info* pyramid, int shrink, int modelHt, int modelWd, int stride, float cascThr, float *thrs, float *hs, 
+BB_Array Detector::applyDetectorToFrame(std::vector<Info> pyramid, int shrink, int modelHt, int modelWd, int stride, float cascThr, float *thrs, float *hs, 
 										uint32 *fids, uint32 *child, int nTreeNodes, int nTrees, int treeDepth, int nChns)
 {
 	BB_Array result;
@@ -280,7 +280,7 @@ void Detector::acfDetect(std::vector<std::string> imageNames, std::string dataSe
 		image.convertTo(I, CV_32FC3, 1.0/255.0);
 
 		// compute feature pyramid
-		Info* framePyramid;
+		std::vector<Info> framePyramid;
 		framePyramid = opts.pPyramid.computeMultiScaleChannelFeaturePyramid(I);
 
 		clock_t detectionStart = clock();
@@ -302,7 +302,7 @@ void Detector::acfDetect(std::vector<std::string> imageNames, std::string dataSe
 		I.release();
 		// experimental */
 
-		
+		/*
 		// debug: shows detections 
 		cv::imshow("source image", I);
 		showDetections(I, detections[i], "detections before suppression");

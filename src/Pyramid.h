@@ -30,7 +30,7 @@ public:
 	double totalTimeForApproxScales;
 
 	void readPyramid(cv::FileNode);
-	Info* computeMultiScaleChannelFeaturePyramid(cv::Mat I);
+	std::vector<Info> computeMultiScaleChannelFeaturePyramid(cv::Mat I);
 	Info computeSingleScaleChannelFeatures(float* I, int rows, int cols);
 	cv::Mat TriangleFilterConvolution(cv::Mat, int, int, int);
 	void getScales(int, int , int);
