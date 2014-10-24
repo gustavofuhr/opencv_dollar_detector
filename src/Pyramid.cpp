@@ -15,9 +15,8 @@ void Pyramid::readPyramid(cv::FileNode pyramidNode)
 	lambdas[2] = pyramidNode["lambdas"][2];
 	
 	padSize = pyramidNode["padSize"];
-	pad = (int*)malloc(padSize*sizeof(int));
 	for (int i=0; i < padSize; i++)
-		pad[i] = pyramidNode["pad"][i];
+		pad.push_back(pyramidNode["pad"][i]);
 
 	minImgSize[0] = pyramidNode["minDs"][0];
 	minImgSize[1] = pyramidNode["minDs"][1];
@@ -504,27 +503,24 @@ void Pyramid::getScales(int h, int w, int shrink)
 		}
 		
 		// just keep the values of scales[i] which are different from their neighbours
-		scales = (double*)malloc(computedScales*sizeof(double));
-		scales[0] = tempScales[0];
 		int scalesIndex=1;
+		scales.insert(scales.begin(),tempScales[0]);
 		for (int i=1; i < computedScales; i++)
 			if(tempScales[i] != tempScales[i-1])
 			{
-				scales[scalesIndex++] = tempScales[i];
+				scales.insert(scales.begin()+scalesIndex,tempScales[i]);
+				scalesIndex++;
 			}
 
 		// this updates the value of computedScales, since some of them have been suppressed
 		computedScales = scalesIndex;
 		
-		scales_h = (double*)malloc(computedScales * sizeof(double));
-		scales_w = (double*)malloc(computedScales * sizeof(double));
-
 		// scaleshw = 	[round(sz(1)*scales/shrink)*shrink/sz(1);
   		//				round(sz(2)*scales/shrink)*shrink/sz(2)]';
 		for (int i=0; i<computedScales; i++)
 		{
-			scales_w[i] = round(w*scales[i]/shrink)*shrink/w;
-			scales_h[i] = round(h*scales[i]/shrink)*shrink/h;
+			scales_w.insert(scales_w.begin()+i, round(w*scales[i]/shrink)*shrink/w);
+			scales_h.insert(scales_h.begin()+i, round(h*scales[i]/shrink)*shrink/h);
 		}
 	}
 	else //error, height or width of the image are wrong
