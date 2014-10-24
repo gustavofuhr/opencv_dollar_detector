@@ -110,9 +110,7 @@ std::vector<Info> Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 		if (scales[i] == 0.5 && (approximatedScales>0 || scalesPerOctave == 1))
 			convertedImage = I1; 
 
-		// computedChannels[i] = computeSingleScaleChannelFeatures(I1, h1, w1);
-		std::vector<Info>::iterator it = computedChannels.begin();
-		computedChannels.insert(it+i, computeSingleScaleChannelFeatures(I1, h1, w1));
+		computedChannels.insert(computedChannels.begin()+i, computeSingleScaleChannelFeatures(I1, h1, w1));
 		numberOfRealScales++;
 	}
 	end = clock();
@@ -361,6 +359,8 @@ Info Pyramid::computeSingleScaleChannelFeatures(float* source, int rows, int col
 
 			// normalization constant is read inside the procedure
 			pChns.pGradMag.gradMagNorm(M, S, height, width);
+
+			free(S);
 		}	
 	}		
 	else
@@ -374,6 +374,7 @@ Info Pyramid::computeSingleScaleChannelFeatures(float* source, int rows, int col
 			{
 				float *S = convolution(M, height, width, 1, pChns.pGradMag.normalizationRadius, 1, CONV_TRI);			
 				pChns.pGradMag.gradMagNorm(M, S, height, width);
+				free(S);
 			}
 		}	
 	}
@@ -411,15 +412,6 @@ Info Pyramid::computeSingleScaleChannelFeatures(float* source, int rows, int col
 		M = resample(M, height, width, shrinkedHeight, shrinkedWidth, 1.0, pChns.pGradMag.nChannels);
 		result.gradientMagnitude = floatArray2cvImage(M, shrinkedHeight, shrinkedWidth, pChns.pGradMag.nChannels);
 	}
-
-	/*
-	// debug: print results for every channel
-	cv::imshow("Color Channel", result.image);
-	cv::imshow("Gradient Magnitude Channel", result.gradientMagnitude);
-	cv::imshow("Gradient Orientation", gradOrientation);
-	cv::imshow("Gradient Histogram Channel", result.gradientHistogram[0]);
-	cv::waitKey();		
-	// debug */
 
 	//for now, i wont add computation of custom channels
 
