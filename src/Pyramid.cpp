@@ -67,8 +67,12 @@ std::vector<Info> Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 
 	//float* floatImg = cvImage2floatArray(I, colorChannels);
 	int previousColorSpaceType = pChns.pColor.colorSpaceType; // saves the value to be reloaded afterwards
-	convertedImage = rgbConvert(floatImg, I.rows, I.cols, colorChannels, pChns.pColor.colorSpaceType);
-	pChns.pColor.colorSpaceType = ORIG;
+	// convertedImage = rgbConvert(floatImg, I.rows, I.cols, colorChannels, pChns.pColor.colorSpaceType);
+	convertedImage = rgbConvert(floatImg, I.rows*I.cols, colorChannels, pChns.pColor.colorSpaceType, 1.0f);
+	// if(flag==4), flag=1; end;
+	pChns.pColor.colorSpaceType = RGB;
+
+	free(floatImg);
 
 	/*
 	// debug
@@ -340,7 +344,7 @@ Info Pyramid::computeSingleScaleChannelFeatures(float* source, int rows, int col
 	int width =  cols - (cols % pChns.shrink);
 
 	// compute color channels
-	I = rgbConvert(source, height, width, colorChannels, pChns.pColor.colorSpaceType);
+	I = rgbConvert(source, height*width, colorChannels, pChns.pColor.colorSpaceType, 1.0f);
 	I = convolution(I, height, width, colorChannels, pChns.pColor.smoothingRadius, 1, CONV_TRI);
 
 	if (pChns.pGradHist.enabled)

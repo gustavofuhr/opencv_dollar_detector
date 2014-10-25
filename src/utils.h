@@ -31,7 +31,7 @@ void alFree(void* aligned);
 // image operations
 float* convolution(float* source, int rows, int cols, int channels, int radius, int s, int flag);
 float* resample(float* source, int ori_h, int ori_w, int new_h, int new_w, float nrm, int channels);
-float* rgbConvert(float* source, int h, int w, int channels, int colorSpace);
+float* rgbConvert(float *I, int n, int d, int flag, float nrm);
 cv::Mat padImage(cv::Mat source, int channels, int *pad, int padSize, int type);
 
 std::vector<std::string> getDataSetFileNames(std::string directory);

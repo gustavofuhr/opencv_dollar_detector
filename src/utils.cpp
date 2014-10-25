@@ -534,13 +534,13 @@ template<class iT, class oT> void normalize( iT *I, oT *J, int n, oT nrm ) {
 }
 
 // Convert rgb to various colorspaces
-template<class iT, class oT>
-oT* rgbConvertImg( iT *I, int n, int d, int flag, oT nrm ) {
-  oT *J = (oT*) wrMalloc(n*(flag==0 ? (d==1?1:d/3) : d)*sizeof(oT));
-  int i, n1=d*(n<1000?n/10:100); oT thr = oT(1.001);
+float* rgbConvert(float *I, int n, int d, int flag, float nrm) 
+{
+  float *J = (float*) wrMalloc(n*(flag==0 ? (d==1?1:d/3) : d)*sizeof(float));
+  int i, n1=d*(n<1000?n/10:100); float thr = float(1.001);
   if(flag>1 && nrm==1) for(i=0; i<n1; i++) if(I[i]>thr)
     wrError("For floats all values in I must be smaller than 1.");
-  bool useSse = n%4==0 && typeid(oT)==typeid(float);
+  bool useSse = n%4==0;
   if( flag==2 && useSse )
     for(i=0; i<d/3; i++) rgb2luv_sse(I+i*n*3,(float*)(J+i*n*3),n,(float)nrm);
     //for(i=0; i<d/3; i++) rgb2luv(I+i*n*3,(float*)(J+i*n*3),n,(float)nrm);
@@ -552,38 +552,6 @@ oT* rgbConvertImg( iT *I, int n, int d, int flag, oT nrm ) {
   return J;
 }
 
-float* rgbConvert(float* source, int h, int w, int channels, int colorSpace)
-{
-	float* result;
-
-	void* O;
-
-	// flag = find(strcmpi(colorSpace,{'gray','rgb','luv','hsv','orig'}))-1;
-	int flag = colorSpace;
-
-	// if(flag==4), flag=1; end;
-	if (flag == ORIG)
-		flag = RGB;
-
-	// dims = (const int*) mxGetDimensions(pr[0]); n=dims[0]*dims[1];
-	int n = h * w;
-
-	// nDims = mxGetNumberOfDimensions(pr[0]); d=(nDims==2) ? 1 : dims[2];
-	int d = channels;
-
-	// std::cout << "before rgbConvertImg" << std::endl;
-
-	// J = (void*) rgbConvert( (float*) I, n, d, flag, 1.0 );
-	// O = rgbConvertImg(I, n, d, flag, 1.0f);
-	O = (void*) rgbConvertImg(source, n, d, flag, 1.0f);
-
-	//std::cout << "after rgbConvertImg" << std::endl;
-
-
-	result = (float*) O;
-
-	return result;
-}
 /************************************************************************************************************/
 
 // pad A by [pt,pb,pl,pr] and store result in B
