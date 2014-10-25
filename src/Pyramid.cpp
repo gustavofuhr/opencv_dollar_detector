@@ -301,13 +301,15 @@ std::vector<Info> Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 	      		floatImg3[imgIndex3++] = tempFloat3[k];
 	  	}
 	  	// */
-		float* tempOutput = convolution(floatImg3, h, w, 3, pChns.pColor.smoothingRadius, 1, CONV_TRI);	
+	  	float* tempOutput = (float*)malloc(h/pChns.pColor.smoothingRadius*w/pChns.pColor.smoothingRadius*3*sizeof(float));
+		convolution(floatImg3, tempOutput, h, w, 3, pChns.pColor.smoothingRadius, 1, CONV_TRI);	
 		computedChannels[i].image = floatArray2cvImage(tempOutput, h, w, 3);
 
 		cv::Mat tempMag;
 		cv::transpose(computedChannels[i].gradientMagnitude, tempMag);
 		float *floatMag = (float*)tempMag.data;
-		float* tempOutput1 = convolution(floatMag, h, w, 1, pChns.pColor.smoothingRadius, 1, CONV_TRI);	
+		float* tempOutput1 = (float*)malloc(h/pChns.pColor.smoothingRadius*w/pChns.pColor.smoothingRadius*sizeof(float));
+		convolution(floatMag, tempOutput1, h, w, 1, pChns.pColor.smoothingRadius, 1, CONV_TRI);	
 		computedChannels[i].gradientMagnitude = floatArray2cvImage(tempOutput1, h, w, 1);
 
 		for (int j=0; j < pChns.pGradHist.nChannels; j++)
@@ -315,7 +317,8 @@ std::vector<Info> Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 			cv::Mat tempHist;
 			cv::transpose(computedChannels[i].gradientHistogram[j], tempHist);
 			float *floatHist = (float*)tempHist.data;
-			float* tempOutput2 = convolution(floatHist, h, w, 1, pChns.pColor.smoothingRadius, 1, CONV_TRI);
+			float* tempOutput2 = (float*)malloc(h/pChns.pColor.smoothingRadius*w/pChns.pColor.smoothingRadius*sizeof(float));
+			convolution(floatHist, tempOutput2, h, w, 1, pChns.pColor.smoothingRadius, 1, CONV_TRI);
 			computedChannels[i].gradientHistogram[j] = floatArray2cvImage(tempOutput2, h, w, 1);
 		}
 
@@ -357,8 +360,11 @@ Info Pyramid::computeSingleScaleChannelFeatures(float* source, int rows, int col
 	int width =  cols - (cols % pChns.shrink);
 
 	// compute color channels
-	I = rgbConvert(source, height*width, colorChannels, pChns.pColor.colorSpaceType, 1.0f);
-	I = convolution(I, height, width, colorChannels, pChns.pColor.smoothingRadius, 1, CONV_TRI);
+	float* tempI = (float*)malloc(height*width*colorChannels*sizeof(float));
+	tempI = rgbConvert(source, height*width, colorChannels, pChns.pColor.colorSpaceType, 1.0f);
+	I = (float*)malloc(height/pChns.pColor.smoothingRadius*width/pChns.pColor.smoothingRadius*3*sizeof(float));
+	convolution(tempI, I, height, width, colorChannels, pChns.pColor.smoothingRadius, 1, CONV_TRI);
+	free(tempI);
 
 	if (pChns.pGradHist.enabled)
 	{
@@ -371,7 +377,8 @@ Info Pyramid::computeSingleScaleChannelFeatures(float* source, int rows, int col
 
 		if (pChns.pGradMag.normalizationRadius != 0)
 		{
-			float *S = convolution(M, height, width, 1, pChns.pGradMag.normalizationRadius, 1, CONV_TRI);
+			float* S = (float*)malloc(height/pChns.pColor.smoothingRadius*width/pChns.pColor.smoothingRadius*sizeof(float));
+			convolution(M, S, height, width, 1, pChns.pGradMag.normalizationRadius, 1, CONV_TRI);
 
 			// normalization constant is read inside the procedure
 			pChns.pGradMag.gradMagNorm(M, S, height, width);
@@ -388,7 +395,8 @@ Info Pyramid::computeSingleScaleChannelFeatures(float* source, int rows, int col
 
 			if (pChns.pGradMag.normalizationRadius != 0)
 			{
-				float *S = convolution(M, height, width, 1, pChns.pGradMag.normalizationRadius, 1, CONV_TRI);			
+				float* S = (float*)malloc(height/pChns.pColor.smoothingRadius*width/pChns.pColor.smoothingRadius*sizeof(float));
+				convolution(M, S, height, width, 1, pChns.pGradMag.normalizationRadius, 1, CONV_TRI);			
 				pChns.pGradMag.gradMagNorm(M, S, height, width);
 				free(S);
 			}
@@ -423,7 +431,6 @@ Info Pyramid::computeSingleScaleChannelFeatures(float* source, int rows, int col
 		// data=imResampleMex(data,h,w,1);
 		float* tempI = (float*)malloc(shrinkedHeight*shrinkedWidth*pChns.pColor.nChannels*sizeof(float));
 		resample(I, tempI, height, shrinkedHeight, width, shrinkedWidth, pChns.pGradMag.nChannels, 1.0);
-		//I = resample(I, height, width, shrinkedHeight, shrinkedWidth, 1.0, pChns.pColor.nChannels);
 		result.image = floatArray2cvImage(I, shrinkedHeight, shrinkedWidth, pChns.pColor.nChannels);
 		free(tempI);
 		free(I);

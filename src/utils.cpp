@@ -210,22 +210,20 @@ void convTri1( float *I, float *O, int h, int w, int d, float p, int s ) {
   alFree(T);
 }
 
-float* convolution(float* source, int rows, int cols, int channels, int radius, int s, int flag)
+void convolution(float* source, float* result, int rows, int cols, int channels, int radius, int s, int flag)
 {
-	float* O = (float*)malloc(rows/s*cols/s*channels*sizeof(float));
+	// float* O = (float*)malloc(rows/s*cols/s*channels*sizeof(float));
 
 	switch(flag)
 	{
 		case CONV_TRI: 	
-					convTri(source, O, rows, cols, channels, radius, s);
+					convTri(source, result, rows, cols, channels, radius, s);
 		break;
 		case CONV_TRI1: 
 					int p = 12/radius/(radius+2)-2;
-					convTri1(source, O, rows, cols, channels, p, s);
+					convTri1(source, result, rows, cols, channels, p, s);
 		break;
 	}
-
-	return O;
 }
 
 /************************************************************************************************************/
