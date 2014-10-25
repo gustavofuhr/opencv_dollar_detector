@@ -262,7 +262,7 @@ void resampleCoef( int ha, int hb, int &n, int *&yas, int *&ybs, float *&wts, in
 }
 
 // resample A using bilinear interpolation and and store result in B
-void imResample(float *A, float *B, int ha, int hb, int wa, int wb, int d, float r ) {
+void resample(float *A, float *B, int ha, int hb, int wa, int wb, int d, float r ) {
   int hn, wn, x, x1, y, z, xa, xb, ya; float *A0, *A1, *A2, *A3, *B0, wt, wt1;
   float *C = (float*) alMalloc((ha+4)*sizeof(float),16); 
   for(y=ha; y<ha+4; y++) C[y]=0;
@@ -348,21 +348,6 @@ void imResample(float *A, float *B, int ha, int hb, int wa, int wb, int d, float
   }
   alFree(xas); alFree(xbs); alFree(xwts); alFree(C);
   alFree(yas); alFree(ybs); alFree(ywts);
-}
-
-// I1=imResampleMex(I,sz1(1),sz1(2),1);
-float* resample(float* source, int ori_h, int ori_w, int new_h, int new_w, float nrm, int channels)
-{
-	float *O = (float*)malloc(new_h*new_w*channels*sizeof(float));
-
-	// resample((float*)A, (float*)B, ns[0], ms[0], ns[1], ms[1], nCh, nrm);
-	// ns = (int*) mxGetDimensions(prhs[0]);
-	// nCh=(nDims==2) ? 1 : ns[2];
-	// nrm=(double)mxGetScalar(prhs[3]);
-	// ms[0]=(int)mxGetScalar(prhs[1]); ms[1]=(int)mxGetScalar(prhs[2]); ms[2]=nCh;
-	imResample(source, O, ori_h, new_h, ori_w, new_w, channels, nrm);
-	
-	return O;
 }
 
 /************************************************************************************************************/

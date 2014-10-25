@@ -29,8 +29,8 @@ void* alMalloc( size_t size, int alignment );
 void alFree(void* aligned);
 
 // image operations
-float* convolution(float* source, int rows, int cols, int channels, int radius, int s, int flag);
-float* resample(float* source, int ori_h, int ori_w, int new_h, int new_w, float nrm, int channels);
+float* convolution(float* source, int rows, int cols, int channels, int radius, int s, int flag);;
+void resample(float *A, float *B, int ha, int hb, int wa, int wb, int d, float r );
 float* rgbConvert(float *I, int n, int d, int flag, float nrm);
 cv::Mat padImage(cv::Mat source, int channels, int *pad, int padSize, int type);
 
