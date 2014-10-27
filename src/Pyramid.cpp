@@ -126,6 +126,8 @@ std::vector<Info> Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 	end = clock();
 	totalTimeForRealScales = totalTimeForRealScales + (double(end - start) / CLOCKS_PER_SEC);
 
+	free(convertedImage);
+
 	/*
 	// calculates lambdas, maybe this will not be implemented
 	int is[computedScales/(approximatedScales+1)]; //needs a better name
@@ -232,7 +234,8 @@ std::vector<Info> Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 		  	float* tempOutput = (float*)malloc(new_h*new_w*colorChannels*sizeof(float));
 			resample(floatImg2, tempOutput, realScaleRows, new_h, realScaleCols, new_w, colorChannels, ratio[0]);
 			computedChannels[i].image = floatArray2cvImage(tempOutput, new_h, new_w, colorChannels);
-			//free(tempOutput); // this is probably necessary, but slightly changes the results so is suppressed for now
+			free(floatImg2); // this alters the results a bit
+			free(tempOutput); 
 		
 			// resample gradMag channel
 			ratio[1] = pow(scales[i]/scales[iR],-lambdas[1]);
@@ -242,6 +245,7 @@ std::vector<Info> Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 			float* tempOutput1 = (float*)malloc(new_h*new_w*1*sizeof(float));
 			resample(floatMag, tempOutput1, realScaleRows, new_h, realScaleCols, new_w, 1, ratio[1]);
 			computedChannels[i].gradientMagnitude = floatArray2cvImage(tempOutput1, new_h, new_w, 1);
+			//free(floatMag); // this causes an error
 			free(tempOutput1);
 			
 			// resample histogram channels
@@ -254,6 +258,7 @@ std::vector<Info> Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 				float* tempOutput2 = (float*)malloc(new_h*new_w*1*sizeof(float));
 				resample(floatHist, tempOutput2, realScaleRows, new_h, realScaleCols, new_w, 1, ratio[2]);
 				computedChannels[i].gradientHistogram.push_back(floatArray2cvImage(tempOutput2, new_h, new_w, 1));
+				// free(floatHist); // this causes an error
 				free(tempOutput2);
 			}
 		}
@@ -304,6 +309,8 @@ std::vector<Info> Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 	  	float* tempOutput = (float*)malloc(h/pChns.pColor.smoothingRadius*w/pChns.pColor.smoothingRadius*3*sizeof(float));
 		convolution(floatImg3, tempOutput, h, w, 3, pChns.pColor.smoothingRadius, 1, CONV_TRI);	
 		computedChannels[i].image = floatArray2cvImage(tempOutput, h, w, 3);
+		free(tempOutput); // alters the results
+		free(floatImg3);
 
 		cv::Mat tempMag;
 		cv::transpose(computedChannels[i].gradientMagnitude, tempMag);
@@ -311,6 +318,8 @@ std::vector<Info> Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 		float* tempOutput1 = (float*)malloc(h/pChns.pColor.smoothingRadius*w/pChns.pColor.smoothingRadius*sizeof(float));
 		convolution(floatMag, tempOutput1, h, w, 1, pChns.pColor.smoothingRadius, 1, CONV_TRI);	
 		computedChannels[i].gradientMagnitude = floatArray2cvImage(tempOutput1, h, w, 1);
+		free(tempOutput1);
+
 
 		for (int j=0; j < pChns.pGradHist.nChannels; j++)
 		{
@@ -320,6 +329,7 @@ std::vector<Info> Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 			float* tempOutput2 = (float*)malloc(h/pChns.pColor.smoothingRadius*w/pChns.pColor.smoothingRadius*sizeof(float));
 			convolution(floatHist, tempOutput2, h, w, 1, pChns.pColor.smoothingRadius, 1, CONV_TRI);
 			computedChannels[i].gradientHistogram[j] = floatArray2cvImage(tempOutput2, h, w, 1);
+			free(tempOutput2);
 		}
 
 		if (pad[0]!=0 || pad[1]!=0)
@@ -423,16 +433,18 @@ Info Pyramid::computeSingleScaleChannelFeatures(float* source, int rows, int col
 			free(tempH);
 			free(H[i]);
 		}
+
+		free(O); // alters results
 	}	
 
 	// if(p.enabled), chns=addChn(chns,I,nm,p,'replicate',h,w); end
 	if (pChns.pColor.enabled)
 	{
 		// data=imResampleMex(data,h,w,1);
-		float* tempI = (float*)malloc(shrinkedHeight*shrinkedWidth*pChns.pColor.nChannels*sizeof(float));
-		resample(I, tempI, height, shrinkedHeight, width, shrinkedWidth, pChns.pGradMag.nChannels, 1.0);
+		float* tempI2 = (float*)malloc(shrinkedHeight*shrinkedWidth*pChns.pColor.nChannels*sizeof(float));
+		resample(I, tempI2, height, shrinkedHeight, width, shrinkedWidth, pChns.pGradMag.nChannels, 1.0);
 		result.image = floatArray2cvImage(I, shrinkedHeight, shrinkedWidth, pChns.pColor.nChannels);
-		free(tempI);
+		free(tempI2);
 		free(I);
 	}
 
@@ -556,6 +568,8 @@ void Pyramid::getScales(int h, int w, int shrink)
 			scales_w.insert(scales_w.begin()+i, round(w*scales[i]/shrink)*shrink/w);
 			scales_h.insert(scales_h.begin()+i, round(h*scales[i]/shrink)*shrink/h);
 		}
+
+		free(tempScales);
 	}
 	else //error, height or width of the image are wrong
 		std::cout << " # getScales error: both height and width need to be greater than 0!";

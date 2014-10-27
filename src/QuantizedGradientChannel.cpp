@@ -304,8 +304,11 @@ std::vector<float*> QuantizedGradientChannel::mGradHist(float* gradMag, float* g
           tempH[j] = H[indexForH++];
 
       result.push_back(tempH);
+      // free(tempH); // causes an error
     }
 	}
+
+  free(H);
 
 	return result;
 }

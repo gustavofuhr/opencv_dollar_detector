@@ -134,32 +134,6 @@ BB_Array Detector::applyDetectorToFrame(std::vector<Info> pyramid, int shrink, i
 		std::cout << "height=" << height << ", width=" << width << ", nChns=" << nChns <<  ", nTreeNodes=" << nTreeNodes << ", nTrees=" << nTrees << ", height1=" << height1 << 
 			", width1=" << width1 << ", nFtrs=" << nFtrs << std::endl;
 		// debug */
-		
-		/*
-		// debug: print input matrices
-		int rows = opts.pPyramid.computedChannels[i].image.rows;
-
-		print_20_elements(chns, "channel 0");
-		print_100_elements(chns, rows, "channel 0");
-		print_100_elements(&chns[height*width], rows, "channel 1");
-		print_100_elements(&chns[height*width*2], rows, "channel 2");
-		print_100_elements(&chns[height*width*3], rows, "channel 3");
-		print_100_elements(&chns[height*width*4], rows, "channel 4");
-		print_100_elements(&chns[height*width*5], rows, "channel 5");
-		print_100_elements(&chns[height*width*6], rows, "channel 6");
-		print_100_elements(&chns[height*width*7], rows, "channel 7");
-		print_100_elements(&chns[height*width*8], rows, "channel 8");
-		print_100_elements(&chns[height*width*9], rows, "channel 9");
-
-		print_20_elements(thrs, "thrs");
-		print_20_elements(hs, "hs");
-
-		print_20i_elements(fids, "fids");
-		print_20i_elements(child, "child");
-		print_20i_elements(cids, "cids");
-
-		std::cin.get();
-		// debug */
 
 		// apply classifier to each patch
   		std::vector<int> rs, cs; std::vector<float> hs1;

@@ -41,6 +41,7 @@ float* cvImage2floatArray(cv::Mat source, int channels)
 }
 // */
 
+
 cv::Mat floatArray2cvImage(float* source, int rows, int cols, int channels)
 {
   int type; 
@@ -63,9 +64,9 @@ cv::Mat floatArray2cvImage(float* source, int rows, int cols, int channels)
 
   return result;
 }
+// */
 
 /*
-// gives correct results early, but breaks images after real scales
 cv::Mat floatArray2cvImage(float* source, int rows, int cols, int channels)
 {
   int type; 
@@ -625,8 +626,8 @@ cv::Mat padImage(cv::Mat source, int channels, int *pad, int padSize, int type)
 	float *O, *I;
 	O = (float*) malloc((newRows)*(newCols)*channels*sizeof(float));
 
-	// I = cvImage2floatArray(source, channels);
-
+	//I = cvImage2floatArray(source, channels);
+  
   int imgIndex=0;
   I = (float*)malloc(source.rows*source.cols*channels*sizeof(float));
   std::vector<cv::Mat> splitChannels;
@@ -646,6 +647,8 @@ cv::Mat padImage(cv::Mat source, int channels, int *pad, int padSize, int type)
 	imPad(I, O, source.rows, source.cols, channels, padTop, padBottom, padLeft, padRight, type, val);
 
 	result = floatArray2cvImage(O, newRows, newCols, channels);
+
+  free(O);
 
 	return result;
 }
