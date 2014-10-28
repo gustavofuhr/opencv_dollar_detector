@@ -265,18 +265,6 @@ void Detector::acfDetect(std::vector<std::string> imageNames, std::string dataSe
 		clock_t detectionEnd = clock();
 		timeSpentInDetection = timeSpentInDetection + (double(detectionEnd - detectionStart) / CLOCKS_PER_SEC);
 
-		/*
-		// experimental: do i need to clear these?
-		for (int j=0; j < opts.pPyramid.computedScales; j++)
-		{
-			opts.pPyramid.computedChannels[j].image.release();
-			opts.pPyramid.computedChannels[j].gradientMagnitude.release();
-			opts.pPyramid.computedChannels[j].gradientHistogram.clear();
-		}
-		image.release();
-		I.release();
-		// experimental */
-
 		
 		// debug: shows detections 
 		cv::imshow("source image", I);
@@ -285,6 +273,17 @@ void Detector::acfDetect(std::vector<std::string> imageNames, std::string dataSe
 		showDetections(I, detections[i], "detections after suppression");
 		cv::waitKey();
 		// debug */
+		
+		// experimental: do i need to clear these?
+		for (int j=0; j < opts.pPyramid.computedScales; j++)
+		{
+			framePyramid[j].image.release();
+			framePyramid[j].gradientMagnitude.release();
+			framePyramid[j].gradientHistogram.clear();
+		}
+		image.release();
+		I.release();
+		// experimental */
 
 		clock_t frameEnd = clock();
 		double elapsed_secs = double(frameEnd - frameStart) / CLOCKS_PER_SEC;

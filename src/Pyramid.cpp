@@ -458,14 +458,11 @@ Info Pyramid::computeSingleScaleChannelFeatures(float* source, int rows, int col
 		free(M);
 	}
 
-	//for now, i wont add computation of custom channels
-
 	return result;
 }
 
 // set each scale s such that max(abs(round(sz*s/shrink)*shrink-sz*s)) is minimized 
 // without changing the smaller dim of sz (tricky algebra)
-// getScales(convertedImage.rows, convertedImage.cols, pChns.shrink);
 void Pyramid::getScales(int h, int w, int shrink)
 {
 	int minSize, bgDim, smDim;

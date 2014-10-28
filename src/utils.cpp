@@ -648,6 +648,7 @@ cv::Mat padImage(cv::Mat source, int channels, int *pad, int padSize, int type)
 
 	result = floatArray2cvImage(O, newRows, newCols, channels);
 
+  free(I);
   free(O);
 
 	return result;
