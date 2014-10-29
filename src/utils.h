@@ -22,6 +22,7 @@ enum suppressionTypeID { NONE, MAX, MAXG, MS, COVER };
 // matrix conversions
 float* cvImage2floatArray(cv::Mat source, int channels);
 cv::Mat floatArray2cvImage(float* source, int rows, int cols, int channels);
+void floatArray2cvData(float* source, float* result, int rows, int cols, int channels);
 void features2floatArray (Info features, float* result, int rows, int cols, int colorChannels, int magChannels, int histChannels);
 
 // Dóllar's allocation functions

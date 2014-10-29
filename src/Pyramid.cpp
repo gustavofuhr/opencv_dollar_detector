@@ -257,8 +257,22 @@ std::vector<Info> Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 				float *floatHist = (float*)tempHist.data;
 				float* tempOutput2 = (float*)malloc(new_h*new_w*1*sizeof(float));
 				resample(floatHist, tempOutput2, realScaleRows, new_h, realScaleCols, new_w, 1, ratio[2]);
+
+				// original
 				computedChannels[i].gradientHistogram.push_back(floatArray2cvImage(tempOutput2, new_h, new_w, 1));
-				// free(floatHist); // this causes an error
+
+				/*
+				// new section
+				float* tempHdata = (float*)malloc(new_h*new_w*sizeof(float));
+				floatArray2cvData(tempOutput2, tempHdata, new_h, new_w, 1);
+				cv::Mat tempHist2(new_h, new_w, CV_32FC1);
+				tempHist2.data = (uchar*)tempHdata;
+				//tempHist.copyTo(computedChannels[i].gradientHistogram[j]);
+				computedChannels[i].gradientHistogram.push_back(tempHist2);
+				//tempHist2.release();
+				free(tempHdata);
+				// new section */
+				
 				free(tempOutput2);
 			}
 		}
@@ -269,6 +283,8 @@ std::vector<Info> Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 	int tempPad[padSize];
 	for (int i=0; i < padSize; i++)
 		tempPad[i] = pad[i]/pChns.shrink;
+
+	int smoothingRadius = pChns.pColor.smoothingRadius;
 
 	/*
 	% smooth channels, optionally pad and concatenate channels
@@ -306,18 +322,47 @@ std::vector<Info> Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 	      		floatImg3[imgIndex3++] = tempFloat3[k];
 	  	}
 	  	// */
-	  	float* tempOutput = (float*)malloc(h/pChns.pColor.smoothingRadius*w/pChns.pColor.smoothingRadius*3*sizeof(float));
-		convolution(floatImg3, tempOutput, h, w, 3, pChns.pColor.smoothingRadius, 1, CONV_TRI);	
-		computedChannels[i].image = floatArray2cvImage(tempOutput, h, w, 3);
+	  	float* tempOutput = (float*)malloc(h/smoothingRadius*w/smoothingRadius*3*sizeof(float));
+		convolution(floatImg3, tempOutput, h, w, 3, smoothingRadius, 1, CONV_TRI);	
+
+		// original:
+		//computedChannels[i].image = floatArray2cvImage(tempOutput, h/smoothingRadius, w/smoothingRadius, 3);
+
+
+		// new
+		float* tempIdata = (float*)malloc(h/smoothingRadius*w/smoothingRadius*3*sizeof(float));
+		floatArray2cvData(tempOutput, tempIdata, h/smoothingRadius, w/smoothingRadius, 3);
+		cv::Mat tempImg2(h/smoothingRadius, w/smoothingRadius, CV_32FC3);
+		tempImg2.data = (uchar*)tempIdata;
+		tempImg2.copyTo(computedChannels[i].image);
+		tempImg2.release();
+		free(tempIdata);
+		// new */
+
 		free(tempOutput); // alters the results
 		free(floatImg3);
+
 
 		cv::Mat tempMag;
 		cv::transpose(computedChannels[i].gradientMagnitude, tempMag);
 		float *floatMag = (float*)tempMag.data;
-		float* tempOutput1 = (float*)malloc(h/pChns.pColor.smoothingRadius*w/pChns.pColor.smoothingRadius*sizeof(float));
-		convolution(floatMag, tempOutput1, h, w, 1, pChns.pColor.smoothingRadius, 1, CONV_TRI);	
-		computedChannels[i].gradientMagnitude = floatArray2cvImage(tempOutput1, h, w, 1);
+		float* tempOutput1 = (float*)malloc(h/smoothingRadius*w/smoothingRadius*sizeof(float));
+		convolution(floatMag, tempOutput1, h, w, 1, smoothingRadius, 1, CONV_TRI);	
+
+		// original:
+		//computedChannels[i].gradientMagnitude = floatArray2cvImage(tempOutput1, h/smoothingRadius, w/smoothingRadius, 1);
+
+
+		// new
+		float* tempMdata = (float*)malloc(h/smoothingRadius*w/smoothingRadius*sizeof(float));
+		floatArray2cvData(tempOutput1, tempMdata, h/smoothingRadius, w/smoothingRadius, 1);
+		cv::Mat tempMag2(h/smoothingRadius, w/smoothingRadius, CV_32FC1);
+		tempMag2.data = (uchar*)tempMdata;
+		tempMag2.copyTo(computedChannels[i].gradientMagnitude);
+		tempMag2.release();
+		free(tempMdata);
+		// new */
+		
 		free(tempOutput1);
 
 
@@ -326,9 +371,23 @@ std::vector<Info> Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 			cv::Mat tempHist;
 			cv::transpose(computedChannels[i].gradientHistogram[j], tempHist);
 			float *floatHist = (float*)tempHist.data;
-			float* tempOutput2 = (float*)malloc(h/pChns.pColor.smoothingRadius*w/pChns.pColor.smoothingRadius*sizeof(float));
-			convolution(floatHist, tempOutput2, h, w, 1, pChns.pColor.smoothingRadius, 1, CONV_TRI);
-			computedChannels[i].gradientHistogram[j] = floatArray2cvImage(tempOutput2, h, w, 1);
+			float* tempOutput2 = (float*)malloc(h/smoothingRadius*w/smoothingRadius*sizeof(float));
+			convolution(floatHist, tempOutput2, h, w, 1, smoothingRadius, 1, CONV_TRI);
+
+			// original:
+			//computedChannels[i].gradientHistogram[j] = floatArray2cvImage(tempOutput2, h/smoothingRadius, w/smoothingRadius, 1);
+
+			
+			// new section
+			float* tempHdata = (float*)malloc(h/smoothingRadius*w/smoothingRadius*sizeof(float));
+			floatArray2cvData(tempOutput2, tempHdata, h, w, 1);
+			cv::Mat tempHist2(h/smoothingRadius, w/smoothingRadius, CV_32FC1);
+			tempHist2.data = (uchar*)tempHdata;
+			tempHist2.copyTo(computedChannels[i].gradientHistogram[j]);
+			tempHist2.release();
+			free(tempHdata);
+			// new section */
+
 			free(tempOutput2);
 		}
 
@@ -429,7 +488,21 @@ Info Pyramid::computeSingleScaleChannelFeatures(float* source, int rows, int col
 		{
 			float* tempH = (float*)malloc(shrinkedHeight*shrinkedWidth*1*sizeof(float));
 			resample(H[i], tempH, height/binSize, shrinkedHeight, width/binSize, shrinkedWidth, 1, 1.0);
-			result.gradientHistogram.push_back(floatArray2cvImage(tempH, shrinkedHeight, shrinkedWidth, 1));
+
+			// original:
+			//result.gradientHistogram.push_back(floatArray2cvImage(tempH, shrinkedHeight, shrinkedWidth, 1));
+			
+			
+			// new:
+			float* tempHdata = (float*)malloc(shrinkedHeight*shrinkedWidth*1*sizeof(float));
+			floatArray2cvData(tempH, tempHdata, shrinkedHeight, shrinkedWidth, 1);
+			cv::Mat tempHist(shrinkedHeight, shrinkedWidth, CV_32FC1);
+			tempHist.data = (uchar*)tempHdata;
+			result.gradientHistogram.push_back(tempHist);
+			tempHist.release();
+			//free(tempHdata); // breaks everything!
+			// new */
+
 			free(tempH);
 			free(H[i]);
 		}
@@ -443,7 +516,20 @@ Info Pyramid::computeSingleScaleChannelFeatures(float* source, int rows, int col
 		// data=imResampleMex(data,h,w,1);
 		float* tempI2 = (float*)malloc(shrinkedHeight*shrinkedWidth*pChns.pColor.nChannels*sizeof(float));
 		resample(I, tempI2, height, shrinkedHeight, width, shrinkedWidth, pChns.pGradMag.nChannels, 1.0);
-		result.image = floatArray2cvImage(I, shrinkedHeight, shrinkedWidth, pChns.pColor.nChannels);
+
+		// original:
+		//result.image = floatArray2cvImage(I, shrinkedHeight, shrinkedWidth, pChns.pColor.nChannels);
+		
+		// new
+		float* tempI2data = (float*)malloc(shrinkedHeight*shrinkedWidth*pChns.pColor.nChannels*sizeof(float));
+		floatArray2cvData(I, tempI2data, shrinkedHeight, shrinkedWidth, pChns.pColor.nChannels);
+		cv::Mat tempImg(shrinkedHeight, shrinkedWidth, CV_32FC3);
+		tempImg.data = (uchar*)tempI2data;
+		tempImg.copyTo(result.image);
+		tempImg.release();
+		free(tempI2data);
+		// new */
+
 		free(tempI2);
 		free(I);
 	}
@@ -453,7 +539,20 @@ Info Pyramid::computeSingleScaleChannelFeatures(float* source, int rows, int col
 	{
 		float* tempM = (float*)malloc(shrinkedHeight*shrinkedWidth*1*sizeof(float));
 		resample(M, tempM, height, shrinkedHeight, width, shrinkedWidth, pChns.pGradMag.nChannels, 1.0);
-		result.gradientMagnitude = floatArray2cvImage(tempM, shrinkedHeight, shrinkedWidth, pChns.pGradMag.nChannels);
+
+		// original:
+		//result.gradientMagnitude = floatArray2cvImage(tempM, shrinkedHeight, shrinkedWidth, pChns.pGradMag.nChannels);
+		
+		// new section
+		float* tempMdata = (float*)malloc(shrinkedHeight*shrinkedWidth*1*sizeof(float));
+		floatArray2cvData(tempM, tempMdata, shrinkedHeight, shrinkedWidth, pChns.pGradMag.nChannels);
+		cv::Mat tempMag(shrinkedHeight, shrinkedWidth, CV_32FC1);
+		tempMag.data = (uchar*)tempMdata;
+		tempMag.copyTo(result.gradientMagnitude);
+		tempMag.release();
+		free(tempMdata);
+		// new section */
+
 		free(tempM);
 		free(M);
 	}
