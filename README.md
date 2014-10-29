@@ -7,17 +7,18 @@ This is a work-in-progress port of the Dóllar pedestrian detector to OpenCV in 
 Current Status  
 ======================  
 
-Detection working for multiple images, but process is being killed for lack of memory when applied to a big data set. 
+Detection working, but has two memory leaks and is too slow. 
 
 
 To Do List:  
 ======================  
 
-Current Total: 10  
+Current Total: 11  
 
 Opencv_Dollar_Detector.cpp:  
+&nbsp;&nbsp;&nbsp;&nbsp;find out why the program is so slow!  
 &nbsp;&nbsp;&nbsp;&nbsp;maybe change the way time is being calculated  
-&nbsp;&nbsp;&nbsp;&nbsp;fix all instances where locally allocated arrays are returned (causing memory leak, oops) 
+&nbsp;&nbsp;&nbsp;&nbsp;save detections to .txt file  
 
 Detector.cpp:  
 &nbsp;&nbsp;&nbsp;&nbsp;nonMaximalSuppression:  
@@ -35,9 +36,9 @@ QuantizedGradientChannel.cpp:
 &nbsp;&nbsp;&nbsp;&nbsp;OK!  
 
 Pyramid.cpp:  
-&nbsp;&nbsp;&nbsp;&nbsp;use matrices I, M, O, S, H as float* inside this class, transform them afterwards  
 &nbsp;&nbsp;&nbsp;&nbsp;computeMultiScaleChannelFeaturePyramid:  
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;add calculation of lambdas  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;find sources of two memory leaks  
 &nbsp;&nbsp;&nbsp;&nbsp;computeSingleScaleChannelFeatures:  
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;possibly add computation of custom channels  
 

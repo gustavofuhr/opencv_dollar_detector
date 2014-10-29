@@ -233,7 +233,20 @@ std::vector<Info> Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 		  	}
 		  	float* tempOutput = (float*)malloc(new_h*new_w*colorChannels*sizeof(float));
 			resample(floatImg2, tempOutput, realScaleRows, new_h, realScaleCols, new_w, colorChannels, ratio[0]);
-			computedChannels[i].image = floatArray2cvImage(tempOutput, new_h, new_w, colorChannels);
+
+			// original:
+			//computedChannels[i].image = floatArray2cvImage(tempOutput, new_h, new_w, colorChannels);
+			// new section
+			float* tempIdata = (float*)malloc(new_h*new_w*colorChannels*sizeof(float));
+			floatArray2cvData(tempOutput, tempIdata, new_h, new_w, colorChannels);
+			cv::Mat tempImg2(new_h, new_w, CV_32FC3);
+			tempImg2.data = (uchar*)tempIdata;
+			tempImg2.copyTo(computedChannels[i].image);
+			//computedChannels[i].image = tempImg2.clone();
+			tempImg2.release();
+			free(tempIdata);
+			// new section */
+
 			free(floatImg2); // this alters the results a bit
 			free(tempOutput); 
 		
@@ -244,8 +257,19 @@ std::vector<Info> Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 			float *floatMag = (float*)tempMag.data;
 			float* tempOutput1 = (float*)malloc(new_h*new_w*1*sizeof(float));
 			resample(floatMag, tempOutput1, realScaleRows, new_h, realScaleCols, new_w, 1, ratio[1]);
-			computedChannels[i].gradientMagnitude = floatArray2cvImage(tempOutput1, new_h, new_w, 1);
-			//free(floatMag); // this causes an error
+
+			// original:
+			//computedChannels[i].gradientMagnitude = floatArray2cvImage(tempOutput1, new_h, new_w, 1);
+			// new section
+			float* tempMdata = (float*)malloc(new_h*new_w*sizeof(float));
+			floatArray2cvData(tempOutput1, tempMdata, new_h, new_w, 1);
+			cv::Mat tempMag2(new_h, new_w, CV_32FC1);
+			tempMag2.data = (uchar*)tempMdata;
+			tempMag2.copyTo(computedChannels[i].gradientMagnitude);
+			tempMag2.release();
+			free(tempMdata);
+			// new section */
+
 			free(tempOutput1);
 			
 			// resample histogram channels
@@ -259,17 +283,14 @@ std::vector<Info> Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 				resample(floatHist, tempOutput2, realScaleRows, new_h, realScaleCols, new_w, 1, ratio[2]);
 
 				// original
-				computedChannels[i].gradientHistogram.push_back(floatArray2cvImage(tempOutput2, new_h, new_w, 1));
-
-				/*
+				//computedChannels[i].gradientHistogram.push_back(floatArray2cvImage(tempOutput2, new_h, new_w, 1));				
 				// new section
 				float* tempHdata = (float*)malloc(new_h*new_w*sizeof(float));
 				floatArray2cvData(tempOutput2, tempHdata, new_h, new_w, 1);
 				cv::Mat tempHist2(new_h, new_w, CV_32FC1);
 				tempHist2.data = (uchar*)tempHdata;
-				//tempHist.copyTo(computedChannels[i].gradientHistogram[j]);
-				computedChannels[i].gradientHistogram.push_back(tempHist2);
-				//tempHist2.release();
+				computedChannels[i].gradientHistogram.push_back(tempHist2.clone());
+				tempHist2.release();
 				free(tempHdata);
 				// new section */
 				
@@ -327,8 +348,6 @@ std::vector<Info> Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 
 		// original:
 		//computedChannels[i].image = floatArray2cvImage(tempOutput, h/smoothingRadius, w/smoothingRadius, 3);
-
-
 		// new
 		float* tempIdata = (float*)malloc(h/smoothingRadius*w/smoothingRadius*3*sizeof(float));
 		floatArray2cvData(tempOutput, tempIdata, h/smoothingRadius, w/smoothingRadius, 3);
@@ -351,8 +370,6 @@ std::vector<Info> Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 
 		// original:
 		//computedChannels[i].gradientMagnitude = floatArray2cvImage(tempOutput1, h/smoothingRadius, w/smoothingRadius, 1);
-
-
 		// new
 		float* tempMdata = (float*)malloc(h/smoothingRadius*w/smoothingRadius*sizeof(float));
 		floatArray2cvData(tempOutput1, tempMdata, h/smoothingRadius, w/smoothingRadius, 1);
@@ -376,8 +393,6 @@ std::vector<Info> Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 
 			// original:
 			//computedChannels[i].gradientHistogram[j] = floatArray2cvImage(tempOutput2, h/smoothingRadius, w/smoothingRadius, 1);
-
-			
 			// new section
 			float* tempHdata = (float*)malloc(h/smoothingRadius*w/smoothingRadius*sizeof(float));
 			floatArray2cvData(tempOutput2, tempHdata, h, w, 1);
@@ -491,16 +506,14 @@ Info Pyramid::computeSingleScaleChannelFeatures(float* source, int rows, int col
 
 			// original:
 			//result.gradientHistogram.push_back(floatArray2cvImage(tempH, shrinkedHeight, shrinkedWidth, 1));
-			
-			
 			// new:
 			float* tempHdata = (float*)malloc(shrinkedHeight*shrinkedWidth*1*sizeof(float));
 			floatArray2cvData(tempH, tempHdata, shrinkedHeight, shrinkedWidth, 1);
 			cv::Mat tempHist(shrinkedHeight, shrinkedWidth, CV_32FC1);
 			tempHist.data = (uchar*)tempHdata;
-			result.gradientHistogram.push_back(tempHist);
+			result.gradientHistogram.push_back(tempHist.clone());
 			tempHist.release();
-			//free(tempHdata); // breaks everything!
+			free(tempHdata); 
 			// new */
 
 			free(tempH);
@@ -519,7 +532,6 @@ Info Pyramid::computeSingleScaleChannelFeatures(float* source, int rows, int col
 
 		// original:
 		//result.image = floatArray2cvImage(I, shrinkedHeight, shrinkedWidth, pChns.pColor.nChannels);
-		
 		// new
 		float* tempI2data = (float*)malloc(shrinkedHeight*shrinkedWidth*pChns.pColor.nChannels*sizeof(float));
 		floatArray2cvData(I, tempI2data, shrinkedHeight, shrinkedWidth, pChns.pColor.nChannels);
@@ -542,7 +554,6 @@ Info Pyramid::computeSingleScaleChannelFeatures(float* source, int rows, int col
 
 		// original:
 		//result.gradientMagnitude = floatArray2cvImage(tempM, shrinkedHeight, shrinkedWidth, pChns.pGradMag.nChannels);
-		
 		// new section
 		float* tempMdata = (float*)malloc(shrinkedHeight*shrinkedWidth*1*sizeof(float));
 		floatArray2cvData(tempM, tempMdata, shrinkedHeight, shrinkedWidth, pChns.pGradMag.nChannels);

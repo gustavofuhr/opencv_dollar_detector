@@ -20,6 +20,9 @@ int main(int argc, char *argv[])
 		if (argc > 3)
 		{
 			firstFrame = atoi(argv[3]);
+		}
+		if (argc > 4)
+		{
 			lastFrame = atoi(argv[4]);
 		}
 
