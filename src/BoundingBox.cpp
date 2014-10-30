@@ -3,7 +3,16 @@
 void BoundingBox::plot (cv::Mat &frame, cv::Scalar color)
 {
 	cv::Point br;
-	br.x = firstPoint.x + width;
-	br.y = firstPoint.y + height;
-	cv::rectangle(frame, firstPoint, br, color, 2.0);
+	br.x = topLeftPoint.x + width;
+	br.y = topLeftPoint.y + height;
+	cv::rectangle(frame, topLeftPoint, br, color, 2.0);
+}
+
+std::string BoundingBox::toString (int frameIndex)
+{
+	std::ostringstream result;
+
+	result << frameIndex << " " << topLeftPoint.x << " " << topLeftPoint.y << " " << height << " " << width << " " << score;
+
+	return result.str();
 }

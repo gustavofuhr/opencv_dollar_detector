@@ -66,6 +66,14 @@ void showDetections(cv::Mat I, BB_Array detections, cv::String windowName)
 	cv::imshow(windowName, img);
 }
 
+void printDetections(BB_Array detections, int frameIndex)
+{
+	std::cout << "Detections in frame " << frameIndex << ":\n";
+	for (int i=0; i < detections.size(); i++)
+		std::cout << detections[i].toString(frameIndex) << std::endl;
+	std::cout << std::endl;
+}
+
 // this procedure was just copied verbatim
 inline void getChild(float *chns1, uint32 *cids, uint32 *fids, float *thrs, uint32 offset, uint32 &k0, uint32 &k)
 {
@@ -192,10 +200,10 @@ BB_Array Detector::applyDetectorToFrame(std::vector<Info> pyramid, int shrink, i
 		for(int j=0; j<m; j++ )
 		{
 			BoundingBox bb;
-			bb.firstPoint.x = cs[j]*stride;
-			bb.firstPoint.x = (bb.firstPoint.x+shift[1])/opts.pPyramid.scales_w[i];
-			bb.firstPoint.y = rs[j]*stride;
-			bb.firstPoint.y = (bb.firstPoint.y+shift[0])/opts.pPyramid.scales_h[i];
+			bb.topLeftPoint.x = cs[j]*stride;
+			bb.topLeftPoint.x = (bb.topLeftPoint.x+shift[1])/opts.pPyramid.scales_w[i];
+			bb.topLeftPoint.y = rs[j]*stride;
+			bb.topLeftPoint.y = (bb.topLeftPoint.y+shift[0])/opts.pPyramid.scales_h[i];
 			bb.height = opts.modelDs[0]/opts.pPyramid.scales[i];
 			bb.width = opts.modelDs[1]/opts.pPyramid.scales[i];
 			bb.score = hs1[j];
@@ -271,6 +279,7 @@ void Detector::acfDetect(std::vector<std::string> imageNames, std::string dataSe
 		showDetections(I, detections[i], "detections before suppression");
 		detections[i] = nonMaximalSuppression(detections[i]);
 		showDetections(I, detections[i], "detections after suppression");
+		//printDetections(detections[i], i);
 		cv::waitKey();
 		// debug */
 		
@@ -318,23 +327,23 @@ BB_Array nmsMax(BB_Array source, bool greedy, double overlapArea, cv::String ove
 				{
 					double xei, xej, xmin, xsMax, iw;
 					double yei, yej, ymin, ysMax, ih;
-					xei = sortedArray[i].firstPoint.x + sortedArray[i].width;
-					xej = sortedArray[j].firstPoint.x + sortedArray[j].width;
+					xei = sortedArray[i].topLeftPoint.x + sortedArray[i].width;
+					xej = sortedArray[j].topLeftPoint.x + sortedArray[j].width;
 					xmin = xej;			
 					if (xei < xej)
 						xmin = xei;
-					xsMax = sortedArray[i].firstPoint.x;
-					if (sortedArray[j].firstPoint.x > sortedArray[i].firstPoint.x)
-						xsMax = sortedArray[j].firstPoint.x;
+					xsMax = sortedArray[i].topLeftPoint.x;
+					if (sortedArray[j].topLeftPoint.x > sortedArray[i].topLeftPoint.x)
+						xsMax = sortedArray[j].topLeftPoint.x;
 					iw = xmin - xsMax;
-					yei = sortedArray[i].firstPoint.y + sortedArray[i].height;
-					yej = sortedArray[j].firstPoint.y + sortedArray[j].height;
+					yei = sortedArray[i].topLeftPoint.y + sortedArray[i].height;
+					yej = sortedArray[j].topLeftPoint.y + sortedArray[j].height;
 					ymin = yej;			
 					if (yei < yej)
 						ymin = yei;
-					ysMax = sortedArray[i].firstPoint.y;
-					if (sortedArray[j].firstPoint.y > sortedArray[i].firstPoint.y)
-						ysMax = sortedArray[j].firstPoint.y;
+					ysMax = sortedArray[i].topLeftPoint.y;
+					if (sortedArray[j].topLeftPoint.y > sortedArray[i].topLeftPoint.y)
+						ysMax = sortedArray[j].topLeftPoint.y;
 					ih = ymin - ysMax;
 					if (iw > 0 && ih > 0)
 					{

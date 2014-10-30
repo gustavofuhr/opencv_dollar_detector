@@ -3,13 +3,14 @@
 class BoundingBox
 {
 public:
-	cv::Point firstPoint;
+	cv::Point topLeftPoint;
 	int height;
 	int width;
 	float score;
 	int scale;
 
 	void plot (cv::Mat &frame, cv::Scalar color);
+	std::string toString (int frameIndex);
 
 	// this was added to be able to sort BB_Array objects
 	bool operator< (const BoundingBox &other) const 
