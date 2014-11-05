@@ -222,8 +222,6 @@ void convTri1( float *I, float *O, int h, int w, int d, float p, int s ) {
 
 void convolution(float* source, float* result, int rows, int cols, int channels, int radius, int s, int flag)
 {
-	// float* O = (float*)malloc(rows/s*cols/s*channels*sizeof(float));
-
 	switch(flag)
 	{
 		case CONV_TRI: 	

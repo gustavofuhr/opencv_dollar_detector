@@ -274,10 +274,15 @@ void Detector::acfDetect(std::vector<std::string> imageNames, std::string dataSe
 		timeSpentInDetection = timeSpentInDetection + (double(detectionEnd - detectionStart) / CLOCKS_PER_SEC);
 
 		
-		// debug: shows detections 
+		// debug: shows detections before suppression
 		cv::imshow("source image", I);
 		showDetections(I, detections[i], "detections before suppression");
+		// debug */
+
 		detections[i] = nonMaximalSuppression(detections[i]);
+
+		
+		// debug: shows detections after suppression
 		showDetections(I, detections[i], "detections after suppression");
 		//printDetections(detections[i], i);
 		cv::waitKey();

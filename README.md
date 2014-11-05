@@ -13,28 +13,23 @@ Detection working, but has two memory leaks and is too slow.
 To Do List:  
 ======================  
 
-Current Total: 11  
+Current Total: 13  
 
 Opencv_Dollar_Detector.cpp:  
 &nbsp;&nbsp;&nbsp;&nbsp;find out why the program is so slow!  
 &nbsp;&nbsp;&nbsp;&nbsp;maybe change the way time is being calculated  
 &nbsp;&nbsp;&nbsp;&nbsp;save detections to .txt file  
+&nbsp;&nbsp;&nbsp;&nbsp;add more comments  
 
 Detector.cpp:  
 &nbsp;&nbsp;&nbsp;&nbsp;nonMaximalSuppression:  
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;possibly relocate suppression to other class  
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;add the other two types of suppression    
-
-ColorChannel.cpp:  
-&nbsp;&nbsp;&nbsp;&nbsp;OK!  
-
+  
 GradientMagnitudeChannel.cpp:  
 &nbsp;&nbsp;&nbsp;&nbsp;check if variable d is correct inside mGradMag  
 &nbsp;&nbsp;&nbsp;&nbsp;check if mGradMag is not modifying the input  
-
-QuantizedGradientChannel.cpp:  
-&nbsp;&nbsp;&nbsp;&nbsp;OK!  
-
+  
 Pyramid.cpp:  
 &nbsp;&nbsp;&nbsp;&nbsp;computeMultiScaleChannelFeaturePyramid:  
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;add calculation of lambdas  
@@ -45,5 +40,5 @@ Pyramid.cpp:
 Pyramid.cpp:  
 &nbsp;&nbsp;&nbsp;&nbsp;decide what to do with the channelTypes variable   
 
-utils.cpp:  
-&nbsp;&nbsp;&nbsp;&nbsp;OK!  
+utils.cpp:
+&nbsp;&nbsp;&nbsp;&nbsp;find out why convTri function is so much slower than in the original mex file

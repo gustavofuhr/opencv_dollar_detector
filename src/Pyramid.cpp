@@ -118,7 +118,12 @@ std::vector<Info> Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 			convertedImage = I1; 
 		}
 
+		//clock_t start = clock();
 		computedChannels.insert(computedChannels.begin()+i, computeSingleScaleChannelFeatures(I1, new_h, new_w));
+		//clock_t end = clock();
+		//double elapsed_secs = double(end - start) / CLOCKS_PER_SEC;
+		//std::cout << "chnsCompute duration: " << elapsed_secs << "s\n";
+
 		if (I1 != convertedImage)
 			free(I1);
 		numberOfRealScales++;
@@ -423,7 +428,8 @@ std::vector<Info> Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 	return computedChannels;
 }
 
-//translation of the chnsCompute.m file
+// translation of the chnsCompute.m file
+// this procedure is currently between five to eight times slower than the original
 Info Pyramid::computeSingleScaleChannelFeatures(float* source, int rows, int cols)
 {
 	cv::Mat gradOrientation;
@@ -443,12 +449,24 @@ Info Pyramid::computeSingleScaleChannelFeatures(float* source, int rows, int col
 	int height = rows - (rows % pChns.shrink);
 	int width =  cols - (cols % pChns.shrink);
 
-	// compute color channels
+	/*
+	// compute color channels, old version
 	float* tempI = (float*)malloc(height*width*colorChannels*sizeof(float));
 	tempI = rgbConvert(source, height*width, colorChannels, pChns.pColor.colorSpaceType, 1.0f);
 	I = (float*)malloc(height/pChns.pColor.smoothingRadius*width/pChns.pColor.smoothingRadius*3*sizeof(float));
 	convolution(tempI, I, height, width, colorChannels, pChns.pColor.smoothingRadius, 1, CONV_TRI);
 	free(tempI);
+	// old version */
+
+	
+	// compute color channels, new version
+	I = (float*)malloc(height/pChns.pColor.smoothingRadius*width/pChns.pColor.smoothingRadius*3*sizeof(float));
+	//clock_t start = clock();
+	convolution(source, I, height, width, colorChannels, pChns.pColor.smoothingRadius, 1, CONV_TRI);
+	//clock_t end = clock();
+	//double elapsed_secs = double(end - start) / CLOCKS_PER_SEC;
+	//std::cout << "convolution inside chnsCompute duration: " << elapsed_secs << "s\n";
+	// new version */
 
 	if (pChns.pGradHist.enabled)
 	{
