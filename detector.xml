@@ -52,7 +52,7 @@
 			<type>maxg</type>
 			<overlap>0.65</overlap>
 			<ovrDnm>min</ovrDnm>	
-			<threshold>0</threshold>	
+			<threshold>15</threshold>	
 		</pNms>
 		<stride>4</stride>
 		<cascThr>-1</cascThr>

@@ -220,17 +220,19 @@ void convTri1( float *I, float *O, int h, int w, int d, float p, int s ) {
   alFree(T);
 }
 
-void convolution(float* source, float* result, int rows, int cols, int channels, int radius, int s, int flag)
+void convolution(float* source, float* result, int rows, int cols, int channels, int radius, int s)
 {
-	switch(flag)
-	{
-		case CONV_TRI: 	
-					convTri(source, result, rows, cols, channels, radius, s);
-		break;
-		case CONV_TRI1: 
-					int p = 12/radius/(radius+2)-2;
-					convTri1(source, result, rows, cols, channels, p, s);
-		break;
+  if (radius > 0 && radius <= 1)
+  {
+    int p = 12/radius/(radius+2)-2;
+    convTri1(source, result, rows, cols, channels, p, s);
+  }
+  else
+  {
+    if (radius == 0)
+      std::cout << " # Convolution error: invalid radius!\n";
+    else
+      convTri(source, result, rows, cols, channels, radius, s);
 	}
 }
 

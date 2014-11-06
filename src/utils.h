@@ -30,7 +30,7 @@ void* alMalloc( size_t size, int alignment );
 void alFree(void* aligned);
 
 // image operations
-void convolution(float* source, float* result, int rows, int cols, int channels, int radius, int s, int flag);
+void convolution(float* source, float* result, int rows, int cols, int channels, int radius, int s);
 void resample(float *A, float *B, int ha, int hb, int wa, int wb, int d, float r );
 float* rgbConvert(float *I, int n, int d, int flag, float nrm);
 cv::Mat padImage(cv::Mat source, int channels, int *pad, int padSize, int type);

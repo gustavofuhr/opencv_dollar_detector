@@ -349,7 +349,7 @@ std::vector<Info> Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 	  	}
 	  	// */
 	  	float* tempOutput = (float*)malloc(h/smoothingRadius*w/smoothingRadius*3*sizeof(float));
-		convolution(floatImg3, tempOutput, h, w, 3, smoothingRadius, 1, CONV_TRI);	
+		convolution(floatImg3, tempOutput, h, w, 3, smoothingRadius, 1);	
 
 		// original:
 		//computedChannels[i].image = floatArray2cvImage(tempOutput, h/smoothingRadius, w/smoothingRadius, 3);
@@ -371,7 +371,7 @@ std::vector<Info> Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 		cv::transpose(computedChannels[i].gradientMagnitude, tempMag);
 		float *floatMag = (float*)tempMag.data;
 		float* tempOutput1 = (float*)malloc(h/smoothingRadius*w/smoothingRadius*sizeof(float));
-		convolution(floatMag, tempOutput1, h, w, 1, smoothingRadius, 1, CONV_TRI);	
+		convolution(floatMag, tempOutput1, h, w, 1, smoothingRadius, 1);	
 
 		// original:
 		//computedChannels[i].gradientMagnitude = floatArray2cvImage(tempOutput1, h/smoothingRadius, w/smoothingRadius, 1);
@@ -394,7 +394,7 @@ std::vector<Info> Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 			cv::transpose(computedChannels[i].gradientHistogram[j], tempHist);
 			float *floatHist = (float*)tempHist.data;
 			float* tempOutput2 = (float*)malloc(h/smoothingRadius*w/smoothingRadius*sizeof(float));
-			convolution(floatHist, tempOutput2, h, w, 1, smoothingRadius, 1, CONV_TRI);
+			convolution(floatHist, tempOutput2, h, w, 1, smoothingRadius, 1);
 
 			// original:
 			//computedChannels[i].gradientHistogram[j] = floatArray2cvImage(tempOutput2, h/smoothingRadius, w/smoothingRadius, 1);
@@ -462,7 +462,7 @@ Info Pyramid::computeSingleScaleChannelFeatures(float* source, int rows, int col
 	// compute color channels, new version
 	I = (float*)malloc(height/pChns.pColor.smoothingRadius*width/pChns.pColor.smoothingRadius*3*sizeof(float));
 	//clock_t start = clock();
-	convolution(source, I, height, width, colorChannels, pChns.pColor.smoothingRadius, 1, CONV_TRI);
+	convolution(source, I, height, width, colorChannels, pChns.pColor.smoothingRadius, 1);
 	//clock_t end = clock();
 	//double elapsed_secs = double(end - start) / CLOCKS_PER_SEC;
 	//std::cout << "convolution inside chnsCompute duration: " << elapsed_secs << "s\n";
@@ -479,8 +479,8 @@ Info Pyramid::computeSingleScaleChannelFeatures(float* source, int rows, int col
 
 		if (pChns.pGradMag.normalizationRadius != 0)
 		{
-			float* S = (float*)malloc(height/pChns.pColor.smoothingRadius*width/pChns.pColor.smoothingRadius*sizeof(float));
-			convolution(M, S, height, width, 1, pChns.pGradMag.normalizationRadius, 1, CONV_TRI);
+			float* S = (float*)malloc(height*width*sizeof(float));
+			convolution(M, S, height, width, 1, pChns.pGradMag.normalizationRadius, 1);
 
 			// normalization constant is read inside the procedure
 			pChns.pGradMag.gradMagNorm(M, S, height, width);
@@ -497,8 +497,8 @@ Info Pyramid::computeSingleScaleChannelFeatures(float* source, int rows, int col
 
 			if (pChns.pGradMag.normalizationRadius != 0)
 			{
-				float* S = (float*)malloc(height/pChns.pColor.smoothingRadius*width/pChns.pColor.smoothingRadius*sizeof(float));
-				convolution(M, S, height, width, 1, pChns.pGradMag.normalizationRadius, 1, CONV_TRI);			
+				float* S = (float*)malloc(height*width*sizeof(float));
+				convolution(M, S, height, width, 1, pChns.pGradMag.normalizationRadius, 1);			
 				pChns.pGradMag.gradMagNorm(M, S, height, width);
 				free(S);
 			}
