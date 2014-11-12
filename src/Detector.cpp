@@ -260,20 +260,24 @@ void Detector::acfDetect(std::vector<std::string> imageNames, std::string dataSe
 		// this conversion is necessary, so we don't apply this transformation multiple times, which would break the image inside chnsPyramid
 		cv::Mat image = cv::imread(dataSetDirectoryName + '/' + imageNames[i]);
 		cv::Mat I;
-		image.convertTo(I, CV_32FC3, 1.0/255.0);
+		// which one of these conversions is best?
+		//image.convertTo(I, CV_32FC3, 1.0/255.0);
+		cv::normalize(image, I, 0.0, 1.0, cv::NORM_MINMAX, CV_32FC3);
 
 		// compute feature pyramid
 		std::vector<Info> framePyramid;
 		framePyramid = opts.pPyramid.computeMultiScaleChannelFeaturePyramid(I);
-
+	
 		clock_t detectionStart = clock();
+
 		BB_Array frameDetections = applyDetectorToFrame(framePyramid, shrink, modelHt, modelWd, stride, cascThr, thrs, hs, fids, child, nTreeNodes, nTrees, treeDepth, nChns);
 		detections.push_back(frameDetections);
 		frameDetections.clear(); //doesn't seem to make a difference
+
 		clock_t detectionEnd = clock();
 		timeSpentInDetection = timeSpentInDetection + (double(detectionEnd - detectionStart) / CLOCKS_PER_SEC);
 
-				
+		/*	
 		// debug: shows detections before suppression
 		cv::imshow("source image", I);
 		showDetections(I, detections[i], "detections before suppression");
@@ -281,11 +285,20 @@ void Detector::acfDetect(std::vector<std::string> imageNames, std::string dataSe
 
 		detections[i] = nonMaximalSuppression(detections[i]);
 
+		/*
 		// debug: shows detections after suppression
 		showDetections(I, detections[i], "detections after suppression");
 		//printDetections(detections[i], i);
 		cv::waitKey();
 		// debug */
+
+		/*
+		// debug: saves image with embedded detections
+		for (int j = 0; j<detections[i].size(); j++) 
+			detections[i][j].plot(image, cv::Scalar(0,255,0));
+		cv::imwrite("/home/c_arnoud/datasets/results/"+imageNames[i], image);
+		// debug */
+
 		
 		// experimental: do i need to clear these?
 		for (int j=0; j < opts.pPyramid.computedScales; j++)
@@ -301,7 +314,7 @@ void Detector::acfDetect(std::vector<std::string> imageNames, std::string dataSe
 		clock_t frameEnd = clock();
 		double elapsed_secs = double(frameEnd - frameStart) / CLOCKS_PER_SEC;
 
-		std::cout << "Frame " << i << " was processed in " << elapsed_secs << " seconds.\n"; 
+		std::cout << "Frame " << i+1 << " of " << imageNames.size() << " was processed in " << elapsed_secs << " seconds.\n"; 
 	}
 }
 
