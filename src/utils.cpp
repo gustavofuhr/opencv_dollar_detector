@@ -710,3 +710,158 @@ std::vector<std::string> getDataSetFileNames(std::string directory)
 }
 
 /************************************************************************************************************/
+
+cv::Mat angles2rotationMatrix(float rx, float ry, float rz)
+{
+  cv::Mat R(3, 3, CV_32FC1);
+  cv::Mat Rx(3, 3, CV_32FC1);
+  cv::Mat Ry(3, 3, CV_32FC1);
+  cv::Mat Rz(3, 3, CV_32FC1);
+
+  Rx.at<float>(0,0) = 1.0;
+  Rx.at<float>(0,1) = 0.0;
+  Rx.at<float>(0,2) = 0.0;
+  Rx.at<float>(1,0) = 0.0;
+  Rx.at<float>(1,1) = cos(rx);
+  Rx.at<float>(1,2) = -sin(rx);
+  Rx.at<float>(2,0) = 0.0;
+  Rx.at<float>(2,1) = sin(rx);
+  Rx.at<float>(2,2) = cos(rx);
+
+  Ry.at<float>(0,0) = cos(ry);
+  Ry.at<float>(0,1) = 0.0;
+  Ry.at<float>(0,2) = sin(ry);
+  Ry.at<float>(1,0) = 0.0;
+  Ry.at<float>(1,1) = 1.0;
+  Ry.at<float>(1,2) = 0.0;
+  Ry.at<float>(2,0) = -sin(ry);
+  Ry.at<float>(2,1) = 0.0;
+  Ry.at<float>(2,2) = cos(ry);
+
+  Rz.at<float>(0,0) = cos(rz);
+  Rz.at<float>(0,1) = -sin(rz);
+  Rz.at<float>(0,2) = 0.0;
+  Rz.at<float>(1,0) = sin(rz);
+  Rz.at<float>(1,1) = cos(rz);
+  Rz.at<float>(1,2) = 0.0;
+  Rz.at<float>(2,0) = 0.0;
+  Rz.at<float>(2,1) = 0.0;
+  Rz.at<float>(2,2) = 1.0;
+
+  R = Rz*Ry*Rx;
+
+  return R;
+}
+
+cv::Mat readHomographyFromCalibrationFile(std::string fileName)
+{
+  cv::FileStorage xml;
+  cv::Mat result(3, 3, CV_32FC1);
+  xml.open(fileName, cv::FileStorage::READ);
+
+  if (!xml.isOpened())
+  {
+    std::cerr << " # Failed to open '" << fileName << "' calibration file." << std::endl;
+  }
+  else
+  {
+    float dpx, dpy, focal, cx, cy, sx, tx, ty, tz, rx, ry,rz;
+    cv::Mat R(3, 3, CV_32FC1);
+    cv::Mat Rt(3, 3, CV_32FC1);
+    cv::Mat K(3, 3, CV_32FC1);
+
+    xml["Camera"]["Geometry"]["dpx"] >> dpx;
+    xml["Camera"]["Geometry"]["dpy"] >> dpy;
+
+    xml["Camera"]["Intrinsic"]["focal"] >> focal;
+    xml["Camera"]["Intrinsic"]["cx"] >> cx;
+    xml["Camera"]["Intrinsic"]["cy"] >> cy;
+    xml["Camera"]["Intrinsic"]["sx"] >> sx;
+
+    xml["Camera"]["Extrinsic"]["tx"] >> tx;
+    xml["Camera"]["Extrinsic"]["ty"] >> ty;
+    xml["Camera"]["Extrinsic"]["tz"] >> tz;
+    xml["Camera"]["Extrinsic"]["rx"] >> rx;
+    xml["Camera"]["Extrinsic"]["ry"] >> ry;
+    xml["Camera"]["Extrinsic"]["rz"] >> rz;
+
+    K.at<float>(0,0) = focal*sx/dpx;
+    K.at<float>(0,1) = 0.0;
+    K.at<float>(0,2) = cx;
+    K.at<float>(1,0) = 0.0;
+    K.at<float>(1,1) = focal/dpy;
+    K.at<float>(1,2) = cy;
+    K.at<float>(2,0) = 0.0;
+    K.at<float>(2,1) = 0.0;
+    K.at<float>(2,2) = 1.0;
+
+    R = angles2rotationMatrix(rx, ry, rz);
+
+    Rt.at<float>(0,0) = R.at<float>(0,0);
+    Rt.at<float>(0,1) = R.at<float>(0,1);
+    Rt.at<float>(0,2) = tx;
+    Rt.at<float>(1,0) = R.at<float>(1,0);
+    Rt.at<float>(1,1) = R.at<float>(1,1);
+    Rt.at<float>(1,2) = ty;
+    Rt.at<float>(2,0) = R.at<float>(2,0);
+    Rt.at<float>(2,1) = R.at<float>(2,1);
+    Rt.at<float>(2,2) = tz;
+
+    result = K*Rt;
+  }
+
+  return result;
+}
+
+cv::Point imagePoint2worldPoint(float imageU, float imageV, float imageZ, cv::Mat homography)
+{
+  cv::Mat inverseH;
+  invert(homography, inverseH);
+
+  float x = inverseH.at<float>(1,1)*imageU +
+        inverseH.at<float>(1,2)*imageU +  
+        inverseH.at<float>(1,3)*imageU;
+
+  float y = inverseH.at<float>(2,1)*imageV +
+        inverseH.at<float>(2,2)*imageV +
+        inverseH.at<float>(2,3)*imageV;
+
+  float z = inverseH.at<float>(3,1)*imageZ +
+        inverseH.at<float>(3,2)*imageZ +
+        inverseH.at<float>(3,3)*imageZ;
+
+  x = x/z;
+  y = y/z;
+
+  cv::Point result;
+  result.x = x;
+  result.y = y;
+
+  return result;
+} 
+
+cv::Point worldPoint2imagePoint(float worldX, float worldY, float worldZ, cv::Mat homography)
+{
+  float u = homography.at<float>(1,1)*worldX +
+        homography.at<float>(1,2)*worldX +  
+        homography.at<float>(1,3)*worldX;
+
+  float v = homography.at<float>(2,1)*worldY +
+        homography.at<float>(2,2)*worldY +
+        homography.at<float>(2,3)*worldY;
+
+  float z = homography.at<float>(3,1)*worldZ +
+        homography.at<float>(3,2)*worldZ +
+        homography.at<float>(3,3)*worldZ;
+
+  u = u/z;
+  v = v/z;
+
+  cv::Point result;
+  result.x = u;
+  result.y = v;
+
+  return result;
+}
+
+/************************************************************************************************************/

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<opencv_storage>
+<Camera name="town_centre">
+	<Geometry> 
+		<width>1920</width> 
+		<height>1080</height> 
+		<ncx>0.0</ncx> 
+		<nfx>0.0</nfx> 
+		<dx>0.0</dx> 
+		<dy>0.0</dy> 
+		<dpx>1.0</dpx> 
+		<dpy>1.0</dpy> 
+	</Geometry>
+	<Intrinsic> 
+		<focal>2696.35</focal> 
+		<kappa1>0</kappa1> 
+		<cx>959.5</cx> 
+		<cy>539.5</cy> 
+		<sx>1.0</sx>
+	</Intrinsic>
+	<Extrinsic> 
+		<tx>-0.05988363921642303467</tx> 
+		<ty>3.83331298828125000000</ty> 
+		<tz>12.39112186431884765625</tz> 
+		<rx>2.230040954281367</rx> 
+		<ry>-0.977176117647404</ry> 
+		<rz>-.596027495864416</rz>
+	</Extrinsic>
+</Camera>
+</opencv_storage>

@@ -292,11 +292,11 @@ void Detector::acfDetect(std::vector<std::string> imageNames, std::string dataSe
 		cv::waitKey();
 		// debug */
 
-		/*
+		
 		// debug: saves image with embedded detections
 		for (int j = 0; j<detections[i].size(); j++) 
 			detections[i][j].plot(image, cv::Scalar(0,255,0));
-		cv::imwrite("/home/c_arnoud/datasets/results/"+imageNames[i], image);
+		cv::imwrite("../datasets/results/"+imageNames[i], image);
 		// debug */
 
 		

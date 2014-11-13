@@ -29,6 +29,12 @@ int main(int argc, char *argv[])
 		Detector d;
 		Info result;
 
+
+		// experimental
+		// reads homography matrix from xml file
+		cv::Mat homography = readHomographyFromCalibrationFile("../opencv_dollar_detector/towncentre_calib.xml");
+		// experimental */
+
 		// loads all detector settings from the provided xml file
 		cv::String detectorFileName = argv[1];
 		d.importDetectorModel(detectorFileName);

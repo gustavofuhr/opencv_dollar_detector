@@ -37,4 +37,8 @@ cv::Mat padImage(cv::Mat source, int channels, int *pad, int padSize, int type);
 
 std::vector<std::string> getDataSetFileNames(std::string directory);
 
+cv::Mat readHomographyFromCalibrationFile(std::string fileName);
+cv::Point imagePoint2worldPoint(float imageU, float imageV, float imageZ, cv::Mat homography);
+cv::Point worldPoint2imagePoint(float worldX, float worldY, float worldZ, cv::Mat homography);
+
 #endif
