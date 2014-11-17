@@ -27,12 +27,16 @@ int main(int argc, char *argv[])
 		}
 
 		Detector d;
-		Info result;
 
-
+		/*
 		// experimental
 		// reads homography matrix from xml file
 		cv::Mat homography = readHomographyFromCalibrationFile("../opencv_dollar_detector/towncentre_calib.xml");
+		cv::Point point = worldPoint2imagePoint(0.0, 0.0, 1.0, homography);
+		std::cout << "world (0,0,1) -> image (" << point.x << "," << point.y << ")\n";
+		cv::Point point2 = imagePoint2worldPoint(0.0, 0.0, 1.0, homography);
+		std::cout << "image (0,0,1) -> world (" << point2.x << "," << point2.y << ")\n";
+		std::cin.get(); 
 		// experimental */
 
 		// loads all detector settings from the provided xml file

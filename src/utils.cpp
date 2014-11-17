@@ -766,8 +766,9 @@ cv::Mat readHomographyFromCalibrationFile(std::string fileName)
   else
   {
     float dpx, dpy, focal, cx, cy, sx, tx, ty, tz, rx, ry,rz;
+    cv::Mat P(3, 4, CV_32FC1);
     cv::Mat R(3, 3, CV_32FC1);
-    cv::Mat Rt(3, 3, CV_32FC1);
+    cv::Mat Rt(3, 4, CV_32FC1);
     cv::Mat K(3, 3, CV_32FC1);
 
     xml["Camera"]["Geometry"]["dpx"] >> dpx;
@@ -799,15 +800,28 @@ cv::Mat readHomographyFromCalibrationFile(std::string fileName)
 
     Rt.at<float>(0,0) = R.at<float>(0,0);
     Rt.at<float>(0,1) = R.at<float>(0,1);
-    Rt.at<float>(0,2) = tx;
+    Rt.at<float>(0,2) = R.at<float>(0,2);
+    Rt.at<float>(0,3) = tx;
     Rt.at<float>(1,0) = R.at<float>(1,0);
     Rt.at<float>(1,1) = R.at<float>(1,1);
-    Rt.at<float>(1,2) = ty;
+    Rt.at<float>(1,2) = R.at<float>(1,2);
+    Rt.at<float>(1,3) = ty;
     Rt.at<float>(2,0) = R.at<float>(2,0);
     Rt.at<float>(2,1) = R.at<float>(2,1);
-    Rt.at<float>(2,2) = tz;
+    Rt.at<float>(2,2) = R.at<float>(2,2);
+    Rt.at<float>(2,3) = tz;
 
-    result = K*Rt;
+    P = K*Rt;
+
+    result.at<float>(0,0) = P.at<float>(0,0);
+    result.at<float>(0,1) = P.at<float>(0,1);
+    result.at<float>(0,2) = P.at<float>(0,2);
+    result.at<float>(1,0) = P.at<float>(1,0);
+    result.at<float>(1,1) = P.at<float>(1,1);
+    result.at<float>(1,2) = P.at<float>(1,2);
+    result.at<float>(2,0) = P.at<float>(3,0);
+    result.at<float>(2,1) = P.at<float>(3,1);
+    result.at<float>(2,2) = P.at<float>(3,2);
   }
 
   return result;

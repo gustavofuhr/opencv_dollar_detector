@@ -285,7 +285,7 @@ void Detector::acfDetect(std::vector<std::string> imageNames, std::string dataSe
 
 		detections[i] = nonMaximalSuppression(detections[i]);
 
-		/*
+		
 		// debug: shows detections after suppression
 		showDetections(I, detections[i], "detections after suppression");
 		//printDetections(detections[i], i);
