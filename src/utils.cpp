@@ -878,4 +878,15 @@ cv::Point worldPoint2imagePoint(float worldX, float worldY, float worldZ, cv::Ma
   return result;
 }
 
+/*
+void findGroundPlanePoints(cv::Mat homography)
+{
+  cv::Point p1, p2, p3, p4;
+  float tempX, tempY;
+
+  tempX = (homography.at<float>(0,0)+homography.at<float>(0,1))/(homography.at<float>(2,0)+homography.at<float>(2,1));
+  tempY = (homography.at<float>(0,0)-homography.at<float>(0,1))/(homography.at<float>(2,0)-homography.at<float>(2,1));
+}
+*/
+
 /************************************************************************************************************/
