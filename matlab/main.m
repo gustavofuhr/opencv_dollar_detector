@@ -26,4 +26,4 @@ plot_grid(area, H, step, [])
 
 % for now, the area will be input by the user to determine which region
 % will generate candidates
-plot_candidates(P, area, 500, size(I));
+plot_candidates(P, area, 5000, size(I));
