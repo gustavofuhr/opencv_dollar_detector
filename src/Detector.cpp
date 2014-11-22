@@ -82,6 +82,115 @@ inline void getChild(float *chns1, uint32 *cids, uint32 *fids, float *thrs, uint
   k0=k+=k0*2; k+=offset;
 }
 
+/*
+// this is not done yet!
+BB_Array Detector::applyCalibratedDetectorToFrame(std::vector<Info> pyramid, int shrink, int modelHt, int modelWd, int stride, float cascThr, float *thrs, 
+												  float *hs, uint32 *fids, uint32 *child, int nTreeNodes, int nTrees, int treeDepth, int nChns, cv::Mat homography)
+{
+	BB_Array result;
+
+	int lastRow = (int)ceil(float(pyramid[0].image.rows*shrink-modelHt+1)/stride);
+	int lastCol = (int)ceil(float(pyramid[0].image.cols*shrink-modelWd+1)/stride);
+
+	int channels = opts.pPyramid.pChns.pColor.nChannels + opts.pPyramid.pChns.pGradMag.nChannels + opts.pPyramid.pChns.pGradHist.nChannels;
+
+	std::vector<int> rs, cs; std::vector<float> hs1;
+	for( int c=0; c<lastCol; c++ ) 
+	{
+		for( int r=0; r<lastRow; r++ ) 
+		{
+			cv::Point groundPoint = imagePoint2worldPoint(c, r+modelHt, 1, homography);
+			cv::Point topPoint = imagePoint2worldPoint(c, r, 1, homography);
+
+			//float boundingBoxWorldHeight = difference in height between topPoint and groundPoint;
+
+			if (boundingBoxWorldHeight >= minPedestrianHeight && boundingBoxWorldHeight <= maxPedestrianHeight)
+			{
+				// discover which of the scales is the correct one
+				int scaleIndex = findBestScale(boundingBoxWorldHeight, std::vector<Info> pyramid);
+				float* chns = (float*)malloc(height*width*channels*sizeof(float));
+				chns = features2floatArray(pyramid[scaleIndex], chns, height, width,  opts.pPyramid.pChns.pColor.nChannels, opts.pPyramid.pChns.pGradMag.nChannels, opts.pPyramid.pChns.pGradHist.nChannels);
+
+				// the rest of the detection works the same way:
+
+				// construct cids array
+			  	int nFtrs = modelHt/shrink*modelWd/shrink*nChns;
+			  	uint32 *cids = new uint32[nFtrs]; int m=0;
+			  	for( int z=0; z<nChns; z++ )
+			    	for( int c=0; c<modelWd/shrink; c++ )
+			      		for( int r=0; r<modelHt/shrink; r++ )
+			        		cids[m++] = z*width*height + c*height + r;
+
+			    float h=0, *chns1=chns+(r*stride/shrink) + (c*stride/shrink)*height;
+			    if( treeDepth==1 ) {
+			      // specialized case for treeDepth==1
+			      for( int t = 0; t < nTrees; t++ ) {
+			        uint32 offset=t*nTreeNodes, k=offset, k0=0;
+			        getChild(chns1,cids,fids,thrs,offset,k0,k);
+			        h += hs[k]; if( h<=cascThr ) break;
+			      }
+			    } else if( treeDepth==2 ) {
+			      // specialized case for treeDepth==2
+			      for( int t = 0; t < nTrees; t++ ) {
+			        uint32 offset=t*nTreeNodes, k=offset, k0=0;
+			        getChild(chns1,cids,fids,thrs,offset,k0,k);
+			        getChild(chns1,cids,fids,thrs,offset,k0,k);
+			        h += hs[k]; if( h<=cascThr ) break;
+			      }
+			    } else if( treeDepth>2) {
+			      // specialized case for treeDepth>2
+			      for( int t = 0; t < nTrees; t++ ) {
+			        uint32 offset=t*nTreeNodes, k=offset, k0=0;
+			        for( int i=0; i<treeDepth; i++ )
+			          getChild(chns1,cids,fids,thrs,offset,k0,k);
+			        h += hs[k]; if( h<=cascThr ) break;
+			      }
+			    } else {
+			      // general case (variable tree depth)
+			      for( int t = 0; t < nTrees; t++ ) {
+			        uint32 offset=t*nTreeNodes, k=offset, k0=k;
+			        while( child[k] ) {
+			          float ftr = chns1[cids[fids[k]]];
+			          k = (ftr<thrs[k]) ? 1 : 0;
+			          k0 = k = child[k0]-k+offset;
+			        }
+			        h += hs[k]; if( h<=cascThr ) break;
+			      }
+				}
+				if(h>cascThr) { cs.push_back(c); rs.push_back(r); hs1.push_back(h); }
+
+				delete [] cids;
+				free(chns);
+				m=cs.size();
+
+				// shift=(modelDsPad-modelDs)/2-pad;
+				double shift[2];
+				shift[0] = (modelHt-double(opts.modelDs[0]))/2-opts.pPyramid.pad[0];
+				shift[1] = (modelWd-double(opts.modelDs[1]))/2-opts.pPyramid.pad[1];
+
+				for(int j=0; j<m; j++ )
+				{
+					BoundingBox bb;
+					bb.topLeftPoint.x = cs[j]*stride;
+					bb.topLeftPoint.x = (bb.topLeftPoint.x+shift[1])/opts.pPyramid.scales_w[i];
+					bb.topLeftPoint.y = rs[j]*stride;
+					bb.topLeftPoint.y = (bb.topLeftPoint.y+shift[0])/opts.pPyramid.scales_h[i];
+					bb.height = opts.modelDs[0]/opts.pPyramid.scales[i];
+					bb.width = opts.modelDs[1]/opts.pPyramid.scales[i];
+					bb.score = hs1[j];
+					bb.scale = i;
+					result.push_back(bb);
+				}
+
+				cs.clear();
+				rs.clear();
+				hs1.clear();
+			}
+		}	
+	}
+}
+*/
+
 BB_Array Detector::applyDetectorToFrame(std::vector<Info> pyramid, int shrink, int modelHt, int modelWd, int stride, float cascThr, float *thrs, float *hs, 
 										uint32 *fids, uint32 *child, int nTreeNodes, int nTrees, int treeDepth, int nChns)
 {
@@ -184,9 +293,9 @@ BB_Array Detector::applyDetectorToFrame(std::vector<Info> pyramid, int shrink, i
 			        }
 			        h += hs[k]; if( h<=cascThr ) break;
 			      }
-		    }
-		    if(h>cascThr) { cs.push_back(c); rs.push_back(r); hs1.push_back(h); }
-		  }
+		    	}
+		    	if(h>cascThr) { cs.push_back(c); rs.push_back(r); hs1.push_back(h); }
+		  	}
 		}
 		delete [] cids;
 		free(chns);
