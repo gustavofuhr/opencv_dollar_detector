@@ -8,6 +8,7 @@ public:
 	int width;
 	float score;
 	int scale;
+	float world_height;
 
 	void plot (cv::Mat &frame, cv::Scalar color);
 	std::string toString (int frameIndex);

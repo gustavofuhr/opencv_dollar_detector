@@ -198,6 +198,7 @@ BB_Array Detector::applyDetectorToFrame(std::vector<Info> pyramid, int shrink, i
 
 
 	printf("Number of scales: %d\n", opts.pPyramid.computedScales);
+	printf("Model size: %d x %d\n", modelWd, modelHt);
 	// this became a simple loop because we will apply just one detector here, 
 	// to apply multiple detector models you need to create multiple Detector objects. 
 	for (int i = 0; i < opts.pPyramid.computedScales; i++)
@@ -208,11 +209,11 @@ BB_Array Detector::applyDetectorToFrame(std::vector<Info> pyramid, int shrink, i
   		// const int nChns = mxGetNumberOfDimensions(prhs[0])<=2 ? 1 : (int) chnsSize[2];
 		int height = pyramid[i].image.rows;
 		int width = pyramid[i].image.cols;
-		fprintf("Size of the downsampled image: %d x %d\n", width, height);
+		printf("Size of the downsampled image: %d x %d\n", width, height);
+		printf("Scale of the image: %f\n", height/(float)width);
 
 		int height1 = (int)ceil(float(height*shrink-modelHt+1)/stride);
 		int width1 = (int)ceil(float(width*shrink-modelWd+1)/stride);
-		fprintf("Size of the patche: %d x %d\n", width, height);
 
 		int channels = opts.pPyramid.pChns.pColor.nChannels + opts.pPyramid.pChns.pGradMag.nChannels + opts.pPyramid.pChns.pGradHist.nChannels;
 		float* chns = (float*)malloc(height*width*channels*sizeof(float));
@@ -334,142 +335,142 @@ BB_Array Detector::applyDetectorToFrame(std::vector<Info> pyramid, int shrink, i
 
 
 
-BB_Array Detector::applyDetectorToFrameSmart(std::vector<Info> pyramid, int shrink, int modelHt, int modelWd, int stride, float cascThr, float *thrs, float *hs, 
-										uint32 *fids, uint32 *child, int nTreeNodes, int nTrees, int treeDepth, int nChns)
-{
-	BB_Array result;
+// BB_Array Detector::applyDetectorToFrameSmart(std::vector<Info> pyramid, int shrink, int modelHt, int modelWd, int stride, float cascThr, float *thrs, float *hs, 
+// 										uint32 *fids, uint32 *child, int nTreeNodes, int nTrees, int treeDepth, int nChns)
+// {
+// 	BB_Array result;
 
-	// this became a simple loop because we will apply just one detector here, 
-	// to apply multiple detector models you need to create multiple Detector objects. 
-	for (int i = 0; i < opts.pPyramid.computedScales; i++)
-	{
-		// in the original file: *chnsSize = mxGetDimensions(P.data{i});
-		// const int height = (int) chnsSize[0];
-  		// const int width = (int) chnsSize[1];
-  		// const int nChns = mxGetNumberOfDimensions(prhs[0])<=2 ? 1 : (int) chnsSize[2];
-		int height = pyramid[i].image.rows;
-		int width = pyramid[i].image.cols;
+// 	// this became a simple loop because we will apply just one detector here, 
+// 	// to apply multiple detector models you need to create multiple Detector objects. 
+// 	for (int i = 0; i < opts.pPyramid.computedScales; i++)
+// 	{
+// 		// in the original file: *chnsSize = mxGetDimensions(P.data{i});
+// 		// const int height = (int) chnsSize[0];
+//   		// const int width = (int) chnsSize[1];
+//   		// const int nChns = mxGetNumberOfDimensions(prhs[0])<=2 ? 1 : (int) chnsSize[2];
+// 		int height = pyramid[i].image.rows;
+// 		int width = pyramid[i].image.cols;
 
-		int height1 = (int)ceil(float(height*shrink-modelHt+1)/stride);
-		int width1 = (int)ceil(float(width*shrink-modelWd+1)/stride);
+// 		int height1 = (int)ceil(float(height*shrink-modelHt+1)/stride);
+// 		int width1 = (int)ceil(float(width*shrink-modelWd+1)/stride);
 
-		int channels = opts.pPyramid.pChns.pColor.nChannels + opts.pPyramid.pChns.pGradMag.nChannels + opts.pPyramid.pChns.pGradHist.nChannels;
-		float* chns = (float*)malloc(height*width*channels*sizeof(float));
-		features2floatArray(pyramid[i], chns, height, width,  opts.pPyramid.pChns.pColor.nChannels, opts.pPyramid.pChns.pGradMag.nChannels, opts.pPyramid.pChns.pGradHist.nChannels);
+// 		int channels = opts.pPyramid.pChns.pColor.nChannels + opts.pPyramid.pChns.pGradMag.nChannels + opts.pPyramid.pChns.pGradHist.nChannels;
+// 		float* chns = (float*)malloc(height*width*channels*sizeof(float));
+// 		features2floatArray(pyramid[i], chns, height, width,  opts.pPyramid.pChns.pColor.nChannels, opts.pPyramid.pChns.pGradMag.nChannels, opts.pPyramid.pChns.pGradHist.nChannels);
 		
-		/*
-		// debug: read chns from file
-	  	cv::Mat scalei;
-	  	std::string scaleName;
+// 		/*
+// 		// debug: read chns from file
+// 	  	cv::Mat scalei;
+// 	  	std::string scaleName;
 
-	  	scaleName += "scale";
-	  	if (i < 9)
-	  		scaleName += "0";
-	  	std::ostringstream scaleNumber;
-        scaleNumber << (i+1);
-	  	scaleName += scaleNumber.str();
+// 	  	scaleName += "scale";
+// 	  	if (i < 9)
+// 	  		scaleName += "0";
+// 	  	std::ostringstream scaleNumber;
+//         scaleNumber << (i+1);
+// 	  	scaleName += scaleNumber.str();
 
-		xml["pyramid"][scaleName] >> scalei;
-		//float* floatScale = cvImage2floatArray(scalei, 1);
-		//printElements(floatScale, scalei.rows, scaleName + " read from xml file");
-		free(chns);
-		chns = (float*) malloc((ch1Size+ch2Size+ch3Size)*sizeof(float));
-		chns = cvImage2floatArray(scalei, 1);
-		// debug */
+// 		xml["pyramid"][scaleName] >> scalei;
+// 		//float* floatScale = cvImage2floatArray(scalei, 1);
+// 		//printElements(floatScale, scalei.rows, scaleName + " read from xml file");
+// 		free(chns);
+// 		chns = (float*) malloc((ch1Size+ch2Size+ch3Size)*sizeof(float));
+// 		chns = cvImage2floatArray(scalei, 1);
+// 		// debug */
 
-		// construct cids array
-	  	int nFtrs = modelHt/shrink*modelWd/shrink*nChns;
-	  	uint32 *cids = new uint32[nFtrs]; int m=0;
-	  	for( int z=0; z<nChns; z++ )
-	    	for( int c=0; c<modelWd/shrink; c++ )
-	      		for( int r=0; r<modelHt/shrink; r++ )
-	        		cids[m++] = z*width*height + c*height + r;
+// 		// construct cids array
+// 	  	int nFtrs = modelHt/shrink*modelWd/shrink*nChns;
+// 	  	uint32 *cids = new uint32[nFtrs]; int m=0;
+// 	  	for( int z=0; z<nChns; z++ )
+// 	    	for( int c=0; c<modelWd/shrink; c++ )
+// 	      		for( int r=0; r<modelHt/shrink; r++ )
+// 	        		cids[m++] = z*width*height + c*height + r;
 
-		/*
-		// debug: prints values of several variables, all of these return correct results
-		// shrink=4, modelHt=128, modelWd=64, stride=4, cascThr=-1.000000, treeDepth=2
-		// height=152, width=186, nChns=10, nTreeNodes=7, nTrees=2048, height1=121, width1=171, nFtrs=5120
-		std::cout << "shrink=" << shrink << ", modelHt=" << modelHt << ", modelWd=" << modelWd << ", stride=" << stride << ", cascThr=" << cascThr << ", treeDepth=" << treeDepth <<  ", modelDs=(" <<
-			opts.modelDs[0] << "," << opts.modelDs[1] << ")" << std::endl;
-		std::cout << "height=" << height << ", width=" << width << ", nChns=" << nChns <<  ", nTreeNodes=" << nTreeNodes << ", nTrees=" << nTrees << ", height1=" << height1 << 
-			", width1=" << width1 << ", nFtrs=" << nFtrs << std::endl;
-		// debug */
+		
+// 		// debug: prints values of several variables, all of these return correct results
+// 		// shrink=4, modelHt=128, modelWd=64, stride=4, cascThr=-1.000000, treeDepth=2
+// 		// height=152, width=186, nChns=10, nTreeNodes=7, nTrees=2048, height1=121, width1=171, nFtrs=5120
+// 		std::cout << "shrink=" << shrink << ", modelHt=" << modelHt << ", modelWd=" << modelWd << ", stride=" << stride << ", cascThr=" << cascThr << ", treeDepth=" << treeDepth <<  ", modelDs=(" <<
+// 			opts.modelDs[0] << "," << opts.modelDs[1] << ")" << std::endl;
+// 		std::cout << "height=" << height << ", width=" << width << ", nChns=" << nChns <<  ", nTreeNodes=" << nTreeNodes << ", nTrees=" << nTrees << ", height1=" << height1 << 
+// 			", width1=" << width1 << ", nFtrs=" << nFtrs << std::endl;
+// 		// debug 
 
-		// apply classifier to each patch
-  		std::vector<int> rs, cs; std::vector<float> hs1;
-  		for( int c=0; c<width1; c++ ) 
-  		{
-  			for( int r=0; r<height1; r++ ) 
-  			{
-			    float h=0, *chns1=chns+(r*stride/shrink) + (c*stride/shrink)*height;
-			    if( treeDepth==1 ) {
-			      // specialized case for treeDepth==1
-			      for( int t = 0; t < nTrees; t++ ) {
-			        uint32 offset=t*nTreeNodes, k=offset, k0=0;
-			        getChild(chns1,cids,fids,thrs,offset,k0,k);
-			        h += hs[k]; if( h<=cascThr ) break;
-			      }
-			    } else if( treeDepth==2 ) {
-			      // specialized case for treeDepth==2
-			      for( int t = 0; t < nTrees; t++ ) {
-			        uint32 offset=t*nTreeNodes, k=offset, k0=0;
-			        getChild(chns1,cids,fids,thrs,offset,k0,k);
-			        getChild(chns1,cids,fids,thrs,offset,k0,k);
-			        h += hs[k]; if( h<=cascThr ) break;
-			      }
-			    } else if( treeDepth>2) {
-			      // specialized case for treeDepth>2
-			      for( int t = 0; t < nTrees; t++ ) {
-			        uint32 offset=t*nTreeNodes, k=offset, k0=0;
-			        for( int i=0; i<treeDepth; i++ )
-			          getChild(chns1,cids,fids,thrs,offset,k0,k);
-			        h += hs[k]; if( h<=cascThr ) break;
-			      }
-			    } else {
-			      // general case (variable tree depth)
-			      for( int t = 0; t < nTrees; t++ ) {
-			        uint32 offset=t*nTreeNodes, k=offset, k0=k;
-			        while( child[k] ) {
-			          float ftr = chns1[cids[fids[k]]];
-			          k = (ftr<thrs[k]) ? 1 : 0;
-			          k0 = k = child[k0]-k+offset;
-			        }
-			        h += hs[k]; if( h<=cascThr ) break;
-			      }
-		    	}
-		    	if(h>cascThr) { cs.push_back(c); rs.push_back(r); hs1.push_back(h); }
-		  	}
-		}
-		delete [] cids;
-		free(chns);
-		m=cs.size();
+// 		// apply classifier to each patch
+//   		std::vector<int> rs, cs; std::vector<float> hs1;
+//   		for( int c=0; c<width1; c++ ) 
+//   		{
+//   			for( int r=0; r<height1; r++ ) 
+//   			{
+// 			    float h=0, *chns1=chns+(r*stride/shrink) + (c*stride/shrink)*height;
+// 			    if( treeDepth==1 ) {
+// 			      // specialized case for treeDepth==1
+// 			      for( int t = 0; t < nTrees; t++ ) {
+// 			        uint32 offset=t*nTreeNodes, k=offset, k0=0;
+// 			        getChild(chns1,cids,fids,thrs,offset,k0,k);
+// 			        h += hs[k]; if( h<=cascThr ) break;
+// 			      }
+// 			    } else if( treeDepth==2 ) {
+// 			      // specialized case for treeDepth==2
+// 			      for( int t = 0; t < nTrees; t++ ) {
+// 			        uint32 offset=t*nTreeNodes, k=offset, k0=0;
+// 			        getChild(chns1,cids,fids,thrs,offset,k0,k);
+// 			        getChild(chns1,cids,fids,thrs,offset,k0,k);
+// 			        h += hs[k]; if( h<=cascThr ) break;
+// 			      }
+// 			    } else if( treeDepth>2) {
+// 			      // specialized case for treeDepth>2
+// 			      for( int t = 0; t < nTrees; t++ ) {
+// 			        uint32 offset=t*nTreeNodes, k=offset, k0=0;
+// 			        for( int i=0; i<treeDepth; i++ )
+// 			          getChild(chns1,cids,fids,thrs,offset,k0,k);
+// 			        h += hs[k]; if( h<=cascThr ) break;
+// 			      }
+// 			    } else {
+// 			      // general case (variable tree depth)
+// 			      for( int t = 0; t < nTrees; t++ ) {
+// 			        uint32 offset=t*nTreeNodes, k=offset, k0=k;
+// 			        while( child[k] ) {
+// 			          float ftr = chns1[cids[fids[k]]];
+// 			          k = (ftr<thrs[k]) ? 1 : 0;
+// 			          k0 = k = child[k0]-k+offset;
+// 			        }
+// 			        h += hs[k]; if( h<=cascThr ) break;
+// 			      }
+// 		    	}
+// 		    	if(h>cascThr) { cs.push_back(c); rs.push_back(r); hs1.push_back(h); }
+// 		  	}
+// 		}
+// 		delete [] cids;
+// 		free(chns);
+// 		m=cs.size();
 
-		// shift=(modelDsPad-modelDs)/2-pad;
-		double shift[2];
-		shift[0] = (modelHt-double(opts.modelDs[0]))/2-opts.pPyramid.pad[0];
-		shift[1] = (modelWd-double(opts.modelDs[1]))/2-opts.pPyramid.pad[1];
+// 		// shift=(modelDsPad-modelDs)/2-pad;
+// 		double shift[2];
+// 		shift[0] = (modelHt-double(opts.modelDs[0]))/2-opts.pPyramid.pad[0];
+// 		shift[1] = (modelWd-double(opts.modelDs[1]))/2-opts.pPyramid.pad[1];
 
-		for(int j=0; j<m; j++ )
-		{
-			BoundingBox bb;
-			bb.topLeftPoint.x = cs[j]*stride;
-			bb.topLeftPoint.x = (bb.topLeftPoint.x+shift[1])/opts.pPyramid.scales_w[i];
-			bb.topLeftPoint.y = rs[j]*stride;
-			bb.topLeftPoint.y = (bb.topLeftPoint.y+shift[0])/opts.pPyramid.scales_h[i];
-			bb.height = opts.modelDs[0]/opts.pPyramid.scales[i];
-			bb.width = opts.modelDs[1]/opts.pPyramid.scales[i];
-			bb.score = hs1[j];
-			bb.scale = i;
-			result.push_back(bb);
-		}
+// 		for(int j=0; j<m; j++ )
+// 		{
+// 			BoundingBox bb;
+// 			bb.topLeftPoint.x = cs[j]*stride;
+// 			bb.topLeftPoint.x = (bb.topLeftPoint.x+shift[1])/opts.pPyramid.scales_w[i];
+// 			bb.topLeftPoint.y = rs[j]*stride;
+// 			bb.topLeftPoint.y = (bb.topLeftPoint.y+shift[0])/opts.pPyramid.scales_h[i];
+// 			bb.height = opts.modelDs[0]/opts.pPyramid.scales[i];
+// 			bb.width = opts.modelDs[1]/opts.pPyramid.scales[i];
+// 			bb.score = hs1[j];
+// 			bb.scale = i;
+// 			result.push_back(bb);
+// 		}
 
-		cs.clear();
-		rs.clear();
-		hs1.clear();
-	}
+// 		cs.clear();
+// 		rs.clear();
+// 		hs1.clear();
+// 	}
 
-	return result;
-}
+// 	return result;
+// }
 
 
 
