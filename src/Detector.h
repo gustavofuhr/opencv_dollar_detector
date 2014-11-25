@@ -30,6 +30,8 @@ public:
 	void importDetectorModel(cv::String);
 	BB_Array applyDetectorToFrame(std::vector<Info> pyramid, int shrink, int modelHt, int modelWd, int stride, float cascThr, float *thrs, 
 									float *hs, uint32 *fids, uint32 *child, int nTreeNodes, int nTrees, int treeDepth, int nChns);
+	BB_Array applyCalibratedDetectorToFrame(std::vector<Info> pyramid, int shrink, int modelHt, int modelWd, int stride, float cascThr, float *thrs, float *hs, 
+	uint32 *fids, uint32 *child, int nTreeNodes, int nTrees, int treeDepth, int nChns, float minPedestrianHeight, float maxPedestrianHeight, cv::Mat homography);
 	void acfDetect(std::vector<std::string> imageNames, std::string dataSetDirectoryName, int firstFrame, int lastFrame);
 	BB_Array nonMaximalSuppression(BB_Array bbs);
 };

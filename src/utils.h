@@ -40,5 +40,6 @@ std::vector<std::string> getDataSetFileNames(std::string directory);
 cv::Mat readHomographyFromCalibrationFile(std::string fileName);
 cv::Point imagePoint2worldPoint(float imageU, float imageV, float imageZ, cv::Mat homography);
 cv::Point worldPoint2imagePoint(float worldX, float worldY, float worldZ, cv::Mat homography);
+cv::Mat scaleHomographyMatrix(cv::Mat homography, float scale_x, float scale_y);
 
 #endif

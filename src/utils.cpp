@@ -889,4 +889,16 @@ void findGroundPlanePoints(cv::Mat homography)
 }
 */
 
+cv::Mat scaleHomographyMatrix(cv::Mat homography, float scale_x, float scale_y)
+{
+  cv::Mat S = cv::Mat::eye(3,3, CV_32F);
+
+  S.at<float>(0,0) = scale_x;
+  S.at<float>(1,1) = scale_y;
+
+  cv::Mat result = S * homography * S.inv();
+
+  return result;
+}
+
 /************************************************************************************************************/
