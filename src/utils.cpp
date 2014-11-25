@@ -753,10 +753,10 @@ cv::Mat angles2rotationMatrix(float rx, float ry, float rz)
   return R;
 }
 
-cv::Mat readHomographyFromCalibrationFile(std::string fileName)
+std::vector<cv::Mat> readProjectionAndHomographyFromCalibrationFile(std::string fileName)
 {
   cv::FileStorage xml;
-  cv::Mat result(3, 3, CV_32FC1);
+  std::vector<cv::Mat> result;
   xml.open(fileName, cv::FileStorage::READ);
 
   if (!xml.isOpened())
@@ -770,6 +770,7 @@ cv::Mat readHomographyFromCalibrationFile(std::string fileName)
     cv::Mat R(3, 3, CV_32FC1);
     cv::Mat Rt(3, 4, CV_32FC1);
     cv::Mat K(3, 3, CV_32FC1);
+    cv::Mat H(3, 3, CV_32FC1);
 
     xml["Camera"]["Geometry"]["dpx"] >> dpx;
     xml["Camera"]["Geometry"]["dpy"] >> dpy;
@@ -813,15 +814,19 @@ cv::Mat readHomographyFromCalibrationFile(std::string fileName)
 
     P = K*Rt;
 
-    result.at<float>(0,0) = P.at<float>(0,0);
-    result.at<float>(0,1) = P.at<float>(0,1);
-    result.at<float>(0,2) = P.at<float>(0,2);
-    result.at<float>(1,0) = P.at<float>(1,0);
-    result.at<float>(1,1) = P.at<float>(1,1);
-    result.at<float>(1,2) = P.at<float>(1,2);
-    result.at<float>(2,0) = P.at<float>(3,0);
-    result.at<float>(2,1) = P.at<float>(3,1);
-    result.at<float>(2,2) = P.at<float>(3,2);
+    result.push_back(P);
+
+    H.at<float>(0,0) = P.at<float>(0,0);
+    H.at<float>(0,1) = P.at<float>(0,1);
+    H.at<float>(0,2) = P.at<float>(0,2);
+    H.at<float>(1,0) = P.at<float>(1,0);
+    H.at<float>(1,1) = P.at<float>(1,1);
+    H.at<float>(1,2) = P.at<float>(1,2);
+    H.at<float>(2,0) = P.at<float>(3,0);
+    H.at<float>(2,1) = P.at<float>(3,1);
+    H.at<float>(2,2) = P.at<float>(3,2);
+
+    result.push_back(H);
   }
 
   return result;
@@ -918,6 +923,23 @@ int findBestScale(float boundingBoxWorldHeight, float minPedestrianHeight, float
   }
 
   return result;
+}
+
+float findWorldHeight(cv::Mat P, int u, int v, float x, float y)
+{
+  float height;
+
+  height = (u - P.at<float>(0,0)*x - P.at<float>(0,1)*y - P.at<float>(0,3)) / P.at<float>(0,2);
+
+  /*
+  // debug
+  float height1 = (v - P.at<float>(1,0)*x - P.at<float>(1,1)*y - P.at<float>(1,3)) / P.at<float>(1,2);
+  float height2 = (1 - P.at<float>(2,0)*x - P.at<float>(2,1)*y - P.at<float>(2,3)) / P.at<float>(2,2);
+  std::cout << height << " " << height1 << " " << height2 << std::endl;
+  std::cin.get();
+  // debug */
+
+  return height;
 }
 
 /************************************************************************************************************/

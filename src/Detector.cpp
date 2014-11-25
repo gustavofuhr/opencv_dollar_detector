@@ -85,7 +85,7 @@ inline void getChild(float *chns1, uint32 *cids, uint32 *fids, float *thrs, uint
 
 // this is not done yet!
 BB_Array Detector::applyCalibratedDetectorToFrame(std::vector<Info> pyramid, int shrink, int modelHt, int modelWd, int stride, float cascThr, float *thrs, float *hs, 
-		uint32 *fids, uint32 *child, int nTreeNodes, int nTrees, int treeDepth, int nChns, float minPedestrianHeight, float maxPedestrianHeight, cv::Mat homography)
+		uint32 *fids, uint32 *child, int nTreeNodes, int nTrees, int treeDepth, int nChns, float minPedestrianHeight, float maxPedestrianHeight, cv::Mat projection, cv::Mat homography)
 {
 	BB_Array result;
 
@@ -100,11 +100,7 @@ BB_Array Detector::applyCalibratedDetectorToFrame(std::vector<Info> pyramid, int
 		for( int r=0; r<lastRow; r++ ) 
 		{
 			cv::Point groundPoint = imagePoint2groundPlanePoint(c, r+modelHt, 1, homography);
-			// to do things like this, we need a function that finds the world coordinates of the top left point of the bounding box
-			// cv::Point topPoint = imagePoint2worldPoint(c, r, 1, homography);
-
-			//float boundingBoxWorldHeight = difference in height between topPoint and groundPoint;
-			float boundingBoxWorldHeight = 0.0; // dummy
+			float boundingBoxWorldHeight = findWorldHeight(projection, c, r, groundPoint.x, groundPoint.y); 
 
 			// since the first scale is the largest, it detects the smallest pedestrians so boundingBoxWorldHeight has to be bigger than minPedestrianHeight
 			if (boundingBoxWorldHeight >= minPedestrianHeight)
@@ -123,7 +119,7 @@ BB_Array Detector::applyCalibratedDetectorToFrame(std::vector<Info> pyramid, int
 
 				// find c and r, using scaledHomography
 				// assuming the ground plane has z coordinate equal to 0, the z coordinate of the (c,r) point is boundingBoxWorldHeight
-				cv::Point scaledPoint = worldPoint2imagePoint(topPoint.x, topPoint.y, boundingBoxWorldHeight, scaledHomography);
+				cv::Point scaledPoint = worldPoint2imagePoint(groundPoint.x, groundPoint.y, boundingBoxWorldHeight, scaledHomography);
 				int scaledC = scaledPoint.x;
 				int scaledR = scaledPoint.y;
 				

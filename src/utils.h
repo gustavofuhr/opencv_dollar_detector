@@ -37,10 +37,11 @@ cv::Mat padImage(cv::Mat source, int channels, int *pad, int padSize, int type);
 
 std::vector<std::string> getDataSetFileNames(std::string directory);
 
-cv::Mat readHomographyFromCalibrationFile(std::string fileName);
+std::vector<cv::Mat> readProjectionAndHomographyFromCalibrationFile(std::string fileName);
 cv::Point imagePoint2groundPlanePoint(float imageU, float imageV, float imageZ, cv::Mat homography);
 cv::Point worldPoint2imagePoint(float worldX, float worldY, float worldZ, cv::Mat homography);
 cv::Mat scaleHomographyMatrix(cv::Mat homography, float scale_x, float scale_y);
 int findBestScale(float boundingBoxWorldHeight, float minPedestrianHeight, float maxPedestrianHeight, std::vector<double> scales);
+float findWorldHeight(cv::Mat P, int u, int v, float x, float y);
 
 #endif
