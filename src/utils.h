@@ -7,6 +7,7 @@
 #include <iomanip>
 #include <typeinfo> // for sse rgbConvert functions
 #include <dirent.h>
+#include "BoundingBox.h"
 
 #include "Info.h"
 
@@ -41,7 +42,8 @@ cv::Mat readHomographyFromCalibrationFile(std::string fileName);
 cv::Point imagePoint2worldPoint(float imageU, float imageV, float imageZ, cv::Mat homography);
 cv::Point worldPoint2imagePoint(float worldX, float worldY, float worldZ, cv::Mat homography);
 
-
+cv::Mat world2image(cv::Mat &w_point, cv::Mat_<float> &P);
+BoundingBox wcoord2bbox(cv::Point2f w_point, cv::Mat_<float> &P, float w_height, float aspect_ratio);
 
 
 #endif

@@ -82,114 +82,182 @@ inline void getChild(float *chns1, uint32 *cids, uint32 *fids, float *thrs, uint
   k0=k+=k0*2; k+=offset;
 }
 
+
+
+
+BB_Array Detector::generateCandidates(int imageHeight, int imageWidth, cv::Mat_<float> &P, 
+							float meanHeight/* = 1.7*/, float stdHeight/* = 0.2*/, float factorStdHeight/* = 3.0*/) 
+{
+
+	// there is a set of parameters here that are hard coded, but should
+	// be read from a file or something...
+	cv::Mat_<float> area(2,2);
+	area(0,0) = -30000;
+	area(0,1) =  30000;
+	area(1,0) = -30000;
+	area(1,1) =  30000;
+
+	float step = 1000;
+	float aspectRatio = 0.5; // same as model
+
+	float stepHeight = 0.1;
+
+
+	BB_Array candidates;
+	for (float x = area(0,0); x < area(0,1); x += step) {
+		for (float y = area(1,0); y < area(1,1); y += step) {
+			// for all points in the ground plane (according to the area), I try all
+			// the heights that I need to
+
+			for (float h = -stdHeight * factorStdHeight; h < stdHeight*factorStdHeight; h+= stepHeight) {
+				float wHeight = meanHeight + h;
+
+				cv::Point2f wPoint(x, y);
+				BoundingBox bb = wcoord2bbox(wPoint, P, wHeight, aspectRatio);
+
+				// only put if it is inside the visible image
+				//if (bb.topLeftPoint )
+
+				candidates.push_back(bb);
+			}
+
+			
+		}
+	}
+}
+
 /*
-// this is not done yet!
-BB_Array Detector::applyCalibratedDetectorToFrame(std::vector<Info> pyramid, int shrink, int modelHt, int modelWd, int stride, float cascThr, float *thrs, 
-												  float *hs, uint32 *fids, uint32 *child, int nTreeNodes, int nTrees, int treeDepth, int nChns, cv::Mat homography)
+    This function return the scale in which the pyramid will be more fitted
+*/
+int Detector::findClosestScaleFromBbox(std::vector<Info> &pyramid, BoundingBox &bb,
+												int modelHeight, int imageHeight)
+{
+
+	// actually here is the size of the the image that changes, the model stays the same
+	// to see the best fit for the bounding box, one must find the relation between the original
+	// and then find the closest to the size of the bounding box
+	float min_dist = imageHeight;
+	int i_min = -1;
+
+	for (int i = 0; i < opts.pPyramid.computedScales; i++) {
+		// size of the downsample image
+		int height = pyramid[i].image.rows;
+		int width = pyramid[i].image.cols;
+
+		// relation between the the image and the downsampled version of it
+		float factor_height = imageHeight/(float)height;
+		// float factor_width  = imageWidth/(float)width;
+
+		float height_model = modelHeight*factor_height;
+		float diff = fabs(height_model - bb.height);
+
+		if (diff < min_dist) {
+			i_min = i;
+			min_dist = diff;
+		}
+
+	}
+
+	return i_min;
+
+}
+
+void Detector::bbTopLeft2PyramidRowColumn(int *r, int *c, BoundingBox &bb, int modelHt, int modelWd, int ith_scale, int stride) {
+
+
+	float s1, s2, sw, sh, tlx, tly;
+
+	s1 = (modelHt-double(opts.modelDs[0]))/2-opts.pPyramid.pad[0];
+	s2 = (modelWd-double(opts.modelDs[1]))/2-opts.pPyramid.pad[1];
+
+	sw = opts.pPyramid.scales_w[ith_scale];
+	sh = opts.pPyramid.scales_h[ith_scale];
+
+	tlx = bb.topLeftPoint.x;
+	tly = bb.topLeftPoint.y;
+
+	float fc = (sw*tlx - s2)/(float)stride;
+	float fr = (sh*tly - s1)/(float)stride;
+
+	*r = (int)fr;
+	*c = (int)fc;
+}
+
+
+BB_Array Detector::applyDetectorToFrameSmart(std::vector<Info> pyramid, int shrink, int modelHt, int modelWd, int stride, float cascThr, float *thrs, float *hs, 
+										uint32 *fids, uint32 *child, int nTreeNodes, int nTrees, int treeDepth, int nChns, int imageWidth, int imageHeight, cv::Mat_<float> &P)
 {
 	BB_Array result;
 
-	int lastRow = (int)ceil(float(pyramid[0].image.rows*shrink-modelHt+1)/stride);
-	int lastCol = (int)ceil(float(pyramid[0].image.cols*shrink-modelWd+1)/stride);
 
-	int channels = opts.pPyramid.pChns.pColor.nChannels + opts.pPyramid.pChns.pGradMag.nChannels + opts.pPyramid.pChns.pGradHist.nChannels;
+	BB_Array bbox_candidates = generateCandidates(imageHeight, imageWidth, P);
+	for (int i = 0; i < bbox_candidates.size(); ++i) {
+		// see which scale is best suited to the candidate
 
-	std::vector<int> rs, cs; std::vector<float> hs1;
-	for( int c=0; c<lastCol; c++ ) 
-	{
-		for( int r=0; r<lastRow; r++ ) 
-		{
-			cv::Point groundPoint = imagePoint2worldPoint(c, r+modelHt, 1, homography);
-			cv::Point topPoint = imagePoint2worldPoint(c, r, 1, homography);
+		int ith_scale = findClosestScaleFromBbox(pyramid, bbox_candidates[i], modelHt, imageHeight);
 
-			//float boundingBoxWorldHeight = difference in height between topPoint and groundPoint;
+		int height = pyramid[ith_scale].image.rows;
+		int width = pyramid[ith_scale].image.cols;
 
-			if (boundingBoxWorldHeight >= minPedestrianHeight && boundingBoxWorldHeight <= maxPedestrianHeight)
-			{
-				// discover which of the scales is the correct one
-				int scaleIndex = findBestScale(boundingBoxWorldHeight, std::vector<Info> pyramid);
-				float* chns = (float*)malloc(height*width*channels*sizeof(float));
-				chns = features2floatArray(pyramid[scaleIndex], chns, height, width,  opts.pPyramid.pChns.pColor.nChannels, opts.pPyramid.pChns.pGradMag.nChannels, opts.pPyramid.pChns.pGradHist.nChannels);
+		int channels = opts.pPyramid.pChns.pColor.nChannels + opts.pPyramid.pChns.pGradMag.nChannels + opts.pPyramid.pChns.pGradHist.nChannels;
+		float* chns = (float*)malloc(height*width*channels*sizeof(float));
+		features2floatArray(pyramid[ith_scale], chns, height, width,  opts.pPyramid.pChns.pColor.nChannels, opts.pPyramid.pChns.pGradMag.nChannels, opts.pPyramid.pChns.pGradHist.nChannels);
 
-				// the rest of the detection works the same way:
+		// r and c are defined by the candidate itself
+		int r, c;
+		bbTopLeft2PyramidRowColumn(&r, &c, bbox_candidates[i], modelHt, modelWd, ith_scale, stride);
 
-				// construct cids array
-			  	int nFtrs = modelHt/shrink*modelWd/shrink*nChns;
-			  	uint32 *cids = new uint32[nFtrs]; int m=0;
-			  	for( int z=0; z<nChns; z++ )
-			    	for( int c=0; c<modelWd/shrink; c++ )
-			      		for( int r=0; r<modelHt/shrink; r++ )
-			        		cids[m++] = z*width*height + c*height + r;
+		int nFtrs = modelHt/shrink*modelWd/shrink*nChns;
+	  	uint32 *cids = new uint32[nFtrs]; int m=0;
+	  	for( int z=0; z<nChns; z++ )
+	    	cids[m++] = z*width*height + c*height + r;
 
-			    float h=0, *chns1=chns+(r*stride/shrink) + (c*stride/shrink)*height;
-			    if( treeDepth==1 ) {
-			      // specialized case for treeDepth==1
-			      for( int t = 0; t < nTrees; t++ ) {
-			        uint32 offset=t*nTreeNodes, k=offset, k0=0;
-			        getChild(chns1,cids,fids,thrs,offset,k0,k);
-			        h += hs[k]; if( h<=cascThr ) break;
-			      }
-			    } else if( treeDepth==2 ) {
-			      // specialized case for treeDepth==2
-			      for( int t = 0; t < nTrees; t++ ) {
-			        uint32 offset=t*nTreeNodes, k=offset, k0=0;
-			        getChild(chns1,cids,fids,thrs,offset,k0,k);
-			        getChild(chns1,cids,fids,thrs,offset,k0,k);
-			        h += hs[k]; if( h<=cascThr ) break;
-			      }
-			    } else if( treeDepth>2) {
-			      // specialized case for treeDepth>2
-			      for( int t = 0; t < nTrees; t++ ) {
-			        uint32 offset=t*nTreeNodes, k=offset, k0=0;
-			        for( int i=0; i<treeDepth; i++ )
-			          getChild(chns1,cids,fids,thrs,offset,k0,k);
-			        h += hs[k]; if( h<=cascThr ) break;
-			      }
-			    } else {
-			      // general case (variable tree depth)
-			      for( int t = 0; t < nTrees; t++ ) {
-			        uint32 offset=t*nTreeNodes, k=offset, k0=k;
-			        while( child[k] ) {
-			          float ftr = chns1[cids[fids[k]]];
-			          k = (ftr<thrs[k]) ? 1 : 0;
-			          k0 = k = child[k0]-k+offset;
-			        }
-			        h += hs[k]; if( h<=cascThr ) break;
-			      }
-				}
-				if(h>cascThr) { cs.push_back(c); rs.push_back(r); hs1.push_back(h); }
+			float h=0, *chns1=chns+(r*stride/shrink) + (c*stride/shrink)*height;
+		    if( treeDepth==1 ) {
+		      // specialized case for treeDepth==1
+		      for( int t = 0; t < nTrees; t++ ) {
+		        uint32 offset=t*nTreeNodes, k=offset, k0=0;
+		        getChild(chns1,cids,fids,thrs,offset,k0,k);
+		        h += hs[k]; if( h<=cascThr ) break;
+		      }
+		    } else if( treeDepth==2 ) {
+		      // specialized case for treeDepth==2
+		      for( int t = 0; t < nTrees; t++ ) {
+		        uint32 offset=t*nTreeNodes, k=offset, k0=0;
+		        getChild(chns1,cids,fids,thrs,offset,k0,k);
+		        getChild(chns1,cids,fids,thrs,offset,k0,k);
+		        h += hs[k]; if( h<=cascThr ) break;
+		      }
+		    } else if( treeDepth>2) {
+		      // specialized case for treeDepth>2
+		      for( int t = 0; t < nTrees; t++ ) {
+		        uint32 offset=t*nTreeNodes, k=offset, k0=0;
+		        for( int i=0; i<treeDepth; i++ )
+		          getChild(chns1,cids,fids,thrs,offset,k0,k);
+		        h += hs[k]; if( h<=cascThr ) break;
+		      }
+		    } else {
+		      // general case (variable tree depth)
+		      for( int t = 0; t < nTrees; t++ ) {
+		        uint32 offset=t*nTreeNodes, k=offset, k0=k;
+		        while( child[k] ) {
+		          float ftr = chns1[cids[fids[k]]];
+		          k = (ftr<thrs[k]) ? 1 : 0;
+		          k0 = k = child[k0]-k+offset;
+		        }
+		        h += hs[k]; if( h<=cascThr ) break;
+		      }
+		    }
 
-				delete [] cids;
-				free(chns);
-				m=cs.size();
-
-				// shift=(modelDsPad-modelDs)/2-pad;
-				double shift[2];
-				shift[0] = (modelHt-double(opts.modelDs[0]))/2-opts.pPyramid.pad[0];
-				shift[1] = (modelWd-double(opts.modelDs[1]))/2-opts.pPyramid.pad[1];
-
-				for(int j=0; j<m; j++ )
-				{
-					BoundingBox bb;
-					bb.topLeftPoint.x = cs[j]*stride;
-					bb.topLeftPoint.x = (bb.topLeftPoint.x+shift[1])/opts.pPyramid.scales_w[i];
-					bb.topLeftPoint.y = rs[j]*stride;
-					bb.topLeftPoint.y = (bb.topLeftPoint.y+shift[0])/opts.pPyramid.scales_h[i];
-					bb.height = opts.modelDs[0]/opts.pPyramid.scales[i];
-					bb.width = opts.modelDs[1]/opts.pPyramid.scales[i];
-					bb.score = hs1[j];
-					bb.scale = i;
-					result.push_back(bb);
-				}
-
-				cs.clear();
-				rs.clear();
-				hs1.clear();
-			}
-		}	
+		    if(h>cascThr) { 
+		    	result.push_back(bbox_candidates[i]);
+		    }
+		
 	}
 }
-*/
+
+
+
 
 BB_Array Detector::applyDetectorToFrame(std::vector<Info> pyramid, int shrink, int modelHt, int modelWd, int stride, float cascThr, float *thrs, float *hs, 
 										uint32 *fids, uint32 *child, int nTreeNodes, int nTrees, int treeDepth, int nChns)
@@ -526,6 +594,7 @@ void Detector::acfDetect(std::vector<std::string> imageNames, std::string dataSe
 	
 		clock_t detectionStart = clock();
 
+		//cv::waitKey();
 		BB_Array frameDetections = applyDetectorToFrame(framePyramid, shrink, modelHt, modelWd, stride, cascThr, thrs, hs, fids, child, nTreeNodes, nTrees, treeDepth, nChns);
 		detections.push_back(frameDetections);
 		frameDetections.clear(); //doesn't seem to make a difference

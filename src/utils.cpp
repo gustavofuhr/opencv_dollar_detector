@@ -878,6 +878,59 @@ cv::Point worldPoint2imagePoint(float worldX, float worldY, float worldZ, cv::Ma
   return result;
 }
 
+cv::Mat world2image(cv::Mat &w_point, cv::Mat_<float> &P) {
+  
+  cv::Mat wp;
+  wp   = P*w_point;
+
+  for (int i = 0; i < w_point.cols; i++) {
+    // normalize the point
+    wp.at<float>(0,i) = wp.at<float>(0,i)/wp.at<float>(2,i);
+    wp.at<float>(1,i) = wp.at<float>(1,i)/wp.at<float>(2,i);
+  }
+
+  cv::Mat res = wp(cv::Range(0,2), cv::Range::all());
+  return res;
+}
+
+
+
+BoundingBox wcoord2bbox(cv::Point2f w_point, cv::Mat_<float> &P, float w_height, float aspect_ratio) {
+  BoundingBox bb;
+
+  // create the foot and head points
+  cv::Mat_<float> w_feet_point(4, 1, 0.0);
+  w_feet_point(0) = w_point.x;
+  w_feet_point(1) = w_point.y;
+  w_feet_point(2) = 0.0;
+  w_feet_point(3) = 1.0;
+
+  cv::Mat_<float> w_head_point(4, 1, 0.0);
+  w_feet_point.copyTo(w_head_point);
+  w_feet_point(2) = w_height;
+
+  // project them to create the bbox
+  cv::Mat_<float> i_feet_point = world2image(w_feet_point, P);
+  cv::Mat_<float> i_head_point = world2image(w_head_point, P);
+
+  // compute the height and width in the image
+  float i_height = fabs(i_feet_point(1) - i_head_point(1));
+  float i_width  = i_height * aspect_ratio;
+
+  // the central x will be the middle point between the line
+  // from the feet to the head
+  float ix_middle = (i_feet_point(0) + i_head_point(0))/2.0;
+
+  bb.topLeftPoint.x = ix_middle - i_width/2.0;
+  bb.topLeftPoint.y = i_head_point(1);
+  bb.width          = i_width;
+  bb.height         = i_height;
+  bb.world_height   = w_height;
+
+  return bb;
+}
+
+
 /*
 void findGroundPlanePoints(cv::Mat homography)
 {
