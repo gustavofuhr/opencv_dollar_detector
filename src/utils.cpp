@@ -827,7 +827,7 @@ cv::Mat readHomographyFromCalibrationFile(std::string fileName)
   return result;
 }
 
-cv::Point imagePoint2worldPoint(float imageU, float imageV, float imageZ, cv::Mat homography)
+cv::Point imagePoint2groundPlanePoint(float imageU, float imageV, float imageZ, cv::Mat homography)
 {
   cv::Mat inverseH;
   invert(homography, inverseH);
@@ -878,17 +878,6 @@ cv::Point worldPoint2imagePoint(float worldX, float worldY, float worldZ, cv::Ma
   return result;
 }
 
-/*
-void findGroundPlanePoints(cv::Mat homography)
-{
-  cv::Point p1, p2, p3, p4;
-  float tempX, tempY;
-
-  tempX = (homography.at<float>(0,0)+homography.at<float>(0,1))/(homography.at<float>(2,0)+homography.at<float>(2,1));
-  tempY = (homography.at<float>(0,0)-homography.at<float>(0,1))/(homography.at<float>(2,0)-homography.at<float>(2,1));
-}
-*/
-
 cv::Mat scaleHomographyMatrix(cv::Mat homography, float scale_x, float scale_y)
 {
   cv::Mat S = cv::Mat::eye(3,3, CV_32F);
@@ -897,6 +886,36 @@ cv::Mat scaleHomographyMatrix(cv::Mat homography, float scale_x, float scale_y)
   S.at<float>(1,1) = scale_y;
 
   cv::Mat result = S * homography * S.inv();
+
+  return result;
+}
+
+int findBestScale(float boundingBoxWorldHeight, float minPedestrianHeight, float maxPedestrianHeight, std::vector<double> scales)
+{
+  bool found = false;
+  int index = 0;
+  int result = 0;
+  float curDiff = 6666666.0;
+  float avgPedestrianHeight = (minPedestrianHeight + maxPedestrianHeight)/2;
+  float targetRatio = avgPedestrianHeight / boundingBoxWorldHeight;
+
+
+  while (!found && index < scales.size())
+  {
+    float tempDiff = (scales[index]-targetRatio)*(scales[index]-targetRatio);
+
+    if (tempDiff < curDiff)
+    {
+      curDiff = tempDiff;
+      result = index;
+    }
+    else
+    {
+      found = true;
+    }
+
+    index++;
+  }
 
   return result;
 }
