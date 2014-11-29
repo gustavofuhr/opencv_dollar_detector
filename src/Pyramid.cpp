@@ -124,6 +124,14 @@ std::vector<Info> Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 		//double elapsed_secs = double(end - start) / CLOCKS_PER_SEC;
 		//std::cout << "chnsCompute duration: " << elapsed_secs << "s\n";
 
+		/*
+		// testing computedChannels[i]
+		cv::imshow("computedChannels[i].image",computedChannels[i].image);
+		cv::imshow("computedChannels[i].gradientMagnitude",computedChannels[i].gradientMagnitude);
+		cv::imshow("computedChannels[i].gradientHistogram[0]",computedChannels[i].gradientHistogram[0]);
+		cv::waitKey();
+		// testing computedChannels[i] */
+
 		if (I1 != convertedImage)
 			free(I1);
 		numberOfRealScales++;
@@ -545,14 +553,14 @@ Info Pyramid::computeSingleScaleChannelFeatures(float* source, int rows, int col
 	if (pChns.pColor.enabled)
 	{
 		// data=imResampleMex(data,h,w,1);
-		float* tempI2 = (float*)malloc(shrinkedHeight*shrinkedWidth*pChns.pColor.nChannels*sizeof(float));
-		resample(I, tempI2, height, shrinkedHeight, width, shrinkedWidth, pChns.pGradMag.nChannels, 1.0);
+		float* tempI2 = (float*)malloc(shrinkedHeight*shrinkedWidth*colorChannels*sizeof(float));
+		resample(I, tempI2, height, shrinkedHeight, width, shrinkedWidth, colorChannels, 1.0);
 
 		// original:
 		//result.image = floatArray2cvImage(I, shrinkedHeight, shrinkedWidth, pChns.pColor.nChannels);
 		// new
-		float* tempI2data = (float*)malloc(shrinkedHeight*shrinkedWidth*pChns.pColor.nChannels*sizeof(float));
-		floatArray2cvData(I, tempI2data, shrinkedHeight, shrinkedWidth, pChns.pColor.nChannels);
+		float* tempI2data = (float*)malloc(shrinkedHeight*shrinkedWidth*colorChannels*sizeof(float));
+		floatArray2cvData(tempI2, tempI2data, shrinkedHeight, shrinkedWidth, colorChannels);
 		cv::Mat tempImg(shrinkedHeight, shrinkedWidth, CV_32FC3);
 		tempImg.data = (uchar*)tempI2data;
 		tempImg.copyTo(result.image);

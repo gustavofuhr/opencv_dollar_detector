@@ -895,6 +895,7 @@ cv::Mat scaleHomographyMatrix(cv::Mat homography, float scale_x, float scale_y)
   return result;
 }
 
+/*
 int findBestScale(float boundingBoxWorldHeight, float minPedestrianHeight, float maxPedestrianHeight, std::vector<double> scales)
 {
   bool found = false;
@@ -924,6 +925,33 @@ int findBestScale(float boundingBoxWorldHeight, float minPedestrianHeight, float
 
   return result;
 }
+*/
+
+int findBestScale1(int targetImageHeight, int modelHeight, std::vector<double> scales)
+{
+  int scaleIndex = 0;
+  int result;
+  float minDiff = 6666666666.0;
+  bool found = false;
+
+  while(!found && scaleIndex < scales.size())
+  {
+    float tempDiff = (targetImageHeight-(modelHeight/scales[scaleIndex])) * (targetImageHeight-(modelHeight/scales[scaleIndex]));
+
+    if (tempDiff < minDiff)
+    {
+      minDiff = tempDiff;
+      result = scaleIndex;
+    }
+    else
+      found = true;
+
+    scaleIndex++;
+  }
+
+  return result;
+}
+
 
 float findWorldHeight(cv::Mat P, int u, int v, float x, float y)
 {

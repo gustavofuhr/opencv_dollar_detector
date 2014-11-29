@@ -82,7 +82,7 @@ inline void getChild(float *chns1, uint32 *cids, uint32 *fids, float *thrs, uint
   k0=k+=k0*2; k+=offset;
 }
 
-
+/*
 // this is not done yet!
 BB_Array Detector::applyCalibratedDetectorToFrame(std::vector<Info> pyramid, int shrink, int modelHt, int modelWd, int stride, float cascThr, float *thrs, float *hs, 
 		uint32 *fids, uint32 *child, int nTreeNodes, int nTrees, int treeDepth, int nChns, float minPedestrianHeight, float maxPedestrianHeight, cv::Mat projection, cv::Mat homography)
@@ -226,6 +226,14 @@ BB_Array Detector::applyDetectorToFrame(std::vector<Info> pyramid, int shrink, i
 		float* chns = (float*)malloc(height*width*channels*sizeof(float));
 		features2floatArray(pyramid[i], chns, height, width,  opts.pPyramid.pChns.pColor.nChannels, opts.pPyramid.pChns.pGradMag.nChannels, opts.pPyramid.pChns.pGradHist.nChannels);
 		
+		/*
+		// testing pyramid contents
+		cv::imshow("image",pyramid[i].image);
+		cv::imshow("gradient Magnitude",pyramid[i].gradientMagnitude);
+		cv::imshow("gradient Histogram",pyramid[i].gradientHistogram[0]);
+		cv::waitKey();
+		// testing pyramid contents */
+
 		/*
 		// debug: read chns from file
 	  	cv::Mat scalei;
