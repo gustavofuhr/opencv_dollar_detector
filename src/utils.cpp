@@ -907,7 +907,7 @@ BoundingBox wcoord2bbox(cv::Point2f w_point, cv::Mat_<float> &P, float w_height,
 
   cv::Mat_<float> w_head_point(4, 1, 0.0);
   w_feet_point.copyTo(w_head_point);
-  w_feet_point(2) = w_height;
+  w_head_point(2) = w_height;
 
   // project them to create the bbox
   cv::Mat_<float> i_feet_point = world2image(w_feet_point, P);
@@ -930,6 +930,17 @@ BoundingBox wcoord2bbox(cv::Point2f w_point, cv::Mat_<float> &P, float w_height,
   return bb;
 }
 
+
+void print_fmatrix(const std::string &title, const cv::Mat &m) {
+
+  std::cout << title << std::endl;
+  for (int i = 0; i < m.rows; ++i) {
+    for (int j = 0; j < m.cols; ++j) {
+      std::cout << m.at<float>(i,j) << " ";
+    }
+    std::cout << std::endl;
+  }
+}
 
 /*
 void findGroundPlanePoints(cv::Mat homography)
