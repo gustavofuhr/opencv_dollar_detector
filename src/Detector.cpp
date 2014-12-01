@@ -49,7 +49,7 @@ void Detector::importDetectorModel(cv::String fileName)
 		xml["detector"]["clf"]["depth"] >> depth;
 		xml["detector"]["clf"]["errs"] >> errs;
 		xml["detector"]["clf"]["losses"] >> losses;		
-		xml["detector"]["clf"]["treeDepth"] >> treeDepth;	
+		xml["detector"]["clf"]["treeDepth"] >> treeDepth;
 
 		timeSpentInDetection = 0;
 
@@ -396,7 +396,7 @@ void Detector::acfDetect(std::vector<std::string> imageNames, std::string dataSe
 		// compute feature pyramid
 		std::vector<Info> framePyramid;
 		framePyramid = opts.pPyramid.computeMultiScaleChannelFeaturePyramid(I);
-	
+
 		clock_t detectionStart = clock();
 
 		BB_Array frameDetections = applyDetectorToFrame(framePyramid, shrink, modelHt, modelWd, stride, cascThr, thrs, hs, fids, child, nTreeNodes, nTrees, treeDepth, nChns);

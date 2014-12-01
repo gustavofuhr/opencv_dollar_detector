@@ -229,7 +229,7 @@ void convolution(float* source, float* result, int rows, int cols, int channels,
   }
   else
   {
-    if (radius == 0)
+    if (radius < 0)
       std::cout << " # Convolution error: invalid radius!\n";
     else
       convTri(source, result, rows, cols, channels, radius, s);
