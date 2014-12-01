@@ -17,7 +17,7 @@ public:
 	int padSize;
 	std::vector<int> pad; //amount to pad channels (along T/B and L/R)
 	int minImgSize[2]; //minimum image size for channel computation, substitutes minDs
-	int smoothRadius; //radius for channel smoothing (using convTri)
+	float smoothRadius; //radius for channel smoothing (using convTri)
 	int concatenateChannels; //if true, concatenate channels
 	int completeInput; //if true does not check/set default vals in pPyramid
 

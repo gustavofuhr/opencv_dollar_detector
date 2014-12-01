@@ -65,7 +65,7 @@ std::vector<Info> Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
       		floatImg[imgIndex++] = tempFloat[i];
   	}
 
-	//float* floatImg = cvImage2floatArray(I, colorChannels);
+  	//float* floatImg = cvImage2floatArray(I, colorChannels);
 	int previousColorSpaceType = pChns.pColor.colorSpaceType; // saves the value to be reloaded afterwards
 	convertedImage = rgbConvert(floatImg, I.rows*I.cols, colorChannels, pChns.pColor.colorSpaceType, 1.0f);
 	// if(flag==4), flag=1; end;
@@ -152,6 +152,14 @@ std::vector<Info> Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 		//clock_t end = clock();
 		//double elapsed_secs = double(end - start) / CLOCKS_PER_SEC;
 		//std::cout << "chnsCompute duration: " << elapsed_secs << "s\n";
+
+		/*
+		// testing computedChannels[i]
+		cv::imshow("computedChannels[i].image",computedChannels[i].image);
+		cv::imshow("computedChannels[i].gradientMagnitude",computedChannels[i].gradientMagnitude);
+		cv::imshow("computedChannels[i].gradientHistogram[0]",computedChannels[i].gradientHistogram[0]);
+		cv::waitKey();
+		// testing computedChannels[i] */
 
 		if (I1 != convertedImage)
 			free(I1);
@@ -405,15 +413,15 @@ std::vector<Info> Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 	      		floatImg3[imgIndex3++] = tempFloat3[k];
 	  	}
 	  	// */
-	  	float* tempOutput = (float*)malloc(h/smoothingRadius*w/smoothingRadius*3*sizeof(float));
-		convolution(floatImg3, tempOutput, h, w, 3, smoothingRadius, 1);	
+	  	float* tempOutput = (float*)malloc(h*w*colorChannels*sizeof(float));
+		convolution(floatImg3, tempOutput, h, w, colorChannels, smoothingRadius, 1);	
 
 		// original:
 		//computedChannels[i].image = floatArray2cvImage(tempOutput, h/smoothingRadius, w/smoothingRadius, 3);
 		// new
-		float* tempIdata = (float*)malloc(h/smoothingRadius*w/smoothingRadius*3*sizeof(float));
-		floatArray2cvData(tempOutput, tempIdata, h/smoothingRadius, w/smoothingRadius, 3);
-		cv::Mat tempImg2(h/smoothingRadius, w/smoothingRadius, CV_32FC3);
+		float* tempIdata = (float*)malloc(h*w*colorChannels*sizeof(float));
+		floatArray2cvData(tempOutput, tempIdata, h, w, 3);
+		cv::Mat tempImg2(h, w, CV_32FC3);
 		tempImg2.data = (uchar*)tempIdata;
 		tempImg2.copyTo(computedChannels[i].image);
 		tempImg2.release();
@@ -427,15 +435,15 @@ std::vector<Info> Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 		cv::Mat tempMag;
 		cv::transpose(computedChannels[i].gradientMagnitude, tempMag);
 		float *floatMag = (float*)tempMag.data;
-		float* tempOutput1 = (float*)malloc(h/smoothingRadius*w/smoothingRadius*sizeof(float));
+		float* tempOutput1 = (float*)malloc(h*w*sizeof(float));
 		convolution(floatMag, tempOutput1, h, w, 1, smoothingRadius, 1);	
 
 		// original:
 		//computedChannels[i].gradientMagnitude = floatArray2cvImage(tempOutput1, h/smoothingRadius, w/smoothingRadius, 1);
 		// new
-		float* tempMdata = (float*)malloc(h/smoothingRadius*w/smoothingRadius*sizeof(float));
-		floatArray2cvData(tempOutput1, tempMdata, h/smoothingRadius, w/smoothingRadius, 1);
-		cv::Mat tempMag2(h/smoothingRadius, w/smoothingRadius, CV_32FC1);
+		float* tempMdata = (float*)malloc(h*w*sizeof(float));
+		floatArray2cvData(tempOutput1, tempMdata, h, w, 1);
+		cv::Mat tempMag2(h, w, CV_32FC1);
 		tempMag2.data = (uchar*)tempMdata;
 		tempMag2.copyTo(computedChannels[i].gradientMagnitude);
 		tempMag2.release();
@@ -450,15 +458,15 @@ std::vector<Info> Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 			cv::Mat tempHist;
 			cv::transpose(computedChannels[i].gradientHistogram[j], tempHist);
 			float *floatHist = (float*)tempHist.data;
-			float* tempOutput2 = (float*)malloc(h/smoothingRadius*w/smoothingRadius*sizeof(float));
+			float* tempOutput2 = (float*)malloc(h*w*sizeof(float));
 			convolution(floatHist, tempOutput2, h, w, 1, smoothingRadius, 1);
 
 			// original:
 			//computedChannels[i].gradientHistogram[j] = floatArray2cvImage(tempOutput2, h/smoothingRadius, w/smoothingRadius, 1);
 			// new section
-			float* tempHdata = (float*)malloc(h/smoothingRadius*w/smoothingRadius*sizeof(float));
+			float* tempHdata = (float*)malloc(h*w*sizeof(float));
 			floatArray2cvData(tempOutput2, tempHdata, h, w, 1);
-			cv::Mat tempHist2(h/smoothingRadius, w/smoothingRadius, CV_32FC1);
+			cv::Mat tempHist2(h, w, CV_32FC1);
 			tempHist2.data = (uchar*)tempHdata;
 			tempHist2.copyTo(computedChannels[i].gradientHistogram[j]);
 			tempHist2.release();
@@ -521,13 +529,8 @@ Info Pyramid::computeSingleScaleChannelFeatures(float* source, int rows, int col
 
 	
 	// compute color channels, new version
-	I = (float*)malloc(height/pChns.pColor.smoothingRadius*width/pChns.pColor.smoothingRadius*3*sizeof(float));
-	//clock_t start = clock();
+	I = (float*)malloc(height*width*colorChannels*sizeof(float));
 	convolution(source, I, height, width, colorChannels, pChns.pColor.smoothingRadius, 1);
-	//clock_t end = clock();
-	//double elapsed_secs = double(end - start) / CLOCKS_PER_SEC;
-	//std::cout << "convolution inside chnsCompute duration: " << elapsed_secs << "s\n";
-	// new version */
 
 	if (pChns.pGradHist.enabled)
 	{
@@ -606,14 +609,14 @@ Info Pyramid::computeSingleScaleChannelFeatures(float* source, int rows, int col
 	if (pChns.pColor.enabled)
 	{
 		// data=imResampleMex(data,h,w,1);
-		float* tempI2 = (float*)malloc(shrinkedHeight*shrinkedWidth*pChns.pColor.nChannels*sizeof(float));
-		resample(I, tempI2, height, shrinkedHeight, width, shrinkedWidth, pChns.pGradMag.nChannels, 1.0);
+		float* tempI2 = (float*)malloc(shrinkedHeight*shrinkedWidth*colorChannels*sizeof(float));
+		resample(I, tempI2, height, shrinkedHeight, width, shrinkedWidth, colorChannels, 1.0);
 
 		// original:
 		//result.image = floatArray2cvImage(I, shrinkedHeight, shrinkedWidth, pChns.pColor.nChannels);
 		// new
-		float* tempI2data = (float*)malloc(shrinkedHeight*shrinkedWidth*pChns.pColor.nChannels*sizeof(float));
-		floatArray2cvData(I, tempI2data, shrinkedHeight, shrinkedWidth, pChns.pColor.nChannels);
+		float* tempI2data = (float*)malloc(shrinkedHeight*shrinkedWidth*colorChannels*sizeof(float));
+		floatArray2cvData(tempI2, tempI2data, shrinkedHeight, shrinkedWidth, colorChannels);
 		cv::Mat tempImg(shrinkedHeight, shrinkedWidth, CV_32FC3);
 		tempImg.data = (uchar*)tempI2data;
 		tempImg.copyTo(result.image);
