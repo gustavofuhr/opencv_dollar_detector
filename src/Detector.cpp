@@ -270,9 +270,38 @@ BB_Array Detector::applyDetectorToFrameSmart(std::vector<Info> pyramid, int shri
 	// }
 	//cv::waitKey(40);
 
+	std::vector<float*> scales_chns(opts.pPyramid.computedScales, NULL);
+	std::vector<uint32*> scales_cids(opts.pPyramid.computedScales, NULL);
 
 	// pre-compute the way we access the features for each scale
-	//for (int i=0; i < )
+	for (int i=0; i < opts.pPyramid.computedScales; i++) {
+		int height = pyramid[i].image.rows;
+		int width = pyramid[i].image.cols;
+
+		int channels = opts.pPyramid.pChns.pColor.nChannels + opts.pPyramid.pChns.pGradMag.nChannels + opts.pPyramid.pChns.pGradHist.nChannels;
+		float* chns = (float*)malloc(height*width*channels*sizeof(float));
+		features2floatArray(pyramid[i], chns, height, width,  opts.pPyramid.pChns.pColor.nChannels, opts.pPyramid.pChns.pGradMag.nChannels, opts.pPyramid.pChns.pGradHist.nChannels);
+		scales_chns[i] = chns;
+
+
+		int nFtrs = modelHt/shrink*modelWd/shrink*nChns;
+	  	uint32 *cids = new uint32[nFtrs]; int m=0;
+	  	/*for( int z=0; z<nChns; z++ ) {
+	    	cids[m++] = z*width*height + c*height + r;
+	    	std::cout << "cid " << cids[m-1] << std::endl;
+	    }*/
+	    for( int z=0; z<nChns; z++ ) {
+	    	for( int cc=0; cc<modelWd/shrink; cc++ ) {
+	      		for( int rr=0; rr<modelHt/shrink; rr++ ) {
+	        		cids[m++] = z*width*height + cc*height + rr;
+	        		// std::cout << "cids[m] " << cids[m-1] << std::endl;
+	        	}
+	        }
+	    }
+
+	    scales_cids[i] = cids;
+	}
+
 
 
 
@@ -290,7 +319,8 @@ BB_Array Detector::applyDetectorToFrameSmart(std::vector<Info> pyramid, int shri
 
 		//ith_scale = 0;
 
-
+		int height = pyramid[ith_scale].image.rows;
+		int width = pyramid[ith_scale].image.cols;
 		
 		//bbox_candidates[i].plot(debug_image, cv::Scalar(0, 255, 0));
 		
@@ -330,16 +360,6 @@ BB_Array Detector::applyDetectorToFrameSmart(std::vector<Info> pyramid, int shri
 		
 		//std::cout << ith_scale << std::endl;
 
-		//TODO: this seems to not change if we fix the scale, precompute this guys then!
-
-
-		int height = pyramid[ith_scale].image.rows;
-		int width = pyramid[ith_scale].image.cols;
-
-		int channels = opts.pPyramid.pChns.pColor.nChannels + opts.pPyramid.pChns.pGradMag.nChannels + opts.pPyramid.pChns.pGradHist.nChannels;
-		float* chns = (float*)malloc(height*width*channels*sizeof(float));
-		features2floatArray(pyramid[ith_scale], chns, height, width,  opts.pPyramid.pChns.pColor.nChannels, opts.pPyramid.pChns.pGradMag.nChannels, opts.pPyramid.pChns.pGradHist.nChannels);
-
 		// r and c are defined by the candidate itself
 		int r, c;
 		bbTopLeft2PyramidRowColumn(&r, &c, bbox_candidates[i], modelHt, modelWd, ith_scale, stride);
@@ -348,34 +368,14 @@ BB_Array Detector::applyDetectorToFrameSmart(std::vector<Info> pyramid, int shri
 		// std::cout << "c: " << c << std::endl; 
 		// std::cout << "chns " << *chns << std::endl;
 
-		int nFtrs = modelHt/shrink*modelWd/shrink*nChns;
-	  	uint32 *cids = new uint32[nFtrs]; int m=0;
-	  	/*for( int z=0; z<nChns; z++ ) {
-	    	cids[m++] = z*width*height + c*height + r;
-	    	std::cout << "cid " << cids[m-1] << std::endl;
-	    }*/
-	    for( int z=0; z<nChns; z++ ) {
-	    	for( int cc=0; cc<modelWd/shrink; cc++ ) {
-	      		for( int rr=0; rr<modelHt/shrink; rr++ ) {
-	        		cids[m++] = z*width*height + cc*height + rr;
-	        		// std::cout << "cids[m] " << cids[m-1] << std::endl;
-	        	}
-	        }
-	    }
 
-	    //cv::imshow("candidates", debug_image);
-		//bbox_candidates[i].plot(debug_image, cv::Scalar(0, 255, 0));
-		//cv::waitKey(200);
-
-		float h=0, *chns1=chns+(r*stride/shrink) + (c*stride/shrink)*height;
-
-		// std::cout << "*chns1 smart: " << *chns1 << std::endl;
+		float h=0, *chns1=scales_chns[ith_scale]+(r*stride/shrink) + (c*stride/shrink)*height;
 	    
 	    if( treeDepth==1 ) {
 	      // specialized case for treeDepth==1
 	      for( int t = 0; t < nTrees; t++ ) {
 	        uint32 offset=t*nTreeNodes, k=offset, k0=0;
-	        getChild(chns1,cids,fids,thrs,offset,k0,k);
+	        getChild(chns1,scales_cids[ith_scale],fids,thrs,offset,k0,k);
 	        h += hs[k]; if( h<=cascThr ) break;
 	      }
 	    } else if( treeDepth==2 ) {
@@ -383,8 +383,8 @@ BB_Array Detector::applyDetectorToFrameSmart(std::vector<Info> pyramid, int shri
 	      for( int t = 0; t < nTrees; t++ ) {
 	        uint32 offset=t*nTreeNodes, k=offset, k0=0;
 
-	        getChild(chns1,cids,fids,thrs,offset,k0,k);
-	        getChild(chns1,cids,fids,thrs,offset,k0,k);
+	        getChild(chns1,scales_cids[ith_scale],fids,thrs,offset,k0,k);
+	        getChild(chns1,scales_cids[ith_scale],fids,thrs,offset,k0,k);
 	        
 	        h += hs[k]; if( h<=cascThr ) break;
 	      }
@@ -393,7 +393,7 @@ BB_Array Detector::applyDetectorToFrameSmart(std::vector<Info> pyramid, int shri
 	      for( int t = 0; t < nTrees; t++ ) {
 	        uint32 offset=t*nTreeNodes, k=offset, k0=0;
 	        for( int i=0; i<treeDepth; i++ )
-	          getChild(chns1,cids,fids,thrs,offset,k0,k);
+	          getChild(chns1,scales_cids[ith_scale],fids,thrs,offset,k0,k);
 	        h += hs[k]; if( h<=cascThr ) break;
 	      }
 	    } else {
@@ -401,7 +401,7 @@ BB_Array Detector::applyDetectorToFrameSmart(std::vector<Info> pyramid, int shri
 	      for( int t = 0; t < nTrees; t++ ) {
 	        uint32 offset=t*nTreeNodes, k=offset, k0=k;
 	        while( child[k] ) {
-	          float ftr = chns1[cids[fids[k]]];
+	          float ftr = chns1[scales_cids[ith_scale][fids[k]]];
 	          k = (ftr<thrs[k]) ? 1 : 0;
 	          k0 = k = child[k0]-k+offset;
 	        }
