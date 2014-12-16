@@ -1,6 +1,9 @@
+#include <sstream>
 #include "Opencv_Dollar_Detector.h"
 
 // valgrind --tool=memcheck --leak-check=yes --log-file=valgrind.log ./opencv_dollar_detector ../opencv_dollar_detector/detector.xml ../datasets/small
+
+
 
 
 // call: ./opencv_dollar_detector ../opencv_dollar_detector/detector.xml ../datasets/small
@@ -16,17 +19,14 @@ int main(int argc, char *argv[])
 		clock_t start = clock();
 		int firstFrame=0, lastFrame=666666666;
 
-		// reads index of the first and last frames 
-		if (argc > 3)
-		{
-			firstFrame = atoi(argv[3]);
-		}
-		if (argc > 4)
-		{
-			lastFrame = atoi(argv[4]);
-		}
+		
+		OddConfig odd_config(argc, argv);
 
-		Detector d;
+		std::cout << "ass" << std::endl;
+
+		Detector d(odd_config);
+
+
 
 		/*
 		// experimental
@@ -46,6 +46,12 @@ int main(int argc, char *argv[])
 		// gets names for all the files inside the data set folder
 		std::string dataSetDirectory = argv[2];
 		std::vector<std::string> imageNames = getDataSetFileNames(dataSetDirectory);
+
+
+		// read the resto of the configuration
+
+
+
 
 		// apply the detection on all images
 		d.acfDetect(imageNames, dataSetDirectory, firstFrame, lastFrame);

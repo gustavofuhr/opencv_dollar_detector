@@ -76,6 +76,25 @@ void floatArray2cvData(float* source, float* result, int rows, int cols, int cha
 }
 
 /*
+
+
+
+*/
+void floatArray2cvDataUCHAR(float* source, uchar* result, int rows, int cols, int channels)
+{
+  int tempIndex=0;
+
+  for (int r = 0; r < rows; r++) {
+    for (int c = 0; c < cols; c++) {
+      for (int ch = 0; ch < channels; ch++) {
+        result[tempIndex++] = (uchar)(source[r*cols + c + ch*cols*rows]*255);
+      }
+    }
+  }
+
+}
+
+/*
 cv::Mat floatArray2cvImage(float* source, int rows, int cols, int channels)
 {
   int type; 

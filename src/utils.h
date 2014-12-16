@@ -50,5 +50,7 @@ BoundingBox wcoord2bbox(cv::Point2f w_point, cv::Mat_<float> &P, float w_height,
 
 void print_fmatrix(const std::string &title, const cv::Mat &m);
 
+void floatArray2cvDataUCHAR(float* source, uchar* result, int rows, int cols, int channels);
+
 
 #endif

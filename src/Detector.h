@@ -6,6 +6,40 @@
 #include "BoundingBox.h"
 #include "utils.h"
 
+
+struct OddConfig {
+
+
+	float resizeImage;
+
+	OddConfig(int argc, char *argv[]) : 
+		resizeImage(1.0)
+	{
+		for (int i=0; i < argc; ++i) {
+			std::cout << argv[i] << std::endl;
+			if (strcmp(argv[i], "--resizeImage")==0) {
+				std::stringstream ss;
+				ss << argv[i+1];
+				ss >> resizeImage;
+			}
+		}
+
+	};
+
+
+	// reads index of the first and last frames 
+	// if (argc > 3)
+	// {
+	// 	firstFrame = atoi(argv[3]);
+	// }
+	// if (argc > 4)
+	// {
+	// 	lastFrame = atoi(argv[4]);
+	// }
+
+};
+
+
 class Detector
 {
 public:
@@ -21,6 +55,7 @@ public:
 	cv::Mat errs;
 	cv::Mat losses;
 	int treeDepth;
+	OddConfig config;
 
 	BB_Array_Array detections;
 
@@ -35,8 +70,14 @@ public:
 	void acfDetect(std::vector<std::string> imageNames, std::string dataSetDirectoryName, int firstFrame, int lastFrame);
 	BB_Array nonMaximalSuppression(BB_Array bbs);
 
+	Detector(OddConfig _config):
+		config(_config) {
+
+	};
 
 private:
+	BoundingBox pyramidRowColumn2BoundingBox(int r, int c,  int modelHt, int modelWd, int ith_scale, int stride);
+
 	BB_Array generateCandidates(int imageHeight, int imageWidth, cv::Mat_<float> &P, 
 							float meanHeight = 1700, float stdHeight = 100, float factorStdHeight = 2.0);
 
