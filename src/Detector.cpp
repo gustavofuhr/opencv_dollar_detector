@@ -1,5 +1,33 @@
 #include "Detector.h"
 
+
+
+
+OddConfig::OddConfig(std::string config_file) :
+	resizeImage(1.0),
+	firstFrame(0),
+	lastFrame(99999)
+{
+
+	std::ifstream in_file;
+	in_file.open(config_file);
+
+	std::string token;
+	while (in_file >> token) {
+		if (token == "resizeImage") in_file >> resizeImage;
+		else if (token == "firstFrame") in_file >> firstFrame;
+		else if (token == "lastFrame") in_file >> lastFrame;
+		else if (token == "detectorFileName") in_file >> detectorFileName;
+		else if (token == "dataSetDirectory") in_file >> dataSetDirectory;
+		else {
+			std::cout << "Token not recognized!" << std::endl;
+		}
+	}
+}
+
+
+
+
 // i dont know if its gonna be needed but this is start
 void Detector::exportDetectorModel(cv::String fileName)
 {

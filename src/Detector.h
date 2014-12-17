@@ -5,38 +5,19 @@
 #include "Info.h"
 #include "BoundingBox.h"
 #include "utils.h"
+#include <fstream>
+#include <string>
 
 
 struct OddConfig {
 
 
 	float resizeImage;
+	std::string detectorFileName;
+	std::string dataSetDirectory;
+	int firstFrame, lastFrame;
 
-	OddConfig(int argc, char *argv[]) : 
-		resizeImage(1.0)
-	{
-		for (int i=0; i < argc; ++i) {
-			std::cout << argv[i] << std::endl;
-			if (strcmp(argv[i], "--resizeImage")==0) {
-				std::stringstream ss;
-				ss << argv[i+1];
-				ss >> resizeImage;
-			}
-		}
-
-	};
-
-
-	// reads index of the first and last frames 
-	// if (argc > 3)
-	// {
-	// 	firstFrame = atoi(argv[3]);
-	// }
-	// if (argc > 4)
-	// {
-	// 	lastFrame = atoi(argv[4]);
-	// }
-
+	OddConfig(std::string config_file);
 };
 
 

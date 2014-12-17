@@ -11,7 +11,7 @@ int main(int argc, char *argv[])
 {
 	if (argc < 2)
 	{
-		std::cout << " # Argument Error: this program expects at least two arguments (detector file name and data set directory)." << std::endl;
+		std::cout << " # Argument Error: this program requires a conf file." << std::endl;
 		return 1;
 	}
 	else
@@ -20,20 +20,19 @@ int main(int argc, char *argv[])
 		int firstFrame=0, lastFrame=666666666;
 
 		
-		OddConfig odd_config(argc, argv);
+		OddConfig odd_config(argv[1]);
 		Detector d(odd_config);
 
 		// loads all detector settings from the provided xml file
-		cv::String detectorFileName = argv[1];
-		d.importDetectorModel(detectorFileName);
+		//cv::String detectorFileName = argv[1];
+		d.importDetectorModel(odd_config.detectorFileName);
 
 		// gets names for all the files inside the data set folder
-		std::string dataSetDirectory = argv[2];
-		std::vector<std::string> imageNames = getDataSetFileNames(dataSetDirectory);
+		std::vector<std::string> imageNames = getDataSetFileNames(odd_config.dataSetDirectory);
 
 
 		// apply the detection on all images
-		d.acfDetect(imageNames, dataSetDirectory, firstFrame, lastFrame);
+		d.acfDetect(imageNames, odd_config.dataSetDirectory, odd_config.firstFrame, odd_config.lastFrame);
 
 		clock_t end = clock();
 		double elapsed_secs = double(end - start) / CLOCKS_PER_SEC;
