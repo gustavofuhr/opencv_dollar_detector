@@ -1054,4 +1054,8 @@ float findWorldHeight(cv::Mat P, int u, int v, float x, float y)
   return height;
 }
 
+double log_base_n(double y, double base) {
+  return log(y)/log(base);
+}
+
 /************************************************************************************************************/

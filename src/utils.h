@@ -52,5 +52,7 @@ void print_fmatrix(const std::string &title, const cv::Mat &m);
 
 void floatArray2cvDataUCHAR(float* source, uchar* result, int rows, int cols, int channels);
 
+double log_base_n(double y, double base);
+
 
 #endif

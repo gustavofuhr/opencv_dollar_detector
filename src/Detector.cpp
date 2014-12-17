@@ -77,11 +77,6 @@ void printDetections(BB_Array detections, int frameIndex)
 // this procedure was just copied verbatim
 inline void getChild(float *chns1, uint32 *cids, uint32 *fids, float *thrs, uint32 offset, uint32 &k0, uint32 &k)
 {
-
-  /*std::cout << "fids " << fids[k] << std::endl;
-  std::cout << "cids com fids " << cids[fids[k]] << std::endl;
-  std::cout << "ftr " << chns1[cids[fids[k]]] << std::endl;*/
-
   float ftr = chns1[cids[fids[k]]];
   k = (ftr<thrs[k]) ? 1 : 2;
   k0=k+=k0*2; k+=offset;
@@ -102,12 +97,12 @@ BB_Array Detector::generateCandidates(int imageHeight, int imageWidth, cv::Mat_<
 	area(1,0) = -30000;
 	area(1,1) =  30000;
 
-	float step = 400;
+	float step = 200;
 	float aspectRatio = 0.5; // same as model
 
 	float stepHeight = 100;
 
-	float minImageHeight = 50;
+	float minImageHeight = 80;
 
 
 	BB_Array candidates;
@@ -142,15 +137,6 @@ BB_Array Detector::generateCandidates(int imageHeight, int imageWidth, cv::Mat_<
 int Detector::findClosestScaleFromBbox(std::vector<Info> &pyramid, BoundingBox &bb,
 												int modelHeight, int imageHeight)
 {
-
-	// TODO: make a vector with ranges of scales!
-
-	//std::cout << "height of the bb" << bb.height << std::endl;
-
-	//TODO: should consider the shrink size
-	//float shrinkedModelHeight = (float)modelHeight / 4.0;
-
-
 	// actually here is the size of the the image that changes, the model stays the same
 	// to see the best fit for the bounding box, one must find the relation between the original
 	// and then find the closest to the size of the bounding box
@@ -158,40 +144,17 @@ int Detector::findClosestScaleFromBbox(std::vector<Info> &pyramid, BoundingBox &
 	int i_min = -1;
 
 	for (int i = 0; i < opts.pPyramid.computedScales; i++) {
-
-
-
-
-		// size of the downsample image
-		int height = pyramid[i].image.rows;
-		int width = pyramid[i].image.cols;
-
-				
-
-		// relation between the the image and the downsampled version of it
-		float factor_height = (float)imageHeight/(height*4.0);
-		// float factor_width  = imageWidth/(float)width;
-
-		float height_model = modelHeight*factor_height;
-
-
-		//std::cout << height_model << std::endl;
-
-		float diff = fabs(height_model - bb.height);
+		float diff = fabs(opts.modelDs[0]/opts.pPyramid.scales[i] - bb.height);
 
 		if (diff < min_dist) {
 			i_min = i;
 			min_dist = diff;
 		}
+		else break;
 
 	}
-	//std::cout << i_min << std::endl;
-
-	//exit(42);
 
 	return i_min;
-
-
 
 }
 
@@ -286,15 +249,11 @@ BB_Array Detector::applyDetectorToFrameSmart(std::vector<Info> pyramid, int shri
 
 		int nFtrs = modelHt/shrink*modelWd/shrink*nChns;
 	  	uint32 *cids = new uint32[nFtrs]; int m=0;
-	  	/*for( int z=0; z<nChns; z++ ) {
-	    	cids[m++] = z*width*height + c*height + r;
-	    	std::cout << "cid " << cids[m-1] << std::endl;
-	    }*/
-	    for( int z=0; z<nChns; z++ ) {
+	  	
+	  	for( int z=0; z<nChns; z++ ) {
 	    	for( int cc=0; cc<modelWd/shrink; cc++ ) {
 	      		for( int rr=0; rr<modelHt/shrink; rr++ ) {
 	        		cids[m++] = z*width*height + cc*height + rr;
-	        		// std::cout << "cids[m] " << cids[m-1] << std::endl;
 	        	}
 	        }
 	    }
@@ -305,27 +264,16 @@ BB_Array Detector::applyDetectorToFrameSmart(std::vector<Info> pyramid, int shri
 
 
 
-
-
-
-
 	float max_h = -1000;
 
 	for (int i = 0; i < bbox_candidates.size(); ++i) {
-		std::cout << i << std::endl;
 
 		// see which scale is best suited to the candidate
 		int ith_scale = findClosestScaleFromBbox(pyramid, bbox_candidates[i], modelHt, imageHeight);
-
-		//ith_scale = 0;
-
+		
 		int height = pyramid[ith_scale].image.rows;
 		int width = pyramid[ith_scale].image.cols;
 		
-		//bbox_candidates[i].plot(debug_image, cv::Scalar(0, 255, 0));
-		
-
-		// for debug got to r and c and then come back
 		// std::cout << "Original bbox " << bbox_candidates[i].topLeftPoint.x << " " << bbox_candidates[i].topLeftPoint.y << " size: " 
 		// 	<< bbox_candidates[i].width << " x " << bbox_candidates[i].height << std::endl;
 		// int row, col;
@@ -334,40 +282,16 @@ BB_Array Detector::applyDetectorToFrameSmart(std::vector<Info> pyramid, int shri
 		// BoundingBox testbb = pyramidRowColumn2BoundingBox(row, col, modelHt, modelWd, ith_scale, stride);
 		// std::cout << "New bbox " << testbb.topLeftPoint.x << " " << testbb.topLeftPoint.y << " size: " 
 		// 	<< testbb.width << " x " << testbb.height << std::endl;
-
-
-		//testbb.plot(debug_image, cv::Scalar(255, 0, 0));
-
-		//ith_scale = opts.pPyramid.computedScales - 1;
-
-	// for debug got to r and c and then come back
-		// std::cout << "Original bbox " << bbox_candidates[i].topLeftPoint.x << " " << bbox_candidates[i].topLeftPoint.y << " size: " 
-		// 	<< bbox_candidates[i].width << " x " << bbox_candidates[i].height << std::endl;
-		// bbTopLeft2PyramidRowColumn(&row, &col, bbox_candidates[i], modelHt, modelWd, ith_scale, stride);
-		// std::cout << "r " << row << " c " << col << std::endl;
-		// testbb = pyramidRowColumn2BoundingBox(row, col, modelHt, modelWd, ith_scale, stride);
-		// std::cout << "New bbox " << testbb.topLeftPoint.x << " " << testbb.topLeftPoint.y << " size: " 
-		// 	<< testbb.width << " x " << testbb.height << std::endl;
-
-
 		// testbb.plot(debug_image, cv::Scalar(0, 0, 255));
-
-
+		// bbox_candidates[i].plot(debug_image, cv::Scalar(0, 255, 0));
+		// testbb.plot(debug_image, cv::Scalar(0, 0, 255));
 		// cv::imshow("candidates", debug_image);
 		// cv::waitKey(0);
-		//exit(42);	
-
-		
-		//std::cout << ith_scale << std::endl;
+		// exit(42);	
 
 		// r and c are defined by the candidate itself
 		int r, c;
 		bbTopLeft2PyramidRowColumn(&r, &c, bbox_candidates[i], modelHt, modelWd, ith_scale, stride);
-
-		// std::cout << "r: " << r << std::endl;
-		// std::cout << "c: " << c << std::endl; 
-		// std::cout << "chns " << *chns << std::endl;
-
 
 		float h=0, *chns1=scales_chns[ith_scale]+(r*stride/shrink) + (c*stride/shrink)*height;
 	    
@@ -414,22 +338,33 @@ BB_Array Detector::applyDetectorToFrameSmart(std::vector<Info> pyramid, int shri
 	    }
 
 
-	    if(h>3){//cascThr) { 
-			std::cout << h << std::endl;
+	    if(h>1){
+			// std::cout << h << std::endl;
 			// std::cout << "hey" << std::endl;
-			cv::imshow("results", debug_image);
-	    	result.push_back(bbox_candidates[i]);
-	    	bbox_candidates[i].plot(debug_image, cv::Scalar(0, 255, 0));
+			//cv::imshow("results", debug_image);
+			BoundingBox detection(bbox_candidates[i]);
+			detection.score = h;
+			detection.scale = ith_scale;
+
+	    	result.push_back(detection);
+	    	// bbox_candidates[i].plot(debug_image, cv::Scalar(0, 255, 0));
 	    	//cv::waitKey(100);
 	    }
 	
 	}
 
-	std::cout << "max h: " << max_h << std::endl;
-	std::cout << "cascThr: " << cascThr << std::endl;
+	// std::cout << "max h: " << max_h << std::endl;
+	// std::cout << "cascThr: " << cascThr << std::endl;
 	
+	//cv::waitKey(0);
 
-	cv::waitKey(0);
+	//free the memory used to pre-allocate indexes
+	for (int i=0; i < opts.pPyramid.computedScales; i++) {
+		free(scales_chns[i]);
+		free(scales_cids[i]);
+	}
+
+	return result;
 }
 
 
@@ -600,8 +535,8 @@ BB_Array Detector::applyDetectorToFrame(std::vector<Info> pyramid, int shrink, i
 			// bb.topLeftPoint.y = (bb.topLeftPoint.y+shift[0])/opts.pPyramid.scales_h[i];
 			// bb.height = opts.modelDs[0]/opts.pPyramid.scales[i];
 			// bb.width = opts.modelDs[1]/opts.pPyramid.scales[i];
-			// bb.score = hs1[j];
-			// bb.scale = i;
+			bb.score = hs1[j];
+			bb.scale = i;
 			result.push_back(bb);
 		}
 
@@ -697,7 +632,6 @@ void Detector::acfDetect(std::vector<std::string> imageNames, std::string dataSe
 		
 		BB_Array frameDetections = applyDetectorToFrameSmart(framePyramid, shrink, modelHt, modelWd, stride, cascThr, thrs, hs, fids, child, nTreeNodes, nTrees, treeDepth, nChns, image.cols, image.rows, P, image);
 
-
 		
 		//BB_Array frameDetections = applyDetectorToFrame(framePyramid, shrink, modelHt, modelWd, stride, cascThr, thrs, hs, fids, child, nTreeNodes, nTrees, treeDepth, nChns);
 		detections.push_back(frameDetections);
@@ -711,12 +645,11 @@ void Detector::acfDetect(std::vector<std::string> imageNames, std::string dataSe
 		cv::imshow("source image", I);
 		showDetections(I, detections[i], "detections before suppression");
 		// debug 
-
 		cv::waitKey();
-		exit(0);
 
 
-		detections[i] = nonMaximalSuppression(detections[i]);
+		//detections[i] = nonMaximalSuppression(detections[i]);
+		detections[i] = nonMaximalSuppressionSmart(detections[i], 1700, 100);
 
 		
 		// debug: shows detections after suppression
@@ -846,6 +779,47 @@ BB_Array Detector::nonMaximalSuppression(BB_Array bbs)
 	// he splits into two arrays and recurses, merging afterwards
 	// this will be done if necessary
 	
+	// run actual nms on given bbs
+	// other types might be added later
+	switch (opts.suppressionType)
+	{
+		case MAX:
+			result = nmsMax(result, false, opts.overlapArea, opts.overlapDenominator);
+		break;
+		case MAXG:
+			result = nmsMax(result, true, opts.overlapArea, opts.overlapDenominator);
+		break;
+		case MS:
+			// not yet implemented
+		break;
+		case COVER:
+			// not yet implemented
+		break;	
+	}
+
+	return result;
+}
+
+double gaussianFunction(double mean, double std, double x) {
+	return exp(-pow(x-mean, 2)/(2*pow(std,2)));
+}
+
+
+BB_Array Detector::nonMaximalSuppressionSmart(BB_Array bbs, double meanHeight, double stdHeight)
+{
+	BB_Array result;
+
+	//keep just the bounding boxes with scores higher than the threshold
+	// for (int i=0; i < bbs.size(); i++)
+	// 	if (bbs[i].score > opts.suppressionThreshold)
+	// 		result.push_back(bbs[i]);
+
+	for (int i=0; i < bbs.size(); ++i) {
+		bbs[i].score = bbs[i].score*gaussianFunction(meanHeight, stdHeight, bbs[i].world_height);
+		result.push_back(bbs[i]);
+	}
+
+
 	// run actual nms on given bbs
 	// other types might be added later
 	switch (opts.suppressionType)

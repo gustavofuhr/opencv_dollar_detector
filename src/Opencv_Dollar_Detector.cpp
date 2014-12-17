@@ -21,23 +21,7 @@ int main(int argc, char *argv[])
 
 		
 		OddConfig odd_config(argc, argv);
-
-		std::cout << "ass" << std::endl;
-
 		Detector d(odd_config);
-
-
-
-		/*
-		// experimental
-		// reads homography matrix from xml file
-		std::vector<cv::Mat> P_and_H = readProjectionAndHomographyFromCalibrationFile("../opencv_dollar_detector/towncentre_calib.xml");
-		cv::Mat projection = P_and_H[0];
-		cv::Mat homography = P_and_H[1];
-
-		cv::Point groundPoint = imagePoint2groundPlanePoint(0, 50, 1, homography);
-		float boundingBoxWorldHeight = findWorldHeight(projection, 0, 0, groundPoint.x, groundPoint.y); 
-		// experimental */
 
 		// loads all detector settings from the provided xml file
 		cv::String detectorFileName = argv[1];
@@ -46,11 +30,6 @@ int main(int argc, char *argv[])
 		// gets names for all the files inside the data set folder
 		std::string dataSetDirectory = argv[2];
 		std::vector<std::string> imageNames = getDataSetFileNames(dataSetDirectory);
-
-
-		// read the resto of the configuration
-
-
 
 
 		// apply the detection on all images
