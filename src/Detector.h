@@ -10,12 +10,18 @@
 
 
 struct OddConfig {
-
-
 	float resizeImage;
 	std::string detectorFileName;
 	std::string dataSetDirectory;
 	int firstFrame, lastFrame;
+
+	bool saveFrames, saveLog; 
+	std::string outputFolder;
+	std::string logFilename;
+
+	bool useCalibration;
+
+	cv::Mat_<float> *calibrationP;
 
 	OddConfig(std::string config_file);
 };

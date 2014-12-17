@@ -966,6 +966,19 @@ void print_fmatrix(const std::string &title, const cv::Mat &m) {
 
 }
 
+
+void print_dmatrix(const std::string &title, const cv::Mat &m) {
+
+  std::cout << title << std::endl;
+  for (int i = 0; i < m.rows; ++i) {
+    for (int j = 0; j < m.cols; ++j) {
+      std::cout << m.at<double>(i,j) << " ";
+    }
+    std::cout << std::endl;
+  }
+
+}
+
 cv::Mat scaleHomographyMatrix(cv::Mat homography, float scale_x, float scale_y)
 {
   cv::Mat S = cv::Mat::eye(3,3, CV_32F);

@@ -49,6 +49,7 @@ cv::Mat world2image(cv::Mat &w_point, cv::Mat_<float> &P);
 BoundingBox wcoord2bbox(cv::Point2f w_point, cv::Mat_<float> &P, float w_height, float aspect_ratio);
 
 void print_fmatrix(const std::string &title, const cv::Mat &m);
+void print_dmatrix(const std::string &title, const cv::Mat &m);
 
 void floatArray2cvDataUCHAR(float* source, uchar* result, int rows, int cols, int channels);
 

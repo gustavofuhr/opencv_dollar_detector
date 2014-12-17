@@ -6,7 +6,10 @@
 OddConfig::OddConfig(std::string config_file) :
 	resizeImage(1.0),
 	firstFrame(0),
-	lastFrame(99999)
+	lastFrame(99999),
+	saveFrames(false),
+	saveLog(false),
+	useCalibration(false)
 {
 
 	std::ifstream in_file;
@@ -14,11 +17,38 @@ OddConfig::OddConfig(std::string config_file) :
 
 	std::string token;
 	while (in_file >> token) {
+		std::cout << token << std::endl;
 		if (token == "resizeImage") in_file >> resizeImage;
 		else if (token == "firstFrame") in_file >> firstFrame;
 		else if (token == "lastFrame") in_file >> lastFrame;
 		else if (token == "detectorFileName") in_file >> detectorFileName;
 		else if (token == "dataSetDirectory") in_file >> dataSetDirectory;
+		else if (token == "saveFrames") {
+			std::string sbool;
+			in_file >> sbool;
+			saveFrames = (sbool == "true");
+		}
+		else if (token == "outputFolder") in_file >> outputFolder;
+		else if (token == "saveLog") {
+			std::string sbool;
+			in_file >> sbool;
+			saveLog = (sbool == "true");
+		}
+		else if (token == "logFilename") in_file >> logFilename;
+		else if (token == "useCalibration")  {
+			std::string sbool;
+			in_file >> sbool;
+			useCalibration = (sbool == "true");
+		}
+		else if (token == "calibrationP") {
+			float *dP = new float[12];
+			for (int i=0; i<12; ++i) {
+				in_file >> dP[i];
+				std::cout << dP[i] << std::endl;
+			}
+
+			calibrationP = new cv::Mat_<float>(3, 4, dP);
+		}
 		else {
 			std::cout << "Token not recognized!" << std::endl;
 		}
@@ -616,6 +646,15 @@ void Detector::acfDetect(std::vector<std::string> imageNames, std::string dataSe
 	int treeDepth = this->treeDepth;
 	int nChns = opts.pPyramid.pChns.pColor.nChannels + opts.pPyramid.pChns.pGradMag.nChannels + opts.pPyramid.pChns.pGradHist.nChannels; 
 
+	
+	if (config.resizeImage != 1.0) {
+		float s = config.resizeImage;
+		float scale_matrix[9] = {s, 0.0, 0.0, 0.0, s, 0.0, 0.0, 0.0, 1.0};
+
+		cv::Mat_<float> S(3, 3, scale_matrix);
+		*(config.calibrationP) = S * *(config.calibrationP);
+	}
+
 	for (int i = firstFrame; i < imageNames.size() && i < lastFrame; i++)
 	{
 		clock_t frameStart = clock();
@@ -640,26 +679,8 @@ void Detector::acfDetect(std::vector<std::string> imageNames, std::string dataSe
 	
 		clock_t detectionStart = clock();
 
-		// BB_Array frameDetections = applyDetectorToFrame(framePyramid, shrink, modelHt, modelWd, stride, cascThr, thrs, hs, fids, child, nTreeNodes, nTrees, treeDepth, nChns);
-
-		float fP[12] = 
-   				{1.0e+06*0.000736749413407,  1.0e+06*-0.000223100219677,  1.0e+06*0.000082536752103,  1.0e+06*-1.241574319735051,
-   				 1.0e+06*-0.000026514058126,  1.0e+06*0.000013789593083,  1.0e+06*0.000580062688244,  1.0e+06*-3.419049533403133,
-    			 1.0e+06*0.000000736718019,  1.0e+06*0.000000533257141,  1.0e+06*0.000000146092928,  1.0e+06*-0.002129474400950};
-    	cv::Mat_<float> P(3, 4, fP);
-
-    	if (config.resizeImage != 1.0) {
-    		float s = config.resizeImage;
-    		float scale_matrix[9] = {s, 0.0, 0.0, 0.0, s, 0.0, 0.0, 0.0, 1.0};
-
-    		cv::Mat_<float> S(3, 3, scale_matrix);
-    		P = S * P;
-    	}
-
-    	print_fmatrix("Projection matrix", P);
-		
-		BB_Array frameDetections = applyDetectorToFrameSmart(framePyramid, shrink, modelHt, modelWd, stride, cascThr, thrs, hs, fids, child, nTreeNodes, nTrees, treeDepth, nChns, image.cols, image.rows, P, image);
-
+		// BB_Array frameDetections = applyDetectorToFrame(framePyramid, shrink, modelHt, modelWd, stride, cascThr, thrs, hs, fids, child, nTreeNodes, nTrees, treeDepth, nChns);		
+		BB_Array frameDetections = applyDetectorToFrameSmart(framePyramid, shrink, modelHt, modelWd, stride, cascThr, thrs, hs, fids, child, nTreeNodes, nTrees, treeDepth, nChns, image.cols, image.rows, *(config.calibrationP), image);
 		
 		//BB_Array frameDetections = applyDetectorToFrame(framePyramid, shrink, modelHt, modelWd, stride, cascThr, thrs, hs, fids, child, nTreeNodes, nTrees, treeDepth, nChns);
 		detections.push_back(frameDetections);
