@@ -7,6 +7,7 @@
 #include <iomanip>
 #include <typeinfo> // for sse rgbConvert functions
 #include <dirent.h>
+#include "BoundingBox.h"
 
 #include "Info.h"
 
@@ -43,5 +44,16 @@ cv::Point worldPoint2imagePoint(float worldX, float worldY, float worldZ, cv::Ma
 cv::Mat scaleHomographyMatrix(cv::Mat homography, float scale_x, float scale_y);
 int findBestScale(float boundingBoxWorldHeight, float minPedestrianHeight, float maxPedestrianHeight, std::vector<double> scales);
 float findWorldHeight(cv::Mat P, int u, int v, float x, float y);
+
+cv::Mat world2image(cv::Mat &w_point, cv::Mat_<float> &P);
+BoundingBox wcoord2bbox(cv::Point2f w_point, cv::Mat_<float> &P, float w_height, float aspect_ratio);
+
+void print_fmatrix(const std::string &title, const cv::Mat &m);
+void print_dmatrix(const std::string &title, const cv::Mat &m);
+
+void floatArray2cvDataUCHAR(float* source, uchar* result, int rows, int cols, int channels);
+
+double log_base_n(double y, double base);
+
 
 #endif

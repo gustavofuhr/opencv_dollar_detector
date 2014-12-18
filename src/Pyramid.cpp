@@ -71,6 +71,7 @@ std::vector<Info> Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 	// if(flag==4), flag=1; end;
 	pChns.pColor.colorSpaceType = RGB;
 
+
 	free(floatImg);
 
 	/*
@@ -94,6 +95,13 @@ std::vector<Info> Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 	int numberOfRealScales=0;
 	int i;
 
+
+	std::cout << "All scales (" << computedScales << ")" << std::endl;
+	for (i=0; i < computedScales; i++)
+		std::cout << scales[i] << std::endl;
+	std::cout << std::endl;
+
+
 	// compute image pyramid [real scales]
 	start = clock();
 	for (i=0; i < computedScales; i = i+approximatedScales+1)
@@ -102,6 +110,10 @@ std::vector<Info> Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 		// sz1=round(sz*s/shrink)*shrink;
 		new_h = round(I.rows*scales[i]/pChns.shrink)*pChns.shrink;
 		new_w = round(I.cols*scales[i]/pChns.shrink)*pChns.shrink;
+
+		printf("Shrink: %d\n", pChns.shrink);
+		printf("Compute real scale: %f\n", scales[i]);
+		printf("Size of the image: %d x %d\n", new_w, new_h);
 
 		if (new_h == I.rows && new_w == I.cols)
 			I1 = convertedImage; // does this work?
@@ -117,21 +129,8 @@ std::vector<Info> Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 			free(convertedImage);
 			convertedImage = I1; 
 		}
-
-		//clock_t start = clock();
 		computedChannels.insert(computedChannels.begin()+i, computeSingleScaleChannelFeatures(I1, new_h, new_w));
-		//clock_t end = clock();
-		//double elapsed_secs = double(end - start) / CLOCKS_PER_SEC;
-		//std::cout << "chnsCompute duration: " << elapsed_secs << "s\n";
-
-		/*
-		// testing computedChannels[i]
-		cv::imshow("computedChannels[i].image",computedChannels[i].image);
-		cv::imshow("computedChannels[i].gradientMagnitude",computedChannels[i].gradientMagnitude);
-		cv::imshow("computedChannels[i].gradientHistogram[0]",computedChannels[i].gradientHistogram[0]);
-		cv::waitKey();
-		// testing computedChannels[i] */
-
+		
 		if (I1 != convertedImage)
 			free(I1);
 		numberOfRealScales++;
@@ -141,73 +140,10 @@ std::vector<Info> Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 
 	free(convertedImage);
 
-	/*
-	// calculates lambdas, maybe this will not be implemented
-	int is[computedScales/(approximatedScales+1)]; //needs a better name
-	int isIndex = 0;
-	bool isError = false;
-	// if lambdas not specified compute image specific lambdas
-	if (!providedLambdas && computedScales>0 && approximatedScales>0)
-	{
-		for (int j=1+upsampledOctaves*scalesPerOctave; j < computedScales; j = j+approximatedScales+1)
-		{
-			//since j is being used as the index in this for statement,
-			//the next line is equivalent to is=1+nOctUp*nPerOct:nApprox+1:nScales;
-			is[isIndex] = j;	
+	printf("\n\n");
 
-			//the next if statement substitutes assert(length(is)>=2)
-			if (is[isIndex] < 2)
-				isError = true;
+	/* compute the approximate scales */
 
-			isIndex++;	
-		}
-
-		//next line substitutes if(length(is)>2), is=is(2:3); end	
-		//because isIndex is going to carry the number of iteractions
-		//made in the previous for statement
-		if (isIndex > 1);
-			//is=is(2:3)
-
-		//channelTypes is the substitute for the nTypes value
-		double *f0 = (double*)memset(f0,0,channelTypes*sizeof(double));		
-		double *f1 = (double*)memset(f1, 0, channelTypes*sizeof(double));
-
-		// only two of the channel types seem to be considered here
-		// since chnsCompute computes the histogram channel after
-		// the other two, its ommited
-		for (int j=0; j<channelTypes; j++)
-		{
-			double sum=0;
-			int i;
-			for (i=0; i<computedChannels[j].image.dims; i++)
-				sum = sum + computedChannels[j].image.at<double>(j,i);			
-			f0[j] = sum/i;
-
-			sum=0;
-			int k;
-			for (k=0; k<computedChannels[j].gradientMagnitude.dims; k++)
-			{
-				sum = sum + computedChannels[j].gradientMagnitude.at<double>(j,k);	
-			}
-			f1[j] = sum/k;
-		}
-		
-		//next, we use the results of f0 and f1 to compute lambdas
-		//lambdas = - log2(f0./f1) / log2(scales(is(1))/scales(is(2)));
-		//this will be revisited at a later time
-	}
-	*/
-
-	/*
-	% compute image pyramid [approximated scales]
-	for i=isA
-	  iR=isN(i); sz1=round(sz*scales(i)/shrink);
-	  for j=1:nTypes, 
-	  	ratio=(scales(i)/scales(iR)).^-lambdas(j);
-	    data{i,j}=imResampleMex(data{iR,j},sz1(1),sz1(2),ratio); 
-	   end
-	end
-	*/
 	start = clock();
 	for (int i=0; i<computedScales; i++)
 	{
@@ -216,6 +152,9 @@ std::vector<Info> Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 			// sz1=round(sz*scales(i)/shrink);
 			int new_h = round(I.rows*scales[i]/pChns.shrink);
 			int new_w = round(I.cols*scales[i]/pChns.shrink);
+
+			printf("Compute approx scale: %f\n", scales[i]);
+			printf("Size of the image: %d x %d\n", new_w, new_h);
 			
 			double ratio[3];
 			int iR = 0;
@@ -245,7 +184,20 @@ std::vector<Info> Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 		      		floatImg2[imgIndex2++] = tempFloat2[k];
 		  	}
 		  	float* tempOutput = (float*)malloc(new_h*new_w*colorChannels*sizeof(float));
+
+		  	/*
+		  	cv::imshow("real scale", computedChannels[iR].image);
+			cv::waitKey();
+			*/
+
 			resample(floatImg2, tempOutput, realScaleRows, new_h, realScaleCols, new_w, colorChannels, ratio[0]);
+
+			/*
+			cv::Mat im_debug;
+			im_debug = floatArray2cvImage(tempOutput, new_h, new_w, 3);
+			cv::imshow("approx. scale", im_debug);
+			cv::waitKey();
+			*/
 
 			// original:
 			//computedChannels[i].image = floatArray2cvImage(tempOutput, new_h, new_w, colorChannels);
@@ -341,6 +293,8 @@ std::vector<Info> Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 		int h = computedChannels[i].image.rows;
 		int w = computedChannels[i].image.cols;
 
+		
+
 		//float* floatImg3 = cvImage2floatArray(computedChannels[i].image, 3);
 		//this is the only substitution that changes some of the results, maybe there's an error here
 		int imgIndex3=0;
@@ -351,6 +305,9 @@ std::vector<Info> Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 	  	{
 	    	cv::Mat tempMat3;
 	    	cv::transpose(rgb3[j], tempMat3);
+
+	    	//floatArray2cvImage(float* source, int rows, int cols, int channels)
+	    
 	    	float* tempFloat3 = (float*)tempMat3.data;
 	    	for (int k=0; k < h*w; k++)
 	      		floatImg3[imgIndex3++] = tempFloat3[k];
@@ -432,6 +389,10 @@ std::vector<Info> Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 		}
 	}
 
+	for (int i=0; i< computedChannels.size(); ++i) {
+		std::cout << "computedChannels size: " << computedChannels[i].image.size() << std::endl;
+	}
+
 	pChns.pColor.colorSpaceType = previousColorSpaceType;
 	return computedChannels;
 }
@@ -466,7 +427,7 @@ Info Pyramid::computeSingleScaleChannelFeatures(float* source, int rows, int col
 	free(tempI);
 	// old version */
 
-	
+
 	// compute color channels, new version
 	I = (float*)malloc(height*width*colorChannels*sizeof(float));
 	convolution(source, I, height, width, colorChannels, pChns.pColor.smoothingRadius, 1);

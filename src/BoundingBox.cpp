@@ -16,3 +16,15 @@ std::string BoundingBox::toString (int frameIndex)
 
 	return result.str();
 }
+
+
+
+cv::Point2i  BoundingBox::get_bottomRightPoint() {
+
+	cv::Point2i br;
+	br.x = topLeftPoint.x + width;
+	br.y = topLeftPoint.y + height;
+
+	return br;
+
+}
