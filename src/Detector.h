@@ -75,7 +75,7 @@ private:
 												int modelHeight, double shrink);
 
 
-	BB_Array applyDetectorToFrameSmart(std::vector<Info> pyramid, int shrink, int modelHt, int modelWd, int stride, float cascThr, float *thrs, float *hs, 
+	BB_Array applyDetectorToFrameSmart(std::vector<Info> pyramid, BB_Array* bbox_candidates, int shrink, int modelHt, int modelWd, int stride, float cascThr, float *thrs, float *hs, 
 										uint32 *fids, uint32 *child, int nTreeNodes, int nTrees, int treeDepth, int nChns, int imageWidth, int imageHeight, 
 										cv::Mat_<float> &P, cv::Mat &debug_image);
 

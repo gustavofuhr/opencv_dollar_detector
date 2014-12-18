@@ -257,7 +257,7 @@ BoundingBox Detector::pyramidRowColumn2BoundingBox(int r, int c,  int modelHt, i
 }
 
 
-BB_Array Detector::applyDetectorToFrameSmart(std::vector<Info> pyramid, int shrink, int modelHt, int modelWd, int stride, float cascThr, float *thrs, float *hs, 
+BB_Array Detector::applyDetectorToFrameSmart(std::vector<Info> pyramid, BB_Array* bbox_candidates, int shrink, int modelHt, int modelWd, int stride, float cascThr, float *thrs, float *hs, 
 										uint32 *fids, uint32 *child, int nTreeNodes, int nTrees, int treeDepth, int nChns, int imageWidth, int imageHeight, cv::Mat_<float> &P, cv::Mat &debug_image)
 {
 	BB_Array result;
@@ -267,7 +267,7 @@ BB_Array Detector::applyDetectorToFrameSmart(std::vector<Info> pyramid, int shri
 	// std::cout << "shrink: " << shrink << std::endl;
 
 
-	BB_Array *bbox_candidates = generateCandidates(imageHeight, imageWidth, P);
+	
 	std::cout << "Number of candidates: " << bbox_candidates->size() << std::endl;
 
 	// create one candidate only for debug
@@ -688,8 +688,10 @@ void Detector::acfDetect(std::vector<std::string> imageNames, std::string dataSe
 		clock_t detectionStart = clock();
 
 		BB_Array frameDetections;
-		if (config.useCalibration)
-			frameDetections = applyDetectorToFrameSmart(framePyramid, shrink, modelHt, modelWd, stride, cascThr, thrs, hs, fids, child, nTreeNodes, nTrees, treeDepth, nChns, image.cols, image.rows, *(config.calibrationP), image);
+		if (config.useCalibration) {
+			BB_Array *bbox_candidates = generateCandidates(image.rows, image.cols, *(config.calibrationP));
+			frameDetections = applyDetectorToFrameSmart(framePyramid, bbox_candidates, shrink, modelHt, modelWd, stride, cascThr, thrs, hs, fids, child, nTreeNodes, nTrees, treeDepth, nChns, image.cols, image.rows, *(config.calibrationP), image);
+		}
 		else
 			frameDetections = applyDetectorToFrame(framePyramid, shrink, modelHt, modelWd, stride, cascThr, thrs, hs, fids, child, nTreeNodes, nTrees, treeDepth, nChns);		
 		
