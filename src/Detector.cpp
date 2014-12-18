@@ -143,17 +143,17 @@ inline void getChild(float *chns1, uint32 *cids, uint32 *fids, float *thrs, uint
 
 
 
-BB_Array Detector::generateCandidates(int imageHeight, int imageWidth, cv::Mat_<float> &P, 
+BB_Array* Detector::generateCandidates(int imageHeight, int imageWidth, cv::Mat_<float> &P, 
 							float meanHeight/* = 1.7m*/, float stdHeight/* = 0.1m*/, float factorStdHeight/* = 2.0*/) 
 {
 
 	// there is a set of parameters here that are hard coded, but should
 	// be read from a file or something...
 	cv::Mat_<float> area(2,2);
-	area(0,0) = -30000;
-	area(0,1) =  30000;
-	area(1,0) = -30000;
-	area(1,1) =  30000;
+	area(0,0) = -20000;
+	area(0,1) =  20000;
+	area(1,0) = -20000;
+	area(1,1) =  20000;
 
 	float step = 200;
 	float aspectRatio = 0.5; // same as model
@@ -163,7 +163,7 @@ BB_Array Detector::generateCandidates(int imageHeight, int imageWidth, cv::Mat_<
 	float minImageHeight = 80;
 
 
-	BB_Array candidates;
+	BB_Array *candidates = new BB_Array();
 	for (float x = area(0,0); x < area(0,1); x += step) {
 		for (float y = area(1,0); y < area(1,1); y += step) {
 			// for all points in the ground plane (according to the area), I try all
@@ -179,7 +179,7 @@ BB_Array Detector::generateCandidates(int imageHeight, int imageWidth, cv::Mat_<
 				if (bb.topLeftPoint.x >= 0 && bb.topLeftPoint.x+bb.width < imageWidth && 
 					    bb.topLeftPoint.y >= 0 && bb.topLeftPoint.y+bb.height < imageHeight &&
 					    bb.height >= minImageHeight) {
-					candidates.push_back(bb);
+					candidates->push_back(bb);
 				}
 			}
 			
@@ -267,8 +267,8 @@ BB_Array Detector::applyDetectorToFrameSmart(std::vector<Info> pyramid, int shri
 	// std::cout << "shrink: " << shrink << std::endl;
 
 
-	BB_Array bbox_candidates = generateCandidates(imageHeight, imageWidth, P);
-	std::cout << "Number of candidates: " << bbox_candidates.size() << std::endl;
+	BB_Array *bbox_candidates = generateCandidates(imageHeight, imageWidth, P);
+	std::cout << "Number of candidates: " << bbox_candidates->size() << std::endl;
 
 	// create one candidate only for debug
 	// BB_Array bbox_candidates;
@@ -324,10 +324,10 @@ BB_Array Detector::applyDetectorToFrameSmart(std::vector<Info> pyramid, int shri
 
 	float max_h = -1000;
 
-	for (int i = 0; i < bbox_candidates.size(); ++i) {
+	for (int i = 0; i < bbox_candidates->size(); ++i) {
 
 		// see which scale is best suited to the candidate
-		int ith_scale = findClosestScaleFromBbox(pyramid, bbox_candidates[i], modelHt, imageHeight);
+		int ith_scale = findClosestScaleFromBbox(pyramid, (*bbox_candidates)[i], modelHt, imageHeight);
 		
 		int height = pyramid[ith_scale].image.rows;
 		int width = pyramid[ith_scale].image.cols;
@@ -349,7 +349,7 @@ BB_Array Detector::applyDetectorToFrameSmart(std::vector<Info> pyramid, int shri
 
 		// r and c are defined by the candidate itself
 		int r, c;
-		bbTopLeft2PyramidRowColumn(&r, &c, bbox_candidates[i], modelHt, modelWd, ith_scale, stride);
+		bbTopLeft2PyramidRowColumn(&r, &c, (*bbox_candidates)[i], modelHt, modelWd, ith_scale, stride);
 
 		float h=0, *chns1=scales_chns[ith_scale]+(r*stride/shrink) + (c*stride/shrink)*height;
 	    
@@ -400,7 +400,7 @@ BB_Array Detector::applyDetectorToFrameSmart(std::vector<Info> pyramid, int shri
 			// std::cout << h << std::endl;
 			// std::cout << "hey" << std::endl;
 			//cv::imshow("results", debug_image);
-			BoundingBox detection(bbox_candidates[i]);
+			BoundingBox detection((*bbox_candidates)[i]);
 			detection.score = h;
 			detection.scale = ith_scale;
 
@@ -439,6 +439,9 @@ BB_Array Detector::applyDetectorToFrame(std::vector<Info> pyramid, int shrink, i
 	// this became a simple loop because we will apply just one detector here, 
 	// to apply multiple detector models you need to create multiple Detector objects. 
 	float max_h = -10000;
+
+	int n_candidates = 0;
+
 	for (int i = 0; i < opts.pPyramid.computedScales; i++)
 	{
 		// in the original file: *chnsSize = mxGetDimensions(P.data{i});
@@ -499,6 +502,10 @@ BB_Array Detector::applyDetectorToFrame(std::vector<Info> pyramid, int shrink, i
 		std::cout << "height=" << height << ", width=" << width << ", nChns=" << nChns <<  ", nTreeNodes=" << nTreeNodes << ", nTrees=" << nTrees << ", height1=" << height1 << 
 			", width1=" << width1 << ", nFtrs=" << nFtrs << std::endl;
 		// debug */
+
+		n_candidates += width1*height1;
+
+		
 
 		// apply classifier to each patch
   		std::vector<int> rs, cs; std::vector<float> hs1;
@@ -604,6 +611,7 @@ BB_Array Detector::applyDetectorToFrame(std::vector<Info> pyramid, int shrink, i
 	}
 
 	std::cout << "max_h " << max_h << std::endl;
+	std::cout << "Number of candidates (not smart) : " << n_candidates << std::endl; 
 
 	return result;
 }
@@ -646,7 +654,7 @@ void Detector::acfDetect(std::vector<std::string> imageNames, std::string dataSe
 	int treeDepth = this->treeDepth;
 	int nChns = opts.pPyramid.pChns.pColor.nChannels + opts.pPyramid.pChns.pGradMag.nChannels + opts.pPyramid.pChns.pGradHist.nChannels; 
 
-	
+
 	if (config.resizeImage != 1.0) {
 		float s = config.resizeImage;
 		float scale_matrix[9] = {s, 0.0, 0.0, 0.0, s, 0.0, 0.0, 0.0, 1.0};
@@ -679,8 +687,11 @@ void Detector::acfDetect(std::vector<std::string> imageNames, std::string dataSe
 	
 		clock_t detectionStart = clock();
 
-		// BB_Array frameDetections = applyDetectorToFrame(framePyramid, shrink, modelHt, modelWd, stride, cascThr, thrs, hs, fids, child, nTreeNodes, nTrees, treeDepth, nChns);		
-		BB_Array frameDetections = applyDetectorToFrameSmart(framePyramid, shrink, modelHt, modelWd, stride, cascThr, thrs, hs, fids, child, nTreeNodes, nTrees, treeDepth, nChns, image.cols, image.rows, *(config.calibrationP), image);
+		BB_Array frameDetections;
+		if (config.useCalibration)
+			frameDetections = applyDetectorToFrameSmart(framePyramid, shrink, modelHt, modelWd, stride, cascThr, thrs, hs, fids, child, nTreeNodes, nTrees, treeDepth, nChns, image.cols, image.rows, *(config.calibrationP), image);
+		else
+			frameDetections = applyDetectorToFrame(framePyramid, shrink, modelHt, modelWd, stride, cascThr, thrs, hs, fids, child, nTreeNodes, nTrees, treeDepth, nChns);		
 		
 		//BB_Array frameDetections = applyDetectorToFrame(framePyramid, shrink, modelHt, modelWd, stride, cascThr, thrs, hs, fids, child, nTreeNodes, nTrees, treeDepth, nChns);
 		detections.push_back(frameDetections);
@@ -691,27 +702,34 @@ void Detector::acfDetect(std::vector<std::string> imageNames, std::string dataSe
 
 		
 		// debug: shows detections before suppression
-		cv::imshow("source image", I);
-		showDetections(I, detections[i], "detections before suppression");
-		// debug 
-		cv::waitKey();
+		// cv::imshow("source image", I);
+		// showDetections(I, detections[i], "detections before suppression");
+		// // debug 
+		// cv::waitKey();
 
 
-		//detections[i] = nonMaximalSuppression(detections[i]);
-		detections[i] = nonMaximalSuppressionSmart(detections[i], 1700, 100);
+		if (config.useCalibration)
+			detections[i] = nonMaximalSuppressionSmart(detections[i], 1700, 100);
+		else
+			detections[i] = nonMaximalSuppression(detections[i]);
+		
 
 		
 		// debug: shows detections after suppression
 		showDetections(I, detections[i], "detections after suppression");
 		//printDetections(detections[i], i);
-		cv::waitKey();
+		cv::waitKey(30);
 		// debug */
 
 		
 		// debug: saves image with embedded detections
-		for (int j = 0; j<detections[i].size(); j++) 
-			detections[i][j].plot(image, cv::Scalar(0,255,0));
-		cv::imwrite("../datasets/results/"+imageNames[i], image);
+		if (config.saveFrames) {
+			for (int j = 0; j<detections[i].size(); j++) 
+				detections[i][j].plot(image, cv::Scalar(0,255,0));
+
+			std::string outfilename = config.outputFolder + imageNames[i];
+			cv::imwrite(outfilename, image);
+		}
 		// debug */
 
 		

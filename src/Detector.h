@@ -65,7 +65,7 @@ public:
 private:
 	BoundingBox pyramidRowColumn2BoundingBox(int r, int c,  int modelHt, int modelWd, int ith_scale, int stride);
 
-	BB_Array generateCandidates(int imageHeight, int imageWidth, cv::Mat_<float> &P, 
+	BB_Array *generateCandidates(int imageHeight, int imageWidth, cv::Mat_<float> &P, 
 							float meanHeight = 1700, float stdHeight = 100, float factorStdHeight = 2.0);
 
 	int findClosestScaleFromBbox(std::vector<Info> &pyramid, BoundingBox &bb,
