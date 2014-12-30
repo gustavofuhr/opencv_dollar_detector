@@ -163,11 +163,15 @@ std::vector<float*> GradientMagnitudeChannel::mGradMag(float* source, int rows, 
     // if(nl>=2) pl[1] = mxCreateMatrix3(h,w,1,mxSINGLE_CLASS,0,(void**)&O);
     O = (float*)malloc(h*w*1*sizeof(float));
 
+    std::cout << "before gradMag, h=" << h << ", w=" << w << ", d=" << d << std::endl;
+
     // gradMag(I, M, O, h, w, d, full>0 );
 		// call to the actual function: gradMag(I, M, O, h, w, d, full>0 );
 		// void gradMag(float*, float*, float*, int, int, int, bool);
     gradMag(I, M, O, h, w, d, full>0);
     
+    std::cout << "after gradMag\n";
+
 		// next, we assign the values of M and O to the matrix thats going to be returned
     result.push_back(M);
     result.push_back(O);

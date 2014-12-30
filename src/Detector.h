@@ -15,7 +15,7 @@ struct OddConfig {
 	std::string dataSetDirectory;
 	int firstFrame, lastFrame;
 
-	bool saveFrames, saveLog; 
+	bool displayDetections, saveFrames, saveLog; 
 	std::string outputFolder;
 	std::string logFilename;
 
@@ -52,15 +52,10 @@ public:
 	void importDetectorModel(cv::String);
 	BB_Array applyDetectorToFrame(std::vector<Info> pyramid, int shrink, int modelHt, int modelWd, int stride, float cascThr, float *thrs, 
 									float *hs, uint32 *fids, uint32 *child, int nTreeNodes, int nTrees, int treeDepth, int nChns);
-	BB_Array applyCalibratedDetectorToFrame(std::vector<Info> pyramid, int shrink, int modelHt, int modelWd, int stride, float cascThr, float *thrs, float *hs, 
-	uint32 *fids, uint32 *child, int nTreeNodes, int nTrees, int treeDepth, int nChns, float minPedestrianHeight, float maxPedestrianHeight, cv::Mat projection, cv::Mat homography);
 	void acfDetect(std::vector<std::string> imageNames, std::string dataSetDirectoryName, int firstFrame, int lastFrame);
 	BB_Array nonMaximalSuppression(BB_Array bbs);
 
-	Detector(OddConfig _config):
-		config(_config) {
-
-	};
+	Detector(OddConfig _config): config(_config) { };
 
 private:
 	BoundingBox pyramidRowColumn2BoundingBox(int r, int c,  int modelHt, int modelWd, int ith_scale, int stride);
@@ -75,7 +70,7 @@ private:
 												int modelHeight, double shrink);
 
 
-	BB_Array applyDetectorToFrameSmart(std::vector<Info> pyramid, int shrink, int modelHt, int modelWd, int stride, float cascThr, float *thrs, float *hs, 
+	BB_Array applyCalibratedDetectorToFrame(std::vector<Info> pyramid, int shrink, int modelHt, int modelWd, int stride, float cascThr, float *thrs, float *hs, 
 										uint32 *fids, uint32 *child, int nTreeNodes, int nTrees, int treeDepth, int nChns, int imageWidth, int imageHeight, 
 										cv::Mat_<float> &P, cv::Mat &debug_image);
 

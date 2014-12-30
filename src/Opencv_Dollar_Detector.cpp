@@ -4,9 +4,7 @@
 // valgrind --tool=memcheck --leak-check=yes --log-file=valgrind.log ./opencv_dollar_detector ../opencv_dollar_detector/detector.xml ../datasets/small
 
 
-
-
-// call: ./opencv_dollar_detector ../opencv_dollar_detector/detector.xml ../datasets/small
+// call: ./opencv_dollar_detector ../opencv_dollar_detector/odd.conf
 int main(int argc, char *argv[]) 
 {
 	if (argc < 2)

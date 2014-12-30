@@ -1,62 +1,66 @@
 #include "Detector.h"
 
-
-
-
 OddConfig::OddConfig(std::string config_file) :
 	resizeImage(1.0),
 	firstFrame(0),
 	lastFrame(99999),
+	displayDetections(false),
 	saveFrames(false),
 	saveLog(false),
 	useCalibration(false)
 {
-
 	std::ifstream in_file;
-	in_file.open(config_file);
+	in_file.open(config_file.c_str());
 
-	std::string token;
-	while (in_file >> token) {
-		std::cout << token << std::endl;
-		if (token == "resizeImage") in_file >> resizeImage;
-		else if (token == "firstFrame") in_file >> firstFrame;
-		else if (token == "lastFrame") in_file >> lastFrame;
-		else if (token == "detectorFileName") in_file >> detectorFileName;
-		else if (token == "dataSetDirectory") in_file >> dataSetDirectory;
-		else if (token == "saveFrames") {
-			std::string sbool;
-			in_file >> sbool;
-			saveFrames = (sbool == "true");
-		}
-		else if (token == "outputFolder") in_file >> outputFolder;
-		else if (token == "saveLog") {
-			std::string sbool;
-			in_file >> sbool;
-			saveLog = (sbool == "true");
-		}
-		else if (token == "logFilename") in_file >> logFilename;
-		else if (token == "useCalibration")  {
-			std::string sbool;
-			in_file >> sbool;
-			useCalibration = (sbool == "true");
-		}
-		else if (token == "calibrationP") {
-			float *dP = new float[12];
-			for (int i=0; i<12; ++i) {
-				in_file >> dP[i];
-				std::cout << dP[i] << std::endl;
+	if (in_file.is_open())
+	{
+		std::string token;
+		while (in_file >> token) {
+			std::cout << token << std::endl;
+			if (token == "resizeImage") in_file >> resizeImage;
+			else if (token == "firstFrame") in_file >> firstFrame;
+			else if (token == "lastFrame") in_file >> lastFrame;
+			else if (token == "detectorFileName") in_file >> detectorFileName;
+			else if (token == "dataSetDirectory") in_file >> dataSetDirectory;
+			else if (token == "displayDetections") {
+				std::string sbool;
+				in_file >> sbool;
+				displayDetections = (sbool == "true");
 			}
+			else if (token == "saveFrames") {
+				std::string sbool;
+				in_file >> sbool;
+				saveFrames = (sbool == "true");
+			}
+			else if (token == "outputFolder") in_file >> outputFolder;
+			else if (token == "saveLog") {
+				std::string sbool;
+				in_file >> sbool;
+				saveLog = (sbool == "true");
+			}
+			else if (token == "logFilename") in_file >> logFilename;
+			else if (token == "useCalibration")  {
+				std::string sbool;
+				in_file >> sbool;
+				useCalibration = (sbool == "true");
+			}
+			else if (token == "calibrationP") {
+				float *dP = new float[12];
+				for (int i=0; i<12; ++i) {
+					in_file >> dP[i];
+					std::cout << dP[i] << std::endl;
+				}
 
-			calibrationP = new cv::Mat_<float>(3, 4, dP);
-		}
-		else {
-			std::cout << "Token not recognized!" << std::endl;
+				calibrationP = new cv::Mat_<float>(3, 4, dP);
+			}
+			else {
+				std::cout << "Token not recognized!" << std::endl;
+			}
 		}
 	}
+	else
+		std::cout << "Configuration file named " << config_file << " was not found.\n"; 
 }
-
-
-
 
 // i dont know if its gonna be needed but this is start
 void Detector::exportDetectorModel(cv::String fileName)
@@ -140,9 +144,6 @@ inline void getChild(float *chns1, uint32 *cids, uint32 *fids, float *thrs, uint
   k0=k+=k0*2; k+=offset;
 }
 
-
-
-
 BB_Array* Detector::generateCandidates(int imageHeight, int imageWidth, cv::Mat_<float> &P, 
 							float meanHeight/* = 1.7m*/, float stdHeight/* = 0.1m*/, float factorStdHeight/* = 2.0*/) 
 {
@@ -190,7 +191,7 @@ BB_Array* Detector::generateCandidates(int imageHeight, int imageWidth, cv::Mat_
 }
 
 /*
-    This function return the scale in which the pyramid will be more fitted
+    This function returns the scale in which the pyramid will be more fitted
 */
 int Detector::findClosestScaleFromBbox(std::vector<Info> &pyramid, BoundingBox &bb,
 												int modelHeight, int imageHeight)
@@ -201,7 +202,8 @@ int Detector::findClosestScaleFromBbox(std::vector<Info> &pyramid, BoundingBox &
 	float min_dist = imageHeight;
 	int i_min = -1;
 
-	for (int i = 0; i < opts.pPyramid.computedScales; i++) {
+	for (int i = 0; i < opts.pPyramid.computedScales; i++) 
+	{
 		float diff = fabs(opts.modelDs[0]/opts.pPyramid.scales[i] - bb.height);
 
 		if (diff < min_dist) {
@@ -209,7 +211,6 @@ int Detector::findClosestScaleFromBbox(std::vector<Info> &pyramid, BoundingBox &
 			min_dist = diff;
 		}
 		else break;
-
 	}
 
 	return i_min;
@@ -257,7 +258,7 @@ BoundingBox Detector::pyramidRowColumn2BoundingBox(int r, int c,  int modelHt, i
 }
 
 
-BB_Array Detector::applyDetectorToFrameSmart(std::vector<Info> pyramid, int shrink, int modelHt, int modelWd, int stride, float cascThr, float *thrs, float *hs, 
+BB_Array Detector::applyCalibratedDetectorToFrame(std::vector<Info> pyramid, int shrink, int modelHt, int modelWd, int stride, float cascThr, float *thrs, float *hs, 
 										uint32 *fids, uint32 *child, int nTreeNodes, int nTrees, int treeDepth, int nChns, int imageWidth, int imageHeight, cv::Mat_<float> &P, cv::Mat &debug_image)
 {
 	BB_Array result;
@@ -318,9 +319,6 @@ BB_Array Detector::applyDetectorToFrameSmart(std::vector<Info> pyramid, int shri
 
 	    scales_cids[i] = cids;
 	}
-
-
-
 
 	float max_h = -1000;
 
@@ -617,9 +615,6 @@ BB_Array Detector::applyDetectorToFrame(std::vector<Info> pyramid, int shrink, i
 }
 
 
-
-
-
 //bb = acfDetect1(P.data{i},Ds{j}.clf,shrink,modelDsPad(1),modelDsPad(2),opts.stride,opts.cascThr);
 void Detector::acfDetect(std::vector<std::string> imageNames, std::string dataSetDirectoryName, int firstFrame, int lastFrame)
 {
@@ -670,7 +665,7 @@ void Detector::acfDetect(std::vector<std::string> imageNames, std::string dataSe
 		// this conversion is necessary, so we don't apply this transformation multiple times, which would break the image inside chnsPyramid
 		cv::Mat image = cv::imread(dataSetDirectoryName + '/' + imageNames[i]);
 
-		// if resize image is set different to 1.0, resize before computing the pyramid
+		// if resizeImage is set different to 1.0, resize before computing the pyramid
 		std::cout << "Resizing the image, if required..." << std::endl;
 		if (config.resizeImage != 1.0) {
 			cv::resize(image, image, cv::Size(), config.resizeImage, config.resizeImage);
@@ -689,11 +684,11 @@ void Detector::acfDetect(std::vector<std::string> imageNames, std::string dataSe
 
 		BB_Array frameDetections;
 		if (config.useCalibration)
-			frameDetections = applyDetectorToFrameSmart(framePyramid, shrink, modelHt, modelWd, stride, cascThr, thrs, hs, fids, child, nTreeNodes, nTrees, treeDepth, nChns, image.cols, image.rows, *(config.calibrationP), image);
+			frameDetections = applyCalibratedDetectorToFrame(framePyramid, shrink, modelHt, modelWd, stride, cascThr, thrs, hs, fids, child, nTreeNodes, nTrees, treeDepth, nChns, image.cols, image.rows, *(config.calibrationP), image);
 		else
 			frameDetections = applyDetectorToFrame(framePyramid, shrink, modelHt, modelWd, stride, cascThr, thrs, hs, fids, child, nTreeNodes, nTrees, treeDepth, nChns);		
 		
-		//BB_Array frameDetections = applyDetectorToFrame(framePyramid, shrink, modelHt, modelWd, stride, cascThr, thrs, hs, fids, child, nTreeNodes, nTrees, treeDepth, nChns);
+		// BB_Array frameDetections = applyDetectorToFrame(framePyramid, shrink, modelHt, modelWd, stride, cascThr, thrs, hs, fids, child, nTreeNodes, nTrees, treeDepth, nChns);
 		detections.push_back(frameDetections);
 		frameDetections.clear(); //doesn't seem to make a difference
 
@@ -712,26 +707,29 @@ void Detector::acfDetect(std::vector<std::string> imageNames, std::string dataSe
 			detections[i] = nonMaximalSuppressionSmart(detections[i], 1700, 100);
 		else
 			detections[i] = nonMaximalSuppression(detections[i]);
-		
 
+		std::cout << "before display\n";
 		
-		// debug: shows detections after suppression
-		showDetections(I, detections[i], "detections after suppression");
-		//printDetections(detections[i], i);
-		cv::waitKey(30);
-		// debug */
+		// shows detections after suppression
+		if (config.displayDetections)
+		{
+			showDetections(I, detections[i], "detections after suppression");
+			//printDetections(detections[i], i);
+			cv::waitKey(30);
+		}		
 
+		std::cout << "after display\n";
 		
-		// debug: saves image with embedded detections
+		// saves image with embedded detections
 		if (config.saveFrames) {
 			for (int j = 0; j<detections[i].size(); j++) 
 				detections[i][j].plot(image, cv::Scalar(0,255,0));
 
-			std::string outfilename = config.outputFolder + imageNames[i];
-			cv::imwrite(outfilename, image);
+			std::string outputfilename = config.outputFolder + imageNames[i];
+			cv::imwrite(outputfilename, image);
 		}
-		// debug */
 
+		std::cout << "after save\n";
 		
 		// experimental: do i need to clear these?
 		for (int j=0; j < opts.pPyramid.computedScales; j++)
@@ -876,7 +874,7 @@ BB_Array Detector::nonMaximalSuppressionSmart(BB_Array bbs, double meanHeight, d
 {
 	BB_Array result;
 
-	//keep just the bounding boxes with scores higher than the threshold
+	// keep just the bounding boxes with scores higher than the threshold
 	// for (int i=0; i < bbs.size(); i++)
 	// 	if (bbs[i].score > opts.suppressionThreshold)
 	// 		result.push_back(bbs[i]);

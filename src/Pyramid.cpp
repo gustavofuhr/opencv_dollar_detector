@@ -123,20 +123,29 @@ std::vector<Info> Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 			resample(convertedImage, I1, I.rows, new_h, I.cols, new_w, colorChannels, 1.0);
 		}
 
+		std::cout << "after resample\n";
+
 		// if(s==.5 && (nApprox>0 || nPerOct==1)), I=I1;
 		if (scales[i] == 0.5 && (approximatedScales>0 || scalesPerOctave == 1))
 		{
 			free(convertedImage);
 			convertedImage = I1; 
 		}
+
+		std::cout << "before chnsCompute\n";
+
 		computedChannels.insert(computedChannels.begin()+i, computeSingleScaleChannelFeatures(I1, new_h, new_w));
 		
+		std::cout << "after chnsCompute\n";
+
 		if (I1 != convertedImage)
 			free(I1);
 		numberOfRealScales++;
 	}
 	end = clock();
 	totalTimeForRealScales = totalTimeForRealScales + (double(end - start) / CLOCKS_PER_SEC);
+
+	std::cout << "after real scales\n";
 
 	free(convertedImage);
 
@@ -427,14 +436,19 @@ Info Pyramid::computeSingleScaleChannelFeatures(float* source, int rows, int col
 	free(tempI);
 	// old version */
 
+	std::cout << "before color channel\n";
 
 	// compute color channels, new version
 	I = (float*)malloc(height*width*colorChannels*sizeof(float));
 	convolution(source, I, height, width, colorChannels, pChns.pColor.smoothingRadius, 1);
 
+	std::cout << "before gradMag channel\n";
+
 	if (pChns.pGradHist.enabled)
 	{
 		std::vector<float*> tempResult = pChns.pGradMag.mGradMag(I, height, width, 0);
+
+		std::cout << "after mGradMag\n";
 
 		if (tempResult.size() > 0)
 			M = tempResult[0];
@@ -472,6 +486,8 @@ Info Pyramid::computeSingleScaleChannelFeatures(float* source, int rows, int col
 	// h=h/shrink; w=w/shrink;
 	int shrinkedHeight = height/pChns.shrink;
 	int shrinkedWidth = width/pChns.shrink;
+
+	std::cout << "before gradHist\n";
 
 	//compute gradient histogram channels
 	if (pChns.pGradHist.enabled)
