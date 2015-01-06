@@ -34,9 +34,12 @@ public:
 
 	void readPyramid(cv::FileNode);
 	std::vector<Info> computeMultiScaleChannelFeaturePyramid(cv::Mat I);
+	std::vector<Info> computeMultiScaleChannelFeaturePyramidSmart(cv::Mat I, int *modelDimensions, double candidateMaxHeight);
+
 	Info computeSingleScaleChannelFeatures(float* I, int rows, int cols);
 	cv::Mat TriangleFilterConvolution(cv::Mat, int, int, int);
 	void getScales(int, int , int);
+	void getScalesSmart(int h, int w, int shrink, int *modelDimensions, int maxCandidateHeight);
 };
 
 #endif

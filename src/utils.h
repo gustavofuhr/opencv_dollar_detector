@@ -47,6 +47,7 @@ float findWorldHeight(cv::Mat P, int u, int v, float x, float y);
 
 cv::Mat world2image(cv::Mat &w_point, cv::Mat_<float> &P);
 BoundingBox wcoord2bbox(cv::Point2f w_point, cv::Mat_<float> &P, float w_height, float aspect_ratio);
+BoundingBox wcoord2bboxFaster(int u, int v, cv::Mat_<float> &P, cv::Mat_<float> &H_inv, float w_height, float aspect_ratio);
 
 void print_fmatrix(const std::string &title, const cv::Mat &m);
 void print_dmatrix(const std::string &title, const cv::Mat &m);
