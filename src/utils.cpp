@@ -856,17 +856,17 @@ cv::Point imagePoint2groundPlanePoint(float imageU, float imageV, float imageZ, 
   cv::Mat inverseH;
   invert(homography, inverseH);
 
-  float x = inverseH.at<float>(1,1)*imageU +
-        inverseH.at<float>(1,2)*imageU +  
-        inverseH.at<float>(1,3)*imageU;
+  float x = inverseH.at<float>(0,0)*imageU +
+        inverseH.at<float>(0,1)*imageV +  
+        inverseH.at<float>(0,2)*imageZ;
 
-  float y = inverseH.at<float>(2,1)*imageV +
-        inverseH.at<float>(2,2)*imageV +
-        inverseH.at<float>(2,3)*imageV;
+  float y = inverseH.at<float>(1,0)*imageU +
+        inverseH.at<float>(1,1)*imageV +
+        inverseH.at<float>(1,2)*imageZ;
 
-  float z = inverseH.at<float>(3,1)*imageZ +
-        inverseH.at<float>(3,2)*imageZ +
-        inverseH.at<float>(3,3)*imageZ;
+  float z = inverseH.at<float>(2,0)*imageU +
+        inverseH.at<float>(2,1)*imageV +
+        inverseH.at<float>(2,2)*imageZ;
 
   x = x/z;
   y = y/z;
@@ -880,17 +880,17 @@ cv::Point imagePoint2groundPlanePoint(float imageU, float imageV, float imageZ, 
 
 cv::Point worldPoint2imagePoint(float worldX, float worldY, float worldZ, cv::Mat homography)
 {
-  float u = homography.at<float>(1,1)*worldX +
-        homography.at<float>(1,2)*worldX +  
-        homography.at<float>(1,3)*worldX;
+  float u = homography.at<float>(0,0)*worldX +
+        homography.at<float>(0,1)*worldY +  
+        homography.at<float>(0,2)*worldZ;
 
-  float v = homography.at<float>(2,1)*worldY +
-        homography.at<float>(2,2)*worldY +
-        homography.at<float>(2,3)*worldY;
+  float v = homography.at<float>(1,0)*worldX +
+        homography.at<float>(1,1)*worldY +
+        homography.at<float>(1,2)*worldZ;
 
-  float z = homography.at<float>(3,1)*worldZ +
-        homography.at<float>(3,2)*worldZ +
-        homography.at<float>(3,3)*worldZ;
+  float z = homography.at<float>(2,0)*worldX +
+        homography.at<float>(2,1)*worldY +
+        homography.at<float>(2,2)*worldZ;
 
   u = u/z;
   v = v/z;
@@ -901,6 +901,23 @@ cv::Point worldPoint2imagePoint(float worldX, float worldY, float worldZ, cv::Ma
 
   return result;
 }
+
+float findWorldHeight(cv::Mat_<float> &P, int u, int v, float x, float y)
+{
+  double height;
+
+  print_fmatrix("P", P);
+
+  double a = P.at<float>(0,0)*x + P.at<float>(0,1)*y + P.at<float>(0,3);
+  double b = P.at<float>(1,0)*x + P.at<float>(1,1)*y + P.at<float>(1,3);
+  double c = P.at<float>(2,0)*x + P.at<float>(2,1)*y + P.at<float>(2,3);
+
+  height = (a - c*u)/(P.at<float>(2,2)*u - P.at<float>(0,2));
+  // height = (b - c*v)/(P.at<float>(2,2)*v - P.at<float>(1,2));
+
+  return height;
+}
+
 cv::Mat world2image(cv::Mat &w_point, cv::Mat_<float> &P) {
   
   cv::Mat wp;
@@ -915,8 +932,6 @@ cv::Mat world2image(cv::Mat &w_point, cv::Mat_<float> &P) {
   cv::Mat res = wp(cv::Range(0,2), cv::Range::all());
   return res;
 }
-
-
 
 BoundingBox wcoord2bbox(cv::Point2f w_point, cv::Mat_<float> &P, float w_height, float aspect_ratio) {
   BoundingBox bb;
@@ -953,7 +968,6 @@ BoundingBox wcoord2bbox(cv::Point2f w_point, cv::Mat_<float> &P, float w_height,
   return bb;
 }
 
-
 void print_fmatrix(const std::string &title, const cv::Mat &m) {
 
   std::cout << title << std::endl;
@@ -965,7 +979,6 @@ void print_fmatrix(const std::string &title, const cv::Mat &m) {
   }
 
 }
-
 
 void print_dmatrix(const std::string &title, const cv::Mat &m) {
 
@@ -992,38 +1005,6 @@ cv::Mat scaleHomographyMatrix(cv::Mat homography, float scale_x, float scale_y)
 
 }
 
-/*
-int findBestScale(float boundingBoxWorldHeight, float minPedestrianHeight, float maxPedestrianHeight, std::vector<double> scales)
-{
-  bool found = false;
-  int index = 0;
-  int result = 0;
-  float curDiff = 6666666.0;
-  float avgPedestrianHeight = (minPedestrianHeight + maxPedestrianHeight)/2;
-  float targetRatio = avgPedestrianHeight / boundingBoxWorldHeight;
-
-
-  while (!found && index < scales.size())
-  {
-    float tempDiff = (scales[index]-targetRatio)*(scales[index]-targetRatio);
-
-    if (tempDiff < curDiff)
-    {
-      curDiff = tempDiff;
-      result = index;
-    }
-    else
-    {
-      found = true;
-    }
-
-    index++;
-  }
-
-  return result;
-}
-*/
-
 int findBestScale1(int targetImageHeight, int modelHeight, std::vector<double> scales)
 {
   int scaleIndex = 0;
@@ -1049,25 +1030,8 @@ int findBestScale1(int targetImageHeight, int modelHeight, std::vector<double> s
   return result;
 }
 
-
-float findWorldHeight(cv::Mat P, int u, int v, float x, float y)
+double log_base_n(double y, double base) 
 {
-  float height;
-
-  height = (u - P.at<float>(0,0)*x - P.at<float>(0,1)*y - P.at<float>(0,3)) / P.at<float>(0,2);
-
-  /*
-  // debug
-  float height1 = (v - P.at<float>(1,0)*x - P.at<float>(1,1)*y - P.at<float>(1,3)) / P.at<float>(1,2);
-  float height2 = (1 - P.at<float>(2,0)*x - P.at<float>(2,1)*y - P.at<float>(2,3)) / P.at<float>(2,2);
-  std::cout << height << " " << height1 << " " << height2 << std::endl;
-  std::cin.get();
-  // debug */
-
-  return height;
-}
-
-double log_base_n(double y, double base) {
   return log(y)/log(base);
 }
 

@@ -43,7 +43,7 @@ cv::Point imagePoint2groundPlanePoint(float imageU, float imageV, float imageZ, 
 cv::Point worldPoint2imagePoint(float worldX, float worldY, float worldZ, cv::Mat homography);
 cv::Mat scaleHomographyMatrix(cv::Mat homography, float scale_x, float scale_y);
 int findBestScale(float boundingBoxWorldHeight, float minPedestrianHeight, float maxPedestrianHeight, std::vector<double> scales);
-float findWorldHeight(cv::Mat P, int u, int v, float x, float y);
+float findWorldHeight(cv::Mat_<float> &P, int u, int v, float x, float y);
 
 cv::Mat world2image(cv::Mat &w_point, cv::Mat_<float> &P);
 BoundingBox wcoord2bbox(cv::Point2f w_point, cv::Mat_<float> &P, float w_height, float aspect_ratio);
