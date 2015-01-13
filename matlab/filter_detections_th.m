@@ -23,6 +23,10 @@ for f = min_frame:max_frame
         new_det(:,3) = new_det(:,4);
         new_det(:,4) = det(:,3);
         
+        new_det(:,1) = new_det(:,1) - 1;
+        new_det(:,3) = new_det(:,3) - 1;
+    
+        
         detections{f} = new_det;
     else
         detections{f} = [];

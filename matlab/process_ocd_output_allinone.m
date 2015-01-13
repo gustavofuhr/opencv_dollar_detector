@@ -3,7 +3,7 @@
 clear; close all; clc;
 
 
-in_file = 'in/calibrated_one_180cm.txt';
+in_file = 'in/calibrated_biggerstd.txt';
 ground_truth_detections = 'in/pets_gt_MOT_all.mat';
 resize_factor = 1.5; % this is the resize factor used in ocd
 
@@ -33,7 +33,7 @@ rs = [];
 %     toc;
 % end
 
-coarser_th = -2:2:150;
+coarser_th = 1:2:150;
 for th = coarser_th
     fprintf('Processing %d of %d threshold\n', find(coarser_th==th), length(coarser_th)); tic;
     bb = filter_detections_th(all_columns, th, resize_factor);

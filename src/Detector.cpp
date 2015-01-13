@@ -3,6 +3,10 @@
 #include <fstream>
 
 
+double gaussianFunction(double mean, double std, double x) {
+	return exp(-pow(x-mean, 2)/(2*pow(std,2)));
+}
+
 OddConfig::OddConfig(std::string config_file) :
 	resizeImage(1.0),
 	firstFrame(0),
@@ -515,13 +519,13 @@ BB_Array Detector::applyDetectorToFrameSmart(std::vector<Info> pyramid, BB_Array
 	    	max_h = h;
 	    }
 
-
-	    if(h>config.classifierThreshold){
+	    double hf = h*gaussianFunction(1800, 300, (*bbox_candidates)[i].world_height);
+	    if(hf>config.classifierThreshold){
 			// std::cout << h << std::endl;
 			// std::cout << "hey" << std::endl;
 			//cv::imshow("results", debug_image);
 			BoundingBox detection((*bbox_candidates)[i]);
-			detection.score = h;
+			detection.score = hf;
 			detection.scale = ith_scale;
 
 	    	result.push_back(detection);
@@ -791,8 +795,10 @@ void Detector::acfDetect(std::vector<std::string> imageNames, std::string dataSe
         
 	}
 
+	std::cout << "Number of images: " << imageNames.size() << std::endl;
 	for (int i = firstFrame; i < imageNames.size() && i < lastFrame; i++)
 	{
+		std::cout << "file " << imageNames[i] << std::endl;
 		clock_t frameStart = clock();
 
 		// this conversion is necessary, so we don't apply this transformation multiple times, which would break the image inside chnsPyramid
@@ -1032,9 +1038,6 @@ BB_Array Detector::nonMaximalSuppression(BB_Array bbs)
 	return result;
 }
 
-double gaussianFunction(double mean, double std, double x) {
-	return exp(-pow(x-mean, 2)/(2*pow(std,2)));
-}
 
 
 BB_Array Detector::nonMaximalSuppressionSmart(BB_Array bbs, double meanHeight, double stdHeight)
@@ -1047,7 +1050,7 @@ BB_Array Detector::nonMaximalSuppressionSmart(BB_Array bbs, double meanHeight, d
 	// 		result.push_back(bbs[i]);
 
 	for (int i=0; i < bbs.size(); ++i) {
-		bbs[i].score = bbs[i].score*gaussianFunction(meanHeight, stdHeight, bbs[i].world_height);
+		//bbs[i].score = bbs[i].score*gaussianFunction(meanHeight, stdHeight, bbs[i].world_height);
 		if (bbs[i].score > config.supressionThreshold)
 			result.push_back(bbs[i]);
 	}
