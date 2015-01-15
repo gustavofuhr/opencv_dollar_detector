@@ -41,7 +41,6 @@ float* cvImage2floatArray(cv::Mat source, int channels)
 }
 // */
 
-
 cv::Mat floatArray2cvImage(float* source, int rows, int cols, int channels)
 {
   int type; 
@@ -902,18 +901,21 @@ cv::Point worldPoint2imagePoint(float worldX, float worldY, float worldZ, cv::Ma
   return result;
 }
 
-float findWorldHeight(cv::Mat_<float> &P, int u, int v, float x, float y)
+double findWorldHeight(int u, int bottom_v, int top_v, cv::Mat_<float> &projection, cv::Mat_<float> &homography)
 {
   double height;
 
-  print_fmatrix("P", P);
+  float p2 = projection.at<float>(1,2);
+  float p3 = projection.at<float>(2,2);
 
-  double a = P.at<float>(0,0)*x + P.at<float>(0,1)*y + P.at<float>(0,3);
-  double b = P.at<float>(1,0)*x + P.at<float>(1,1)*y + P.at<float>(1,3);
-  double c = P.at<float>(2,0)*x + P.at<float>(2,1)*y + P.at<float>(2,3);
+  cv::Mat inverseH;
+  invert(homography, inverseH);
 
-  height = (a - c*u)/(P.at<float>(2,2)*u - P.at<float>(0,2));
-  // height = (b - c*v)/(P.at<float>(2,2)*v - P.at<float>(1,2));
+  float h1 = inverseH.at<float>(2,0);
+  float h2 = inverseH.at<float>(2,1);
+  float h3 = inverseH.at<float>(2,2);
+
+  height = -(bottom_v - top_v)/(p2*(h3 + h1*u + h2*bottom_v) - p3*top_v*(h3 + h1*u + h2*bottom_v));
 
   return height;
 }

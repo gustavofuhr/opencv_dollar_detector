@@ -44,14 +44,26 @@ OddConfig::OddConfig(std::string config_file) :
 				in_file >> sbool;
 				useCalibration = (sbool == "true");
 			}
-			else if (token == "calibrationP") {
+			else if (token == "projectionMatrix") {
 				float *dP = new float[12];
 				for (int i=0; i<12; ++i) {
 					in_file >> dP[i];
 					std::cout << dP[i] << std::endl;
 				}
 
-				calibrationP = new cv::Mat_<float>(3, 4, dP);
+				projectionMatrix = new cv::Mat_<float>(3, 4, dP);
+
+				homographyMatrix = new cv::Mat_<float>(3,3);
+
+				homographyMatrix->at<float>(0,0) = projectionMatrix->at<float>(0,0);
+				homographyMatrix->at<float>(0,1) = projectionMatrix->at<float>(0,1);
+				homographyMatrix->at<float>(0,2) = projectionMatrix->at<float>(0,3);
+				homographyMatrix->at<float>(1,0) = projectionMatrix->at<float>(1,0);
+				homographyMatrix->at<float>(1,1) = projectionMatrix->at<float>(1,1);
+				homographyMatrix->at<float>(1,2) = projectionMatrix->at<float>(1,3);
+				homographyMatrix->at<float>(2,0) = projectionMatrix->at<float>(2,0);
+				homographyMatrix->at<float>(2,1) = projectionMatrix->at<float>(2,1);
+				homographyMatrix->at<float>(2,2) = projectionMatrix->at<float>(2,3);
 			}
 			else {
 				std::cout << "Token not recognized!" << std::endl;
@@ -655,7 +667,7 @@ void Detector::acfDetect(std::vector<std::string> imageNames, std::string dataSe
 		float scale_matrix[9] = {s, 0.0, 0.0, 0.0, s, 0.0, 0.0, 0.0, 1.0};
 
 		cv::Mat_<float> S(3, 3, scale_matrix);
-		*(config.calibrationP) = S * *(config.calibrationP);
+		*(config.projectionMatrix) = S * *(config.projectionMatrix);
 	}
 
 	for (int i = firstFrame; i < imageNames.size() && i < lastFrame; i++)
@@ -684,7 +696,7 @@ void Detector::acfDetect(std::vector<std::string> imageNames, std::string dataSe
 
 		BB_Array frameDetections;
 		if (config.useCalibration)
-			frameDetections = applyCalibratedDetectorToFrame(framePyramid, shrink, modelHt, modelWd, stride, cascThr, thrs, hs, fids, child, nTreeNodes, nTrees, treeDepth, nChns, image.cols, image.rows, *(config.calibrationP), image);
+			frameDetections = applyCalibratedDetectorToFrame(framePyramid, shrink, modelHt, modelWd, stride, cascThr, thrs, hs, fids, child, nTreeNodes, nTrees, treeDepth, nChns, image.cols, image.rows, *(config.projectionMatrix), image);
 		else
 			frameDetections = applyDetectorToFrame(framePyramid, shrink, modelHt, modelWd, stride, cascThr, thrs, hs, fids, child, nTreeNodes, nTrees, treeDepth, nChns);		
 		
@@ -695,7 +707,6 @@ void Detector::acfDetect(std::vector<std::string> imageNames, std::string dataSe
 		clock_t detectionEnd = clock();
 		timeSpentInDetection = timeSpentInDetection + (double(detectionEnd - detectionStart) / CLOCKS_PER_SEC);
 
-		
 		// debug: shows detections before suppression
 		// cv::imshow("source image", I);
 		// showDetections(I, detections[i], "detections before suppression");

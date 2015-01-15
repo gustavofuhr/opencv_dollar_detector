@@ -21,7 +21,8 @@ struct OddConfig {
 
 	bool useCalibration;
 
-	cv::Mat_<float> *calibrationP;
+	cv::Mat_<float> *projectionMatrix;
+	cv::Mat_<float> *homographyMatrix;
 
 	OddConfig(std::string config_file);
 };
