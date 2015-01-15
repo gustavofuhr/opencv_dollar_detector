@@ -1,13 +1,13 @@
 opencv_dollar_detector
 ======================
 
-This is a work-in-progress port of the Dóllar pedestrian detector to OpenCV in C++ by Charles Arnoud, under the mentorship of Cláudio Rosito Jüng and with the help of Gustavo Führ.  
+This is an attemp to improve the Dóllar pedestrian detector's performance using camera calibration by Charles Arnoud, under the mentorship of Cláudio Rosito Jüng and with the help of Gustavo Führ.  
 
 
 Current Status  
 ======================  
 
-Detection working, but has two memory leaks and is too slow. 
+Detection working, but has two memory leaks and is too slow. Added calibrated detector.
 
 
 To Do List:  

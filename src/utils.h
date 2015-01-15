@@ -43,6 +43,8 @@ cv::Point imagePoint2groundPlanePoint(float imageU, float imageV, float imageZ, 
 cv::Point worldPoint2imagePoint(float worldX, float worldY, float worldZ, cv::Mat homography);
 cv::Mat scaleHomographyMatrix(cv::Mat homography, float scale_x, float scale_y);
 int findBestScale(float boundingBoxWorldHeight, float minPedestrianHeight, float maxPedestrianHeight, std::vector<double> scales);
+std::vector<cv::Point> findGroundPlaneAndImageIntersectionPoints(int imageWidth, int imageHeight, int boundingBoxImageWidth, int boundingBoxImageHeight, 
+  float maxPedestrianHeight, cv::Mat_<float> &projection, cv::Mat_<float> &homography);
 double findWorldHeight(int u, int bottom_v, int top_v, cv::Mat_<float> &projection, cv::Mat_<float> &homography);
 
 cv::Mat world2image(cv::Mat &w_point, cv::Mat_<float> &P);

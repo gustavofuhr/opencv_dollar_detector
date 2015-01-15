@@ -24,6 +24,7 @@ int main(int argc, char *argv[])
 
 		double height = findWorldHeight(0, 50, 0, *(odd_config.projectionMatrix), *(odd_config.homographyMatrix));
 		std::cout << "height=" << height << std::endl;
+		std::vector<cv::Point> points = findGroundPlaneAndImageIntersectionPoints(768*1.5, 576*1.5, 41, 100, 2500.0, *(odd_config.projectionMatrix), *(odd_config.homographyMatrix));
 		std::cin.get();
 
 

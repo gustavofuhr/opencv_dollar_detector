@@ -920,6 +920,59 @@ double findWorldHeight(int u, int bottom_v, int top_v, cv::Mat_<float> &projecti
   return height;
 }
 
+std::vector<cv::Point> findGroundPlaneAndImageIntersectionPoints(int imageWidth, int imageHeight, int boundingBoxImageWidth, int boundingBoxImageHeight, 
+  float maxPedestrianHeight, cv::Mat_<float> &projection, cv::Mat_<float> &homography)
+{
+  std::vector<cv::Point> points;
+  bool foundP1=false, foundP2=false;
+
+  // finding top left point
+  int curV = boundingBoxImageHeight;
+  int curU = boundingBoxImageWidth/2;
+  double curHeight = maxPedestrianHeight+1.0;
+  while (curHeight > maxPedestrianHeight && curV <= imageHeight)
+  {
+    curHeight = findWorldHeight(curU, curV, curV-boundingBoxImageHeight, projection, homography);
+
+    if (curHeight <= maxPedestrianHeight)
+    {
+      foundP1 = true;
+      cv::Point p1 = imagePoint2groundPlanePoint(0, curV, 1.0, homography);
+      points.push_back(p1);
+    }
+
+    curV = curV + 1;   
+  }
+
+  // finding top right point
+  curU = imageWidth - boundingBoxImageWidth/2;
+  curV = boundingBoxImageHeight;
+  curHeight = maxPedestrianHeight+1.0;
+  while (curHeight > maxPedestrianHeight && curV <= imageHeight)
+  {
+    curHeight = findWorldHeight(imageWidth-boundingBoxImageWidth, curV, curV-boundingBoxImageHeight, projection, homography);
+
+    if (curHeight <= maxPedestrianHeight)
+    {
+      foundP2 = true;
+      cv::Point p2 = imagePoint2groundPlanePoint(curU, curV, 1.0, homography);
+      points.push_back(p2);
+    }
+
+    curV = curV + 1;   
+  }
+
+  // finding bottom left point
+  cv::Point p3 = imagePoint2groundPlanePoint(0, imageHeight, 1.0, homography);
+  points.push_back(p3);
+
+  // finding bottom right point
+  cv::Point p4 = imagePoint2groundPlanePoint(imageWidth-boundingBoxImageWidth, imageHeight, 1.0, homography);
+  points.push_back(p4);
+
+  return points;
+}
+
 cv::Mat world2image(cv::Mat &w_point, cv::Mat_<float> &P) {
   
   cv::Mat wp;
