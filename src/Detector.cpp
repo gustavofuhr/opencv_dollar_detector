@@ -53,20 +53,13 @@ OddConfig::OddConfig(std::string config_file) :
 
 				projectionMatrix = new cv::Mat_<float>(3, 4, dP);
 
-				if (resizeImage != 1.0)
+				if (resizeImage != 1.0) 
 				{
-					projectionMatrix->at<float>(0,0) = resizeImage * projectionMatrix->at<float>(0,0);
-					projectionMatrix->at<float>(0,1) = resizeImage * projectionMatrix->at<float>(0,1);
-					projectionMatrix->at<float>(0,2) = resizeImage * projectionMatrix->at<float>(0,2);
-					projectionMatrix->at<float>(0,3) = resizeImage * projectionMatrix->at<float>(0,3);
-					projectionMatrix->at<float>(1,0) = resizeImage * projectionMatrix->at<float>(1,0);
-					projectionMatrix->at<float>(1,1) = resizeImage * projectionMatrix->at<float>(1,1);
-					projectionMatrix->at<float>(1,2) = resizeImage * projectionMatrix->at<float>(1,2);
-					projectionMatrix->at<float>(1,3) = resizeImage * projectionMatrix->at<float>(1,3);
-					projectionMatrix->at<float>(2,0) = resizeImage * projectionMatrix->at<float>(2,0);
-					projectionMatrix->at<float>(2,1) = resizeImage * projectionMatrix->at<float>(2,1);
-					projectionMatrix->at<float>(2,2) = resizeImage * projectionMatrix->at<float>(2,2);
-					projectionMatrix->at<float>(2,3) = resizeImage * projectionMatrix->at<float>(2,3);
+					float s = resizeImage;
+					float scale_matrix[9] = {s, 0.0, 0.0, 0.0, s, 0.0, 0.0, 0.0, 1.0};
+
+					cv::Mat_<float> S(3, 3, scale_matrix);
+					*(projectionMatrix) = S * *(projectionMatrix);
 				}
 
 				homographyMatrix = new cv::Mat_<float>(3,3);

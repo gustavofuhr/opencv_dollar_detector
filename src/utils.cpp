@@ -939,6 +939,9 @@ std::vector<cv::Point> findGroundPlaneAndImageIntersectionPoints(int imageWidth,
       foundP1 = true;
       cv::Point p1 = imagePoint2groundPlanePoint(0, curV, 1.0, homography);
       points.push_back(p1);
+
+      // debug
+      std::cout << "p1_i=(" << 0 << "," << curV << "), p1_w=(" << p1.x << "," << p1.y << ")\n";
     }
 
     curV = curV + 1;   
@@ -955,8 +958,10 @@ std::vector<cv::Point> findGroundPlaneAndImageIntersectionPoints(int imageWidth,
     if (curHeight <= maxPedestrianHeight)
     {
       foundP2 = true;
-      cv::Point p2 = imagePoint2groundPlanePoint(curU, curV, 1.0, homography);
+      cv::Point p2 = imagePoint2groundPlanePoint(imageWidth - boundingBoxImageWidth, curV, 1.0, homography);
       points.push_back(p2);
+
+      std::cout << "p2_i=(" << imageWidth - boundingBoxImageWidth << "," << curV << "), p2_w=(" << p2.x << "," << p2.y << ")\n";
     }
 
     curV = curV + 1;   
@@ -965,10 +970,12 @@ std::vector<cv::Point> findGroundPlaneAndImageIntersectionPoints(int imageWidth,
   // finding bottom left point
   cv::Point p3 = imagePoint2groundPlanePoint(0, imageHeight, 1.0, homography);
   points.push_back(p3);
+  std::cout << "p3_i=(" << 0 << "," << imageHeight << "), p3_w=(" << p3.x << "," << p3.y << ")\n";
 
   // finding bottom right point
   cv::Point p4 = imagePoint2groundPlanePoint(imageWidth-boundingBoxImageWidth, imageHeight, 1.0, homography);
   points.push_back(p4);
+  std::cout << "p4_i=(" << imageWidth-boundingBoxImageWidth << "," << imageHeight << "), p4_w=(" << p4.x << "," << p4.y << ")\n";
 
   return points;
 }
@@ -1044,19 +1051,6 @@ void print_dmatrix(const std::string &title, const cv::Mat &m) {
     }
     std::cout << std::endl;
   }
-
-}
-
-cv::Mat scaleHomographyMatrix(cv::Mat homography, float scale_x, float scale_y)
-{
-  cv::Mat S = cv::Mat::eye(3,3, CV_32F);
-
-  S.at<float>(0,0) = scale_x;
-  S.at<float>(1,1) = scale_y;
-
-  cv::Mat result = S * homography * S.inv();
-
-  return result;
 
 }
 
