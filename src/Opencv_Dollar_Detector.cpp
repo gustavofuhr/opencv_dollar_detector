@@ -22,11 +22,11 @@ int main(int argc, char *argv[])
 		// loads all detector settings from the provided xml file
 		d.importDetectorModel(odd_config.detectorFileName);
 
-		double height = findWorldHeight(0, 50, 0, *(odd_config.projectionMatrix), *(odd_config.homographyMatrix));
-		std::cout << "height=" << height << std::endl;
+		// debug: testing new functions
 		std::vector<cv::Point2f> points = findGroundPlaneAndImageIntersectionPoints(768*1.5, 576*1.5, 41, 100, 2500.0, *(odd_config.projectionMatrix), *(odd_config.homographyMatrix));
-		std::vector<cv::Point2f> trimmedPoints = trimGroundPlanesBottomPoints(768*1.5, 576*1.5, 41, 100, 1300, points, *(odd_config.projectionMatrix), *(odd_config.homographyMatrix));
-		std::cin.get();
+		std::vector<cv::Point2f> trimmedPoints = trimGroundPlanesBottomPoints(768*1.5, 576*1.5, 41, 100, 2000, points, *(odd_config.projectionMatrix), *(odd_config.homographyMatrix));
+		//std::cin.get();
+		// debug */
 
 
 		// gets names for all the files inside the data set folder

@@ -116,20 +116,14 @@ std::vector<Info> Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 			resample(convertedImage, I1, I.rows, new_h, I.cols, new_w, colorChannels, 1.0);
 		}
 
-		std::cout << "after resample\n";
-
 		// if(s==.5 && (nApprox>0 || nPerOct==1)), I=I1;
 		if (scales[i] == 0.5 && (approximatedScales>0 || scalesPerOctave == 1))
 		{
 			free(convertedImage);
-			convertedImage = I1; 
+			convertedImage = I1; // is this causing the memory leaks?
 		}
 
-		std::cout << "before chnsCompute\n";
-
 		computedChannels.insert(computedChannels.begin()+i, computeSingleScaleChannelFeatures(I1, new_h, new_w));
-		
-		std::cout << "after chnsCompute\n";
 
 		if (I1 != convertedImage)
 			free(I1);
@@ -137,8 +131,6 @@ std::vector<Info> Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 	}
 	end = clock();
 	totalTimeForRealScales = totalTimeForRealScales + (double(end - start) / CLOCKS_PER_SEC);
-
-	std::cout << "after real scales\n";
 
 	free(convertedImage);
 
@@ -425,19 +417,13 @@ Info Pyramid::computeSingleScaleChannelFeatures(float* source, int rows, int col
 	free(tempI);
 	// old version */
 
-	std::cout << "before color channel\n";
-
 	// compute color channels, new version
 	I = (float*)malloc(height*width*colorChannels*sizeof(float));
 	convolution(source, I, height, width, colorChannels, pChns.pColor.smoothingRadius, 1);
 
-	std::cout << "before gradMag channel\n";
-
 	if (pChns.pGradHist.enabled)
 	{
 		std::vector<float*> tempResult = pChns.pGradMag.mGradMag(I, height, width, 0);
-
-		std::cout << "after mGradMag\n";
 
 		if (tempResult.size() > 0)
 			M = tempResult[0];
@@ -475,8 +461,6 @@ Info Pyramid::computeSingleScaleChannelFeatures(float* source, int rows, int col
 	// h=h/shrink; w=w/shrink;
 	int shrinkedHeight = height/pChns.shrink;
 	int shrinkedWidth = width/pChns.shrink;
-
-	std::cout << "before gradHist\n";
 
 	//compute gradient histogram channels
 	if (pChns.pGradHist.enabled)
@@ -557,6 +541,35 @@ Info Pyramid::computeSingleScaleChannelFeatures(float* source, int rows, int col
 
 	return result;
 }
+
+/*
+void Pyramid::calibratedGetScales(int h, int w, int shrink, int octaves)
+{
+	int minSize, bgDim, smDim;
+	double *tempScales;
+
+	if (h!=0 && w!=0)
+	{
+		computedScales = octaves + octaves*(scalesPerOctave-1);
+
+		tempScales = (double*)malloc(computedScales * sizeof(double));
+
+		for(int i=0; i < computedScales; i++)
+		{
+			if (i%scalesPerOctave == 0) 
+			{ // real scale
+				tempScales[i] = pow(2, -i);
+			}
+			else 
+			{ // approximated scale
+
+			}
+		}
+	}
+	else
+		std::cout << " # getScales error: both height and width of an image need to be greater than 0!";
+}
+*/
 
 // set each scale s such that max(abs(round(sz*s/shrink)*shrink-sz*s)) is minimized 
 // without changing the smaller dim of sz (tricky algebra)
@@ -666,7 +679,7 @@ void Pyramid::getScales(int h, int w, int shrink)
 		free(tempScales);
 	}
 	else //error, height or width of the image are wrong
-		std::cout << " # getScales error: both height and width need to be greater than 0!";
+		std::cout << " # getScales error: both height and width of an image need to be greater than 0!";
 }
 
 

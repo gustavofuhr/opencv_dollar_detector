@@ -52,7 +52,6 @@ OddConfig::OddConfig(std::string config_file) :
 				float *dP = new float[12];
 				for (int i=0; i<12; ++i) {
 					in_file >> dP[i];
-					std::cout << dP[i] << std::endl;
 				}
 
 				projectionMatrix = new cv::Mat_<float>(3, 4, dP);
@@ -177,7 +176,7 @@ BB_Array* Detector::generateCandidatesFaster(int imageHeight, int imageWidth, in
 	// be read from a file or something...
 	cv::Mat_<float> P3 = P.col(2);
 
-	std::cout << "P3: " << P3 << std::endl;
+	//std::cout << "P3: " << P3 << std::endl;
 	float aspectRatio = 0.41;
 	float minImageHeight = 80;
 
@@ -193,7 +192,7 @@ BB_Array* Detector::generateCandidatesFaster(int imageHeight, int imageWidth, in
 	H(0,1) = P(0,1); H(1,1) = P(1,1); H(2,1) = P(2,1);
 	H(0,2) = P(0,3); H(1,2) = P(1,3); H(2,2) = P(2,3);
 	
-	std::cout << "H: " << H << std::endl;
+	//std::cout << "H: " << H << std::endl;
 	cv::Mat_<float> H_inv = H.inv();
 
 	// std::cout << "H_inv " << H_inv << std::endl;
@@ -244,24 +243,22 @@ BB_Array* Detector::generateCandidatesFaster(int imageHeight, int imageWidth, in
 	}
 	
 	
-	std::cout << "Total candidates: " << totalCandidates << std::endl;
+	//std::cout << "Total candidates: " << totalCandidates << std::endl;
  
 	*maxHeight = max_h;
 
 	return candidates;
 }
 
-BB_Array* Detector::generateCandidates(int imageHeight, int imageWidth, cv::Mat_<float> &P, double *maxHeight,
-							float meanHeight/* = 1.7m*/, float stdHeight/* = 0.1m*/, float factorStdHeight/* = 2.0*/) 
+BB_Array* Detector::generateCandidates(int imageHeight, int imageWidth, float groundPlaneMinX, float groundPlaneMaxX, float groundPlaneMinY, 
+float groundPlaneMaxY, cv::Mat_<float> &P, double *maxHeight, float meanHeight/* = 1.8m*/, float stdHeight/* = 0.1m*/, float factorStdHeight/* = 2.0*/) 
 {
-
-	// there is a set of parameters here that are hard coded, but should
-	// be read from a file or something...
+	// before calling this function, we should use findGroundPlaneAndImageIntersectionPoints to find these parameters
 	cv::Mat_<float> area(2,2);
-	area(0,0) = -20000;
-	area(0,1) =  20000;
-	area(1,0) = -20000;
-	area(1,1) =  20000;
+	area(0,0) = groundPlaneMinX;
+	area(0,1) = groundPlaneMaxX;
+	area(1,0) = groundPlaneMinY;
+	area(1,1) = groundPlaneMaxY;
 
 	float step = 200;
 	float aspectRatio = 0.41; // same as model
@@ -312,7 +309,7 @@ BB_Array* Detector::generateCandidates(int imageHeight, int imageWidth, cv::Mat_
 		}
 	}
 
-	std::cout << "Total candidates: " << totalCandidates << std::endl;
+	//std::cout << "Total candidates: " << totalCandidates << std::endl;
 	*maxHeight = max_h;
 
 	return candidates;
@@ -397,7 +394,7 @@ BB_Array Detector::applyCalibratedDetectorToFrame(std::vector<Info> pyramid, BB_
 
 
 	
-	std::cout << "Number of candidates: " << bbox_candidates->size() << std::endl;
+	//std::cout << "Number of candidates: " << bbox_candidates->size() << std::endl;
 
 	// create one candidate only for debug
 	// BB_Array bbox_candidates;
@@ -419,8 +416,6 @@ BB_Array Detector::applyCalibratedDetectorToFrame(std::vector<Info> pyramid, BB_
 	//  	cv::waitKey(0);
 	// }
 	//cv::waitKey(40);
-
-	std::cout << "opts.pPyramid.computedScales: " << opts.pPyramid.computedScales << std::endl;
 
 	std::vector<float*> scales_chns(opts.pPyramid.computedScales, NULL);
 	std::vector<uint32*> scales_cids(opts.pPyramid.computedScales, NULL);
@@ -565,9 +560,6 @@ BB_Array Detector::applyDetectorToFrame(std::vector<Info> pyramid, int shrink, i
 {
 	BB_Array result;
 
-
-	printf("Number of scales: %d\n", opts.pPyramid.computedScales);
-	printf("Model size: %d x %d\n", modelWd, modelHt);
 	// this became a simple loop because we will apply just one detector here, 
 	// to apply multiple detector models you need to create multiple Detector objects. 
 	float max_h = -10000;
@@ -582,8 +574,6 @@ BB_Array Detector::applyDetectorToFrame(std::vector<Info> pyramid, int shrink, i
   		// const int nChns = mxGetNumberOfDimensions(prhs[0])<=2 ? 1 : (int) chnsSize[2];
 		int height = pyramid[i].image.rows;
 		int width = pyramid[i].image.cols;
-		printf("Size of the downsampled image: %d x %d\n", width, height);
-		printf("Aspect ratio of the image: %f\n", height/(float)width);
 
 		int height1 = (int)ceil(float(height*shrink-modelHt+1)/stride);
 		int width1 = (int)ceil(float(width*shrink-modelWd+1)/stride);
@@ -742,9 +732,6 @@ BB_Array Detector::applyDetectorToFrame(std::vector<Info> pyramid, int shrink, i
 		hs1.clear();
 	}
 
-	std::cout << "max_h " << max_h << std::endl;
-	std::cout << "Number of candidates (not smart) : " << n_candidates << std::endl; 
-
 	return result;
 }
 
@@ -791,7 +778,6 @@ void Detector::acfDetect(std::vector<std::string> imageNames, std::string dataSe
 		cv::Mat image = cv::imread(dataSetDirectoryName + '/' + imageNames[i]);
 
 		// if resizeImage is set different to 1.0, resize before computing the pyramid
-		std::cout << "Resizing the image, if required..." << std::endl;
 		if (config.resizeImage != 1.0) {
 			cv::resize(image, image, cv::Size(), config.resizeImage, config.resizeImage);
 		}
@@ -816,8 +802,8 @@ void Detector::acfDetect(std::vector<std::string> imageNames, std::string dataSe
 			clock_t candidatesEnd = clock();
 
 			double elapsed_secsc = double(candidatesEnd - candidatesStart) / CLOCKS_PER_SEC;
-			std::cout << "Time to create candidates: " << elapsed_secsc << std::endl;
-			std::cout << "Max candidate height in the image: " << maxHeight <<  std::endl;
+			//std::cout << "Time to create candidates: " << elapsed_secsc << std::endl;
+			//std::cout << "Max candidate height in the image: " << maxHeight <<  std::endl;
 			framePyramid = opts.pPyramid.computeMultiScaleChannelFeaturePyramid(I);
  			frameDetections = applyCalibratedDetectorToFrame(framePyramid, bbox_candidates, shrink, modelHt, modelWd, stride, cascThr, thrs, hs, fids, child, nTreeNodes, nTrees, treeDepth, nChns, image.cols, image.rows, *(config.projectionMatrix), image);
 
@@ -847,8 +833,6 @@ void Detector::acfDetect(std::vector<std::string> imageNames, std::string dataSe
 			detections[i] = nonMaximalSuppressionSmart(detections[i], 1800, 100);
 		else
 			detections[i] = nonMaximalSuppression(detections[i]);
-
-		std::cout << "before display\n";
 		
 		// shows detections after suppression
 		if (config.displayDetections)
@@ -857,8 +841,6 @@ void Detector::acfDetect(std::vector<std::string> imageNames, std::string dataSe
 			//printDetections(detections[i], i);
 			cv::waitKey(30);
 		}		
-
-		std::cout << "after display\n";
 		
 		// saves image with embedded detections
 		if (config.saveFrames) {
@@ -868,8 +850,6 @@ void Detector::acfDetect(std::vector<std::string> imageNames, std::string dataSe
 			std::string outputfilename = config.outputFolder + imageNames[i];
 			cv::imwrite(outputfilename, image);
 		}
-
-		std::cout << "after save\n";
 		
 		// experimental: do i need to clear these?
 		for (int j=0; j < opts.pPyramid.computedScales; j++)
