@@ -1,5 +1,9 @@
 #include "Detector.h"
 
+double gaussianFunction(double mean, double std, double x) {
+	return exp(-pow(x-mean, 2)/(2*pow(std,2)));
+}
+
 OddConfig::OddConfig(std::string config_file) :
 	resizeImage(1.0),
 	firstFrame(0),
@@ -16,7 +20,6 @@ OddConfig::OddConfig(std::string config_file) :
 	{
 		std::string token;
 		while (in_file >> token) {
-			std::cout << token << std::endl;
 			if (token == "resizeImage") in_file >> resizeImage;
 			else if (token == "firstFrame") in_file >> firstFrame;
 			else if (token == "lastFrame") in_file >> lastFrame;
@@ -39,6 +42,7 @@ OddConfig::OddConfig(std::string config_file) :
 				saveLog = (sbool == "true");
 			}
 			else if (token == "logFilename") in_file >> logFilename;
+			else if (token == "supressionThreshold") in_file >> supressionThreshold;
 			else if (token == "useCalibration")  {
 				std::string sbool;
 				in_file >> sbool;
@@ -165,7 +169,89 @@ inline void getChild(float *chns1, uint32 *cids, uint32 *fids, float *thrs, uint
   k0=k+=k0*2; k+=offset;
 }
 
-BB_Array* Detector::generateCandidates(int imageHeight, int imageWidth, cv::Mat_<float> &P, 
+BB_Array* Detector::generateCandidatesFaster(int imageHeight, int imageWidth, int shrink, cv::Mat_<float> &P, double *maxHeight,
+							cv::Mat &im_debug, float meanHeight/* = 1.7m*/, float stdHeight/* = 0.1m*/, float factorStdHeight/* = 2.0*/) 
+{
+
+	// there is a set of parameters here that are hard coded, but should
+	// be read from a file or something...
+	cv::Mat_<float> P3 = P.col(2);
+
+	std::cout << "P3: " << P3 << std::endl;
+	float aspectRatio = 0.41;
+	float minImageHeight = 80;
+
+	float stepHeight = 100;
+	int totalCandidates = 0;
+
+	BB_Array *candidates = new BB_Array();
+	double max_h = 0;
+
+	// assemble the third line of the inverse of the homography
+	cv::Mat_<float> H(3, 3, 0.0);
+	H(0,0) = P(0,0); H(1,0) = P(1,0); H(2,0) = P(2,0);
+	H(0,1) = P(0,1); H(1,1) = P(1,1); H(2,1) = P(2,1);
+	H(0,2) = P(0,3); H(1,2) = P(1,3); H(2,2) = P(2,3);
+	
+	std::cout << "H: " << H << std::endl;
+	cv::Mat_<float> H_inv = H.inv();
+
+	// std::cout << "H_inv " << H_inv << std::endl;
+	// cv::Mat_<float> inv_H_3rd_line = H_inv.row(2);
+
+	// std::cout << " inv_H_3rd_line  " <<  inv_H_3rd_line  << std::endl;
+
+	// create foot points using the pixels of the image
+	for (int u = 0; u < imageWidth; u+=shrink) {
+		for (int v = minImageHeight; v < imageHeight; v+=shrink ) {
+
+			float Xw = (H_inv(0,0)*u + H_inv(0,1)*v + H_inv(0,2))/(H_inv(2,0)*u + H_inv(2,1)*v + H_inv(2,2));
+			float Yw = (H_inv(1,0)*u + H_inv(1,1)*v + H_inv(1,2))/(H_inv(2,0)*u + H_inv(2,1)*v + H_inv(2,2));
+
+			// now create candidates at different heights
+			for (float h = -stdHeight * factorStdHeight; h <= stdHeight * factorStdHeight; h+= stepHeight) {
+				float wHeight = meanHeight + h;
+
+				int head_v = (int)((Xw*P(1,0) + Yw*P(1,1) + wHeight*P(1,2) + P(1,3))/(Xw*P(2,0) + Yw*P(2,1) + wHeight*P(2,2) + P(2,3)));
+				int i_height = v - head_v;
+
+				if (i_height >= minImageHeight) {
+					int head_u = (int)((Xw*P(0,0) + Yw*P(0,1) + wHeight*P(0,2) + P(0,3))/(Xw*P(2,0) + Yw*P(2,1) + wHeight*P(2,2) + P(2,3)));
+
+					BoundingBox bb;
+
+					int i_width = i_height*aspectRatio;
+
+				    bb.topLeftPoint.x = (int)(((u + head_u)/2.0) - (i_width/2.0));
+				    bb.topLeftPoint.y = head_v;
+				    bb.width          = i_width;
+				    bb.height         = i_height;
+				    bb.world_height   = wHeight;
+
+				    if (bb.topLeftPoint.x >= 0 && bb.topLeftPoint.x+bb.width < imageWidth && 
+						    bb.topLeftPoint.y >= 0 && bb.topLeftPoint.y+bb.height < imageHeight &&
+						    bb.height >= minImageHeight) {
+						if (bb.height > max_h) 
+							max_h = bb.height;
+						candidates->push_back(bb);
+					}
+				}
+
+				totalCandidates++;
+
+			}
+		}
+	}
+	
+	
+	std::cout << "Total candidates: " << totalCandidates << std::endl;
+ 
+	*maxHeight = max_h;
+
+	return candidates;
+}
+
+BB_Array* Detector::generateCandidates(int imageHeight, int imageWidth, cv::Mat_<float> &P, double *maxHeight,
 							float meanHeight/* = 1.7m*/, float stdHeight/* = 0.1m*/, float factorStdHeight/* = 2.0*/) 
 {
 
@@ -178,20 +264,34 @@ BB_Array* Detector::generateCandidates(int imageHeight, int imageWidth, cv::Mat_
 	area(1,1) =  20000;
 
 	float step = 200;
-	float aspectRatio = 0.5; // same as model
+	float aspectRatio = 0.41; // same as model
 
 	float stepHeight = 100;
 
 	float minImageHeight = 80;
 
+	int totalCandidates = 0;
 
 	BB_Array *candidates = new BB_Array();
-	for (float x = area(0,0); x < area(0,1); x += step) {
-		for (float y = area(1,0); y < area(1,1); y += step) {
+	double max_h = 0;
+	for (float x = area(0,0); x < area(0,1); x += step) 
+	{
+		for (float y = area(1,0); y < area(1,1); y += step) 
+		{
 			// for all points in the ground plane (according to the area), I try all
 			// the heights that I need to
 
-			for (float h = -stdHeight * factorStdHeight; h <= stdHeight * factorStdHeight; h+= stepHeight) {
+			for (float h = -stdHeight * factorStdHeight; h <= stdHeight * factorStdHeight; h+= stepHeight) 
+			{
+				cv::Mat_<float> w_feet_point(4, 1, 0.0);
+			    w_feet_point(0) = x;
+			    w_feet_point(1) = y;
+			    w_feet_point(2) = 0.0;
+			    w_feet_point(3) = 1.0;
+				cv::Mat_<float> i_feet_point = world2image(w_feet_point, P);
+
+				if (i_feet_point(0) >= 0 && i_feet_point(0) < imageWidth &&
+					i_feet_point(1) >= 0 && i_feet_point(1) < imageHeight) {
 				float wHeight = meanHeight + h;
 
 				cv::Point2f wPoint(x, y);
@@ -201,12 +301,19 @@ BB_Array* Detector::generateCandidates(int imageHeight, int imageWidth, cv::Mat_
 				if (bb.topLeftPoint.x >= 0 && bb.topLeftPoint.x+bb.width < imageWidth && 
 					    bb.topLeftPoint.y >= 0 && bb.topLeftPoint.y+bb.height < imageHeight &&
 					    bb.height >= minImageHeight) {
+					if (bb.height > max_h) 
+						max_h = bb.height;
 					candidates->push_back(bb);
+				}
+				totalCandidates++;
 				}
 			}
 			
 		}
 	}
+
+	std::cout << "Total candidates: " << totalCandidates << std::endl;
+	*maxHeight = max_h;
 
 	return candidates;
 }
@@ -279,7 +386,7 @@ BoundingBox Detector::pyramidRowColumn2BoundingBox(int r, int c,  int modelHt, i
 }
 
 
-BB_Array Detector::applyCalibratedDetectorToFrame(std::vector<Info> pyramid, int shrink, int modelHt, int modelWd, int stride, float cascThr, float *thrs, float *hs, 
+BB_Array Detector::applyCalibratedDetectorToFrame(std::vector<Info> pyramid, BB_Array* bbox_candidates, int shrink, int modelHt, int modelWd, int stride, float cascThr, float *thrs, float *hs, 
 										uint32 *fids, uint32 *child, int nTreeNodes, int nTrees, int treeDepth, int nChns, int imageWidth, int imageHeight, cv::Mat_<float> &P, cv::Mat &debug_image)
 {
 	BB_Array result;
@@ -289,7 +396,7 @@ BB_Array Detector::applyCalibratedDetectorToFrame(std::vector<Info> pyramid, int
 	// std::cout << "shrink: " << shrink << std::endl;
 
 
-	BB_Array *bbox_candidates = generateCandidates(imageHeight, imageWidth, P);
+	
 	std::cout << "Number of candidates: " << bbox_candidates->size() << std::endl;
 
 	// create one candidate only for debug
@@ -312,6 +419,8 @@ BB_Array Detector::applyCalibratedDetectorToFrame(std::vector<Info> pyramid, int
 	//  	cv::waitKey(0);
 	// }
 	//cv::waitKey(40);
+
+	std::cout << "opts.pPyramid.computedScales: " << opts.pPyramid.computedScales << std::endl;
 
 	std::vector<float*> scales_chns(opts.pPyramid.computedScales, NULL);
 	std::vector<uint32*> scales_cids(opts.pPyramid.computedScales, NULL);
@@ -340,6 +449,9 @@ BB_Array Detector::applyCalibratedDetectorToFrame(std::vector<Info> pyramid, int
 
 	    scales_cids[i] = cids;
 	}
+
+
+
 
 	float max_h = -1000;
 
@@ -414,13 +526,14 @@ BB_Array Detector::applyCalibratedDetectorToFrame(std::vector<Info> pyramid, int
 	    	max_h = h;
 	    }
 
-
-	    if(h>1){
+	    double hf = h*gaussianFunction(1800, 300, (*bbox_candidates)[i].world_height);
+	    //if(hf>config.classifierThreshold){
+	    if(hf>1.0){
 			// std::cout << h << std::endl;
 			// std::cout << "hey" << std::endl;
 			//cv::imshow("results", debug_image);
 			BoundingBox detection((*bbox_candidates)[i]);
-			detection.score = h;
+			detection.score = hf;
 			detection.scale = ith_scale;
 
 	    	result.push_back(detection);
@@ -670,15 +783,6 @@ void Detector::acfDetect(std::vector<std::string> imageNames, std::string dataSe
 	int treeDepth = this->treeDepth;
 	int nChns = opts.pPyramid.pChns.pColor.nChannels + opts.pPyramid.pChns.pGradMag.nChannels + opts.pPyramid.pChns.pGradHist.nChannels; 
 
-
-	if (config.resizeImage != 1.0) {
-		float s = config.resizeImage;
-		float scale_matrix[9] = {s, 0.0, 0.0, 0.0, s, 0.0, 0.0, 0.0, 1.0};
-
-		cv::Mat_<float> S(3, 3, scale_matrix);
-		*(config.projectionMatrix) = S * *(config.projectionMatrix);
-	}
-
 	for (int i = firstFrame; i < imageNames.size() && i < lastFrame; i++)
 	{
 		clock_t frameStart = clock();
@@ -699,15 +803,31 @@ void Detector::acfDetect(std::vector<std::string> imageNames, std::string dataSe
 
 		// compute feature pyramid
 		std::vector<Info> framePyramid;
-		framePyramid = opts.pPyramid.computeMultiScaleChannelFeaturePyramid(I);
+		//framePyramid = opts.pPyramid.computeMultiScaleChannelFeaturePyramid(I);
 	
 		clock_t detectionStart = clock();
 
 		BB_Array frameDetections;
 		if (config.useCalibration)
-			frameDetections = applyCalibratedDetectorToFrame(framePyramid, shrink, modelHt, modelWd, stride, cascThr, thrs, hs, fids, child, nTreeNodes, nTrees, treeDepth, nChns, image.cols, image.rows, *(config.projectionMatrix), image);
+		{
+			double maxHeight = 0;			
+			clock_t candidatesStart = clock();
+			BB_Array *bbox_candidates = generateCandidatesFaster(image.rows, image.cols, 4, *(config.projectionMatrix), &maxHeight, I);
+			clock_t candidatesEnd = clock();
+
+			double elapsed_secsc = double(candidatesEnd - candidatesStart) / CLOCKS_PER_SEC;
+			std::cout << "Time to create candidates: " << elapsed_secsc << std::endl;
+			std::cout << "Max candidate height in the image: " << maxHeight <<  std::endl;
+			framePyramid = opts.pPyramid.computeMultiScaleChannelFeaturePyramid(I);
+ 			frameDetections = applyCalibratedDetectorToFrame(framePyramid, bbox_candidates, shrink, modelHt, modelWd, stride, cascThr, thrs, hs, fids, child, nTreeNodes, nTrees, treeDepth, nChns, image.cols, image.rows, *(config.projectionMatrix), image);
+
+			free(bbox_candidates);
+		}
 		else
+		{
+			framePyramid = opts.pPyramid.computeMultiScaleChannelFeaturePyramid(I);
 			frameDetections = applyDetectorToFrame(framePyramid, shrink, modelHt, modelWd, stride, cascThr, thrs, hs, fids, child, nTreeNodes, nTrees, treeDepth, nChns);		
+		}
 		
 		// BB_Array frameDetections = applyDetectorToFrame(framePyramid, shrink, modelHt, modelWd, stride, cascThr, thrs, hs, fids, child, nTreeNodes, nTrees, treeDepth, nChns);
 		detections.push_back(frameDetections);
@@ -724,7 +844,7 @@ void Detector::acfDetect(std::vector<std::string> imageNames, std::string dataSe
 
 
 		if (config.useCalibration)
-			detections[i] = nonMaximalSuppressionSmart(detections[i], 1700, 100);
+			detections[i] = nonMaximalSuppressionSmart(detections[i], 1800, 100);
 		else
 			detections[i] = nonMaximalSuppression(detections[i]);
 
@@ -850,7 +970,7 @@ BB_Array Detector::nonMaximalSuppression(BB_Array bbs)
 
 	//keep just the bounding boxes with scores higher than the threshold
 	for (int i=0; i < bbs.size(); i++)
-		if (bbs[i].score > opts.suppressionThreshold)
+		if (bbs[i].score > config.supressionThreshold)
 			result.push_back(bbs[i]);
 
 	// bbNms would apply resize to the bounding boxes now
@@ -885,11 +1005,6 @@ BB_Array Detector::nonMaximalSuppression(BB_Array bbs)
 	return result;
 }
 
-double gaussianFunction(double mean, double std, double x) {
-	return exp(-pow(x-mean, 2)/(2*pow(std,2)));
-}
-
-
 BB_Array Detector::nonMaximalSuppressionSmart(BB_Array bbs, double meanHeight, double stdHeight)
 {
 	BB_Array result;
@@ -901,7 +1016,8 @@ BB_Array Detector::nonMaximalSuppressionSmart(BB_Array bbs, double meanHeight, d
 
 	for (int i=0; i < bbs.size(); ++i) {
 		bbs[i].score = bbs[i].score*gaussianFunction(meanHeight, stdHeight, bbs[i].world_height);
-		result.push_back(bbs[i]);
+		if (bbs[i].score > config.supressionThreshold)
+			result.push_back(bbs[i]);
 	}
 
 

@@ -850,7 +850,7 @@ std::vector<cv::Mat> readProjectionAndHomographyFromCalibrationFile(std::string 
   return result;
 }
 
-cv::Point imagePoint2groundPlanePoint(float imageU, float imageV, float imageZ, cv::Mat homography)
+cv::Point2f imagePoint2groundPlanePoint(float imageU, float imageV, float imageZ, cv::Mat homography)
 {
   cv::Mat inverseH;
   invert(homography, inverseH);
@@ -870,7 +870,7 @@ cv::Point imagePoint2groundPlanePoint(float imageU, float imageV, float imageZ, 
   x = x/z;
   y = y/z;
 
-  cv::Point result;
+  cv::Point2f result;
   result.x = x;
   result.y = y;
 
@@ -920,11 +920,14 @@ double findWorldHeight(int u, int bottom_v, int top_v, cv::Mat_<float> &projecti
   return height;
 }
 
-std::vector<cv::Point> findGroundPlaneAndImageIntersectionPoints(int imageWidth, int imageHeight, int boundingBoxImageWidth, int boundingBoxImageHeight, 
+std::vector<cv::Point2f> findGroundPlaneAndImageIntersectionPoints(int imageWidth, int imageHeight, int boundingBoxImageWidth, int boundingBoxImageHeight, 
   float maxPedestrianHeight, cv::Mat_<float> &projection, cv::Mat_<float> &homography)
 {
-  std::vector<cv::Point> points;
+  std::vector<cv::Point2f> points;
   bool foundP1=false, foundP2=false;
+
+  print_fmatrix("P", projection);
+  print_fmatrix("H", homography);
 
   // finding top left point
   int curV = boundingBoxImageHeight;
@@ -937,7 +940,7 @@ std::vector<cv::Point> findGroundPlaneAndImageIntersectionPoints(int imageWidth,
     if (curHeight <= maxPedestrianHeight)
     {
       foundP1 = true;
-      cv::Point p1 = imagePoint2groundPlanePoint(0, curV, 1.0, homography);
+      cv::Point2f p1 = imagePoint2groundPlanePoint(0, curV, 1.0, homography);
       points.push_back(p1);
 
       // debug
@@ -958,7 +961,7 @@ std::vector<cv::Point> findGroundPlaneAndImageIntersectionPoints(int imageWidth,
     if (curHeight <= maxPedestrianHeight)
     {
       foundP2 = true;
-      cv::Point p2 = imagePoint2groundPlanePoint(imageWidth - boundingBoxImageWidth, curV, 1.0, homography);
+      cv::Point2f p2 = imagePoint2groundPlanePoint(imageWidth - boundingBoxImageWidth, curV, 1.0, homography);
       points.push_back(p2);
 
       std::cout << "p2_i=(" << imageWidth - boundingBoxImageWidth << "," << curV << "), p2_w=(" << p2.x << "," << p2.y << ")\n";
@@ -968,16 +971,97 @@ std::vector<cv::Point> findGroundPlaneAndImageIntersectionPoints(int imageWidth,
   }
 
   // finding bottom left point
-  cv::Point p3 = imagePoint2groundPlanePoint(0, imageHeight, 1.0, homography);
+  cv::Point2f p3 = imagePoint2groundPlanePoint(0, imageHeight, 1.0, homography);
   points.push_back(p3);
   std::cout << "p3_i=(" << 0 << "," << imageHeight << "), p3_w=(" << p3.x << "," << p3.y << ")\n";
 
   // finding bottom right point
-  cv::Point p4 = imagePoint2groundPlanePoint(imageWidth-boundingBoxImageWidth, imageHeight, 1.0, homography);
+  cv::Point2f p4 = imagePoint2groundPlanePoint(imageWidth-boundingBoxImageWidth, imageHeight, 1.0, homography);
   points.push_back(p4);
   std::cout << "p4_i=(" << imageWidth-boundingBoxImageWidth << "," << imageHeight << "), p4_w=(" << p4.x << "," << p4.y << ")\n";
 
   return points;
+}
+ 
+std::vector<cv::Point2f> trimGroundPlanesBottomPoints(int imageWidth, int imageHeight, int boundingBoxImageWidth, int boundingBoxImageHeight, 
+  double minPedestrianWorldHeight, std::vector<cv::Point2f> groundPlaneLimits, cv::Mat_<float> &projection, cv::Mat_<float> &homography)
+{
+  std::vector<cv::Point2f> newGroundPlaneLimits;
+  newGroundPlaneLimits.push_back(groundPlaneLimits[0]);
+  newGroundPlaneLimits.push_back(groundPlaneLimits[1]);
+  cv::Point topLeftLimitImagePoint = worldPoint2imagePoint(groundPlaneLimits[0].x, groundPlaneLimits[0].y, 0.0, homography);
+  cv::Point topRightLimitImagePoint = worldPoint2imagePoint(groundPlaneLimits[1].x, groundPlaneLimits[1].y, 0.0, homography);
+  double curBBworldHeight = minPedestrianWorldHeight - 1.0;
+  int curBBimageHeight = boundingBoxImageHeight;
+  int octaves = 0;
+  bool done = false;
+  int curV = imageHeight;
+
+  while (curV > topLeftLimitImagePoint.y && !done)
+  {
+    curBBworldHeight = findWorldHeight(0, curV, curV-curBBimageHeight, projection, homography);
+    std::cout << "curBBworldHeight=" << curBBworldHeight << std::endl;
+    if (curBBworldHeight >= minPedestrianWorldHeight)
+    {
+      done = true;
+      cv::Point2f newBottomLeft = imagePoint2groundPlanePoint(0, curV, 1.0, homography);
+      newGroundPlaneLimits.push_back(newBottomLeft);
+
+      // debug
+      std::cout << "after " << octaves << " octaves, bottomLeft=(" << newBottomLeft.x << "," << newBottomLeft.y << ")\n";  
+      // debug */
+    }
+    else
+    {
+      octaves++;
+      curBBimageHeight = curBBimageHeight * 2;
+      if (curBBimageHeight > imageHeight)
+      {
+        octaves = 0;
+        curBBimageHeight = boundingBoxImageHeight;
+        curV = curV - 1;
+      }
+    }
+  }
+  if (!done)
+    newGroundPlaneLimits.push_back(groundPlaneLimits[2]);
+  else
+    done = false;
+
+  curBBworldHeight = minPedestrianWorldHeight - 1.0;
+  curBBimageHeight = boundingBoxImageHeight;
+  octaves = 0;
+  curV = imageHeight;
+  while (curV > topRightLimitImagePoint.y && !done)
+  {
+    curBBworldHeight = findWorldHeight(imageWidth-boundingBoxImageWidth, curV, curV-curBBimageHeight, projection, homography);
+    std::cout << "curBBworldHeight=" << curBBworldHeight << std::endl;
+    if (curBBworldHeight >= minPedestrianWorldHeight)
+    {
+      done = true;
+      cv::Point2f newBottomRight = imagePoint2groundPlanePoint(imageWidth-boundingBoxImageWidth, curV, 1.0, homography);
+      newGroundPlaneLimits.push_back(newBottomRight);
+      // debug
+      std::cout << "after " << octaves << " octaves, bottomRight=(" << newBottomRight.x << "," << newBottomRight.y << ")\n";  
+      // debug */
+    }
+    else
+    {
+      octaves++;
+      curBBimageHeight = curBBimageHeight * 2;
+      if (curBBimageHeight > imageHeight)
+      {
+        octaves = 0;
+        curBBimageHeight = boundingBoxImageHeight;
+        curV = curV - 1;
+      }
+    }
+  }
+  if (!done)
+    newGroundPlaneLimits.push_back(groundPlaneLimits[3]);
+
+
+  return newGroundPlaneLimits;
 }
 
 cv::Mat world2image(cv::Mat &w_point, cv::Mat_<float> &P) {

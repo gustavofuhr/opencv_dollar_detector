@@ -95,13 +95,6 @@ std::vector<Info> Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 	int numberOfRealScales=0;
 	int i;
 
-
-	std::cout << "All scales (" << computedScales << ")" << std::endl;
-	for (i=0; i < computedScales; i++)
-		std::cout << scales[i] << std::endl;
-	std::cout << std::endl;
-
-
 	// compute image pyramid [real scales]
 	start = clock();
 	for (i=0; i < computedScales; i = i+approximatedScales+1)
@@ -111,9 +104,9 @@ std::vector<Info> Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 		new_h = round(I.rows*scales[i]/pChns.shrink)*pChns.shrink;
 		new_w = round(I.cols*scales[i]/pChns.shrink)*pChns.shrink;
 
-		printf("Shrink: %d\n", pChns.shrink);
-		printf("Compute real scale: %f\n", scales[i]);
-		printf("Size of the image: %d x %d\n", new_w, new_h);
+		//printf("Shrink: %d\n", pChns.shrink);
+		//printf("Compute real scale: %f\n", scales[i]);
+		//printf("Size of the image: %d x %d\n", new_w, new_h);
 
 		if (new_h == I.rows && new_w == I.cols)
 			I1 = convertedImage; // does this work?
@@ -162,8 +155,8 @@ std::vector<Info> Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 			int new_h = round(I.rows*scales[i]/pChns.shrink);
 			int new_w = round(I.cols*scales[i]/pChns.shrink);
 
-			printf("Compute approx scale: %f\n", scales[i]);
-			printf("Size of the image: %d x %d\n", new_w, new_h);
+			//printf("Compute approx scale: %f\n", scales[i]);
+			//printf("Size of the image: %d x %d\n", new_w, new_h);
 			
 			double ratio[3];
 			int iR = 0;
@@ -396,10 +389,6 @@ std::vector<Info> Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 			for (int j=0; j < pChns.pGradHist.nChannels; j++)
 				computedChannels[i].gradientHistogram[j] = padImage(computedChannels[i].gradientHistogram[j], 1, tempPad, padSize, 0);
 		}
-	}
-
-	for (int i=0; i< computedChannels.size(); ++i) {
-		std::cout << "computedChannels size: " << computedChannels[i].image.size() << std::endl;
 	}
 
 	pChns.pColor.colorSpaceType = previousColorSpaceType;
