@@ -47,6 +47,10 @@ std::vector<cv::Point2f> findGroundPlaneAndImageIntersectionPoints(int imageWidt
 double findWorldHeight(int u, int bottom_v, int top_v, cv::Mat_<float> &projection, cv::Mat_<float> &homography);
 std::vector<cv::Point2f> trimGroundPlanesBottomPoints(int imageWidth, int imageHeight, int boundingBoxImageWidth, int boundingBoxImageHeight, 
   double targetPedestrianWorldHeight, std::vector<cv::Point2f> groundPlaneLimits, cv::Mat_<float> &projection, cv::Mat_<float> &homography);
+int findNecessaryNumberOfOctaves(int imageWidth, int imageHeight, int boundingBoxImageWidth, int boundingBoxImageHeight, 
+  double minPedestrianWorldHeight, double maxPedestrianWorldHeight, cv::Mat_<float> &projection, cv::Mat_<float> &homography);
+double findLastNecessaryScaleInAPoint(int u, int v, int imageHeight, int boundingBoxImageHeight, double maxPedestrianWorldHeight, 
+  cv::Mat_<float> &projection, cv::Mat_<float> &homography);
 
 cv::Mat world2image(cv::Mat &w_point, cv::Mat_<float> &P);
 BoundingBox wcoord2bbox(cv::Point2f w_point, cv::Mat_<float> &P, float w_height, float aspect_ratio);

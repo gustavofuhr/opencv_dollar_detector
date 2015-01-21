@@ -1,19 +1,23 @@
 opencv_dollar_detector
 ======================
 
-This is an attemp to improve the Dóllar pedestrian detector's performance using camera calibration by Charles Arnoud, under the mentorship of Cláudio Rosito Jüng and with the help of Gustavo Führ.  
+This is an attempt to improve the Dóllar pedestrian detector's performance using camera calibration by Charles Arnoud, under the mentorship of Cláudio Rosito Jüng and with the help of Gustavo Führ.  
 
 
 Current Status  
 ======================  
 
-Detection working, but has two memory leaks and is too slow. Added calibrated detector.
+Detection working, but has two memory leaks and is too slow. Working on calibrated detector.
 
 
 To Do List:  
 ======================  
 
-Current Total: 13  
+Current Total: 15  
+
+Calibrated Detection:
+&nbsp;&nbsp;&nbsp;&nbsp;Find the best way to decide how many scales between octaves and their values
+&nbsp;&nbsp;&nbsp;&nbsp;Add a calibrated getScales function
 
 Opencv_Dollar_Detector.cpp:  
 &nbsp;&nbsp;&nbsp;&nbsp;find out why the program is so slow!  

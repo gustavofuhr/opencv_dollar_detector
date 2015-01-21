@@ -1061,6 +1061,97 @@ std::vector<cv::Point2f> trimGroundPlanesBottomPoints(int imageWidth, int imageH
   return newGroundPlaneLimits;
 }
 
+double findLastNecessaryScaleInAPoint(int u, int v, int imageHeight, int boundingBoxImageHeight, double maxPedestrianWorldHeight, 
+  cv::Mat_<float> &projection, cv::Mat_<float> &homography)
+{
+  double lastScale;
+  bool done = false;
+  double curBBworldHeight = 0.0;
+  int curBBimageHeight = boundingBoxImageHeight;
+
+  while (curBBimageHeight < imageHeight && !done)
+  {
+    curBBworldHeight = findWorldHeight(u, v, v-curBBimageHeight, projection, homography);
+
+    if (curBBworldHeight >= maxPedestrianWorldHeight)
+    {
+      done = true;
+    }
+    else
+      curBBimageHeight++;
+  }
+
+  lastScale = (double)boundingBoxImageHeight/curBBimageHeight;
+
+  std::cout << "With curBBimageHeight=" << curBBimageHeight << " and curBBworldHeight=" << curBBworldHeight << ", lastScale=" << lastScale << std::endl;
+
+  return lastScale;
+}
+
+int findNecessaryNumberOfOctaves(int imageWidth, int imageHeight, int boundingBoxImageWidth, int boundingBoxImageHeight, 
+  double minPedestrianWorldHeight, double maxPedestrianWorldHeight, cv::Mat_<float> &projection, cv::Mat_<float> &homography)
+{
+  int necessaryOctaves;
+  int octavesLeft=0, octavesRight=0;
+  double curBBworldHeight = minPedestrianWorldHeight - 1.0;
+  int curBBimageHeight = boundingBoxImageHeight;
+  bool done = false;
+  int curV = imageHeight;
+  while (curBBimageHeight <= imageHeight && !done)
+  {
+    curBBworldHeight = findWorldHeight(0, curV, curV-curBBimageHeight, projection, homography);
+    std::cout << "curBBworldHeight=" << curBBworldHeight << std::endl;
+    if (curBBworldHeight >= minPedestrianWorldHeight)
+    {
+      done = true;
+      
+      if (curBBworldHeight > maxPedestrianWorldHeight)
+        octavesLeft--;
+
+      // debug
+      std::cout << octavesLeft << " octaves on the bottom left corner\n";   
+      // debug */
+    }
+    else
+    {
+      octavesLeft++;
+      curBBimageHeight = curBBimageHeight * 2;
+    }
+  }
+  done = false;
+
+  curBBworldHeight = minPedestrianWorldHeight - 1.0;
+  curBBimageHeight = boundingBoxImageHeight;
+  curV = imageHeight;
+  while (curBBimageHeight <= imageHeight && !done)
+  {
+    curBBworldHeight = findWorldHeight(imageWidth-boundingBoxImageWidth, curV, curV-curBBimageHeight, projection, homography);
+    std::cout << "curBBworldHeight=" << curBBworldHeight << std::endl;
+    if (curBBworldHeight >= minPedestrianWorldHeight)
+    {
+      done = true;
+
+      if (curBBworldHeight > maxPedestrianWorldHeight)
+        octavesRight--;
+
+      // debug
+      std::cout << octavesRight << " octaves on the bottom right corner\n";  
+      // debug */
+    }
+    else
+    {
+      octavesRight++;
+      curBBimageHeight = curBBimageHeight * 2;
+    }
+  }
+
+  necessaryOctaves = octavesLeft;
+  if (octavesRight > necessaryOctaves)
+    necessaryOctaves = octavesRight;
+
+  return necessaryOctaves;
+}
+
 cv::Mat world2image(cv::Mat &w_point, cv::Mat_<float> &P) {
   
   cv::Mat wp;

@@ -22,10 +22,19 @@ int main(int argc, char *argv[])
 		// loads all detector settings from the provided xml file
 		d.importDetectorModel(odd_config.detectorFileName);
 
-		// debug: testing new functions
+		/*
+		// debug: tests new functions
 		std::vector<cv::Point2f> points = findGroundPlaneAndImageIntersectionPoints(768*1.5, 576*1.5, 41, 100, 2500.0, *(odd_config.projectionMatrix), *(odd_config.homographyMatrix));
-		std::vector<cv::Point2f> trimmedPoints = trimGroundPlanesBottomPoints(768*1.5, 576*1.5, 41, 100, 2000, points, *(odd_config.projectionMatrix), *(odd_config.homographyMatrix));
-		//std::cin.get();
+		//std::vector<cv::Point2f> trimmedPoints = trimGroundPlanesBottomPoints(768*1.5, 576*1.5, 41, 100, 2000, points, *(odd_config.projectionMatrix), *(odd_config.homographyMatrix));
+		int octaves = findNecessaryNumberOfOctaves(768*1.5, 576*1.5, 41, 100, 1500.0, 2100.0, *(odd_config.projectionMatrix), *(odd_config.homographyMatrix));
+		std::cout << "octaves=" << octaves << std::endl;
+		// bottom left corner
+		double scaleBL = findLastNecessaryScaleInAPoint(0, 576*1.5, 576*1.5, 100, 2100.0, *(odd_config.projectionMatrix), *(odd_config.homographyMatrix));
+		// bottom center
+		double scaleBC = findLastNecessaryScaleInAPoint(768*1.5/2, 576*1.5, 576*1.5, 100, 2100.0, *(odd_config.projectionMatrix), *(odd_config.homographyMatrix));
+		// bottom right corner
+		double scaleBR = findLastNecessaryScaleInAPoint(768*1.5, 576*1.5, 576*1.5, 100, 2100.0, *(odd_config.projectionMatrix), *(odd_config.homographyMatrix));
+		std::cin.get();
 		// debug */
 
 
