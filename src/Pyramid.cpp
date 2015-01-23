@@ -30,7 +30,8 @@ void Pyramid::readPyramid(cv::FileNode pyramidNode)
 }
 
 // translation of the chnsPyramid.m file
-std::vector<Info> Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
+std::vector<Info> Pyramid::computeFeaturePyramid(cv::Mat I, bool useCalibration, int boundingBoxImageWidth, int boundingBoxImageHeight, 
+	double maxPedestrianWorldHeight, cv::Mat_<float> &projection, cv::Mat_<float> &homography)
 {
 	int colorChannels = pChns.pColor.nChannels;
 	int histogramChannels = pChns.pGradHist.nChannels;
@@ -86,6 +87,10 @@ std::vector<Info> Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 
 	// get scales at which to compute features and list of real/approx scales
 	// [scales,scaleshw]=getScales(nPerOct,nOctUp,minDs,shrink,sz);
+	
+	if (useCalibration)
+		calibratedGetScales(I.rows, I.cols, pChns.shrink, boundingBoxImageWidth, boundingBoxImageHeight, maxPedestrianWorldHeight, projection, homography);
+	else
 	getScales(I.rows, I.cols, pChns.shrink);
 
 	std::vector<Info> computedChannels(computedScales); 
@@ -134,10 +139,7 @@ std::vector<Info> Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 
 	free(convertedImage);
 
-	printf("\n\n");
-
-	/* compute the approximate scales */
-
+	/* compute the approximated scales */
 	start = clock();
 	for (int i=0; i<computedScales; i++)
 	{
@@ -282,6 +284,7 @@ std::vector<Info> Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 		cv::imshow("image", computedChannels[i].image);
 		cv::imshow("gradMag", computedChannels[i].gradientMagnitude);
 		cv::imshow("gradHist", computedChannels[i].gradientHistogram[1]);
+		cv::waitKey();
 		// debug */
 
 		int h = computedChannels[i].image.rows;
@@ -542,34 +545,46 @@ Info Pyramid::computeSingleScaleChannelFeatures(float* source, int rows, int col
 	return result;
 }
 
-/*
-void Pyramid::calibratedGetScales(int h, int w, int shrink, int octaves)
+
+void Pyramid::calibratedGetScales(int h, int w, int shrink, int boundingBoxImageWidth, int boundingBoxImageHeight, double maxPedestrianWorldHeight, 
+	cv::Mat_<float> &projection, cv::Mat_<float> &homography)
 {
-	int minSize, bgDim, smDim;
-	double *tempScales;
+	double curScale, lastScale, lastOctave=1.0, step;
 
 	if (h!=0 && w!=0)
 	{
-		computedScales = octaves + octaves*(scalesPerOctave-1);
+		computedScales = 0;
+		lastScale = findLastNecessaryScaleInAPoint(0, h, h, boundingBoxImageHeight, maxPedestrianWorldHeight, projection, homography);
+		curScale = findLastNecessaryScaleInAPoint(w-boundingBoxImageWidth, h, h, boundingBoxImageHeight, maxPedestrianWorldHeight, projection, homography);
+		if (curScale < lastScale)
+			lastScale = curScale;
 
-		tempScales = (double*)malloc(computedScales * sizeof(double));
-
-		for(int i=0; i < computedScales; i++)
+		curScale = 1.0;
+		step = 0.5/scalesPerOctave;
+		while (curScale >= lastScale)
 		{
-			if (i%scalesPerOctave == 0) 
-			{ // real scale
-				tempScales[i] = pow(2, -i);
-			}
-			else 
-			{ // approximated scale
+			scales.push_back(curScale);
 
+			if (curScale == lastOctave/2)
+			{
+				lastOctave = curScale;
+				step = step/2;
 			}
+
+			curScale = curScale - step;
+			computedScales++;
+		}
+
+		for (int i=0; i<computedScales; i++)
+		{
+			scales_w.insert(scales_w.begin()+i, round(w*scales[i]/shrink)*shrink/w);
+			scales_h.insert(scales_h.begin()+i, round(h*scales[i]/shrink)*shrink/h);
 		}
 	}
 	else
 		std::cout << " # getScales error: both height and width of an image need to be greater than 0!";
 }
-*/
+
 
 // set each scale s such that max(abs(round(sz*s/shrink)*shrink-sz*s)) is minimized 
 // without changing the smaller dim of sz (tricky algebra)

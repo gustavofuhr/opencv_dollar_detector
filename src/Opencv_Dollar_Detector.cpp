@@ -14,7 +14,6 @@ int main(int argc, char *argv[])
 	else
 	{
 		clock_t start = clock();
-		int firstFrame=0, lastFrame=666666666;
 		
 		OddConfig odd_config(argv[1]);
 		Detector d(odd_config);

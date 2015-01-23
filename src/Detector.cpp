@@ -445,17 +445,13 @@ BB_Array Detector::applyCalibratedDetectorToFrame(std::vector<Info> pyramid, BB_
 	    scales_cids[i] = cids;
 	}
 
-
-
-
 	float max_h = -1000;
 
 	for (int i = 0; i < bbox_candidates->size(); ++i) {
-
 		// see which scale is best suited to the candidate
 		int ith_scale = findClosestScaleFromBbox(pyramid, (*bbox_candidates)[i], modelHt, imageHeight);
 		
-		int height = pyramid[ith_scale].image.rows;
+		int height = pyramid[ith_scale].image.rows;                                                              
 		int width = pyramid[ith_scale].image.cols;
 		
 		// std::cout << "Original bbox " << bbox_candidates[i].topLeftPoint.x << " " << bbox_candidates[i].topLeftPoint.y << " size: " 
@@ -476,7 +472,7 @@ BB_Array Detector::applyCalibratedDetectorToFrame(std::vector<Info> pyramid, BB_
 		// r and c are defined by the candidate itself
 		int r, c;
 		bbTopLeft2PyramidRowColumn(&r, &c, (*bbox_candidates)[i], modelHt, modelWd, ith_scale, stride);
-
+		
 		float h=0, *chns1=scales_chns[ith_scale]+(r*stride/shrink) + (c*stride/shrink)*height;
 	    
 	    if( treeDepth==1 ) {
@@ -804,14 +800,13 @@ void Detector::acfDetect(std::vector<std::string> imageNames, std::string dataSe
 			double elapsed_secsc = double(candidatesEnd - candidatesStart) / CLOCKS_PER_SEC;
 			//std::cout << "Time to create candidates: " << elapsed_secsc << std::endl;
 			//std::cout << "Max candidate height in the image: " << maxHeight <<  std::endl;
-			framePyramid = opts.pPyramid.computeMultiScaleChannelFeaturePyramid(I);
+			framePyramid = opts.pPyramid.computeFeaturePyramid(I, true, modelWd, modelHt, 2100.0, *(config.projectionMatrix), *(config.homographyMatrix));
  			frameDetections = applyCalibratedDetectorToFrame(framePyramid, bbox_candidates, shrink, modelHt, modelWd, stride, cascThr, thrs, hs, fids, child, nTreeNodes, nTrees, treeDepth, nChns, image.cols, image.rows, *(config.projectionMatrix), image);
-
 			free(bbox_candidates);
 		}
 		else
 		{
-			framePyramid = opts.pPyramid.computeMultiScaleChannelFeaturePyramid(I);
+			framePyramid = opts.pPyramid.computeFeaturePyramid(I, false, modelWd, modelHt, 2100.0, *(config.projectionMatrix), *(config.homographyMatrix));
 			frameDetections = applyDetectorToFrame(framePyramid, shrink, modelHt, modelWd, stride, cascThr, thrs, hs, fids, child, nTreeNodes, nTrees, treeDepth, nChns);		
 		}
 		
