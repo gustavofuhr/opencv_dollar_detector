@@ -12,12 +12,11 @@ std::string BoundingBox::toString (int frameIndex)
 {
 	std::ostringstream result;
 
-	result << frameIndex << " " << topLeftPoint.x << " " << topLeftPoint.y << " " << height << " " << width << " " << score;
+	result << "Frame: " << std::setw(4) << frameIndex << ", TopLeftPoint: (" << std::setw(4) << topLeftPoint.x << "," << std::setw(4) << topLeftPoint.y << 
+			"), Height: " << std::setw(4) << height << ", Width: " << std::setw(3) << width << ", Score: " << score << std::endl;
 
 	return result.str();
 }
-
-
 
 cv::Point2i  BoundingBox::get_bottomRightPoint() {
 

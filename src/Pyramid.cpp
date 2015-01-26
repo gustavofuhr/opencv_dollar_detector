@@ -87,11 +87,10 @@ std::vector<Info> Pyramid::computeFeaturePyramid(cv::Mat I, bool useCalibration,
 
 	// get scales at which to compute features and list of real/approx scales
 	// [scales,scaleshw]=getScales(nPerOct,nOctUp,minDs,shrink,sz);
-	
 	if (useCalibration)
 		calibratedGetScales(I.rows, I.cols, pChns.shrink, boundingBoxImageWidth, boundingBoxImageHeight, maxPedestrianWorldHeight, projection, homography);
 	else
-	getScales(I.rows, I.cols, pChns.shrink);
+		getScales(I.rows, I.cols, pChns.shrink);
 
 	std::vector<Info> computedChannels(computedScales); 
 	

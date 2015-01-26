@@ -7,11 +7,12 @@ double gaussianFunction(double mean, double std, double x) {
 OddConfig::OddConfig(std::string config_file) :
 	resizeImage(1.0),
 	firstFrame(0),
-	lastFrame(99999),
+	lastFrame(999999),
 	displayDetections(false),
 	saveFrames(false),
 	saveLog(false),
-	useCalibration(false)
+	useCalibration(false),
+	saveDetectionsInText(false)
 {
 	std::ifstream in_file;
 	in_file.open(config_file.c_str());
@@ -34,6 +35,11 @@ OddConfig::OddConfig(std::string config_file) :
 				std::string sbool;
 				in_file >> sbool;
 				saveFrames = (sbool == "true");
+			}
+			else if (token == "saveDetectionsInText") {
+				std::string sbool;
+				in_file >> sbool;
+				saveDetectionsInText = (sbool == "true");
 			}
 			else if (token == "outputFolder") in_file >> outputFolder;
 			else if (token == "saveLog") {
@@ -363,7 +369,6 @@ void Detector::bbTopLeft2PyramidRowColumn(int *r, int *c, BoundingBox &bb, int m
 	*c = (int)fc;
 }
 
-
 BoundingBox Detector::pyramidRowColumn2BoundingBox(int r, int c,  int modelHt, int modelWd, int ith_scale, int stride) {
 
 	double shift[2];
@@ -381,7 +386,6 @@ BoundingBox Detector::pyramidRowColumn2BoundingBox(int r, int c,  int modelHt, i
 
 	return bb;
 }
-
 
 BB_Array Detector::applyCalibratedDetectorToFrame(std::vector<Info> pyramid, BB_Array* bbox_candidates, int shrink, int modelHt, int modelWd, int stride, float cascThr, float *thrs, float *hs, 
 										uint32 *fids, uint32 *child, int nTreeNodes, int nTrees, int treeDepth, int nChns, int imageWidth, int imageHeight, cv::Mat_<float> &P, cv::Mat &debug_image)
@@ -547,9 +551,6 @@ BB_Array Detector::applyCalibratedDetectorToFrame(std::vector<Info> pyramid, BB_
 
 	return result;
 }
-
-
-
 
 BB_Array Detector::applyDetectorToFrame(std::vector<Info> pyramid, int shrink, int modelHt, int modelWd, int stride, float cascThr, float *thrs, float *hs, 
 										uint32 *fids, uint32 *child, int nTreeNodes, int nTrees, int treeDepth, int nChns)
@@ -766,6 +767,14 @@ void Detector::acfDetect(std::vector<std::string> imageNames, std::string dataSe
 	int treeDepth = this->treeDepth;
 	int nChns = opts.pPyramid.pChns.pColor.nChannels + opts.pPyramid.pChns.pGradMag.nChannels + opts.pPyramid.pChns.pGradHist.nChannels; 
 
+	std::ofstream txtFile;
+
+	if (config.saveDetectionsInText)
+	{
+		std::string outputfilename = config.outputFolder + "/detections.txt"; 
+		txtFile.open (outputfilename.c_str());
+	}
+
 	for (int i = firstFrame; i < imageNames.size() && i < lastFrame; i++)
 	{
 		clock_t frameStart = clock();
@@ -785,28 +794,25 @@ void Detector::acfDetect(std::vector<std::string> imageNames, std::string dataSe
 
 		// compute feature pyramid
 		std::vector<Info> framePyramid;
-		//framePyramid = opts.pPyramid.computeMultiScaleChannelFeaturePyramid(I);
-	
-		clock_t detectionStart = clock();
+		clock_t detectionStart;
 
 		BB_Array frameDetections;
 		if (config.useCalibration)
 		{
 			double maxHeight = 0;			
-			clock_t candidatesStart = clock();
 			BB_Array *bbox_candidates = generateCandidatesFaster(image.rows, image.cols, 4, *(config.projectionMatrix), &maxHeight, I);
-			clock_t candidatesEnd = clock();
-
-			double elapsed_secsc = double(candidatesEnd - candidatesStart) / CLOCKS_PER_SEC;
-			//std::cout << "Time to create candidates: " << elapsed_secsc << std::endl;
-			//std::cout << "Max candidate height in the image: " << maxHeight <<  std::endl;
+			
 			framePyramid = opts.pPyramid.computeFeaturePyramid(I, true, modelWd, modelHt, 2100.0, *(config.projectionMatrix), *(config.homographyMatrix));
+ 			
+ 			detectionStart = clock();
  			frameDetections = applyCalibratedDetectorToFrame(framePyramid, bbox_candidates, shrink, modelHt, modelWd, stride, cascThr, thrs, hs, fids, child, nTreeNodes, nTrees, treeDepth, nChns, image.cols, image.rows, *(config.projectionMatrix), image);
 			free(bbox_candidates);
 		}
 		else
 		{
 			framePyramid = opts.pPyramid.computeFeaturePyramid(I, false, modelWd, modelHt, 2100.0, *(config.projectionMatrix), *(config.homographyMatrix));
+			
+			detectionStart = clock();
 			frameDetections = applyDetectorToFrame(framePyramid, shrink, modelHt, modelWd, stride, cascThr, thrs, hs, fids, child, nTreeNodes, nTrees, treeDepth, nChns);		
 		}
 		
@@ -842,8 +848,14 @@ void Detector::acfDetect(std::vector<std::string> imageNames, std::string dataSe
 			for (int j = 0; j<detections[i].size(); j++) 
 				detections[i][j].plot(image, cv::Scalar(0,255,0));
 
-			std::string outputfilename = config.outputFolder + imageNames[i];
+			std::string outputfilename = config.outputFolder + '/' + imageNames[i];
 			cv::imwrite(outputfilename, image);
+		}
+
+		if (config.saveDetectionsInText)
+		{
+  			for (int j = 0; j < detections[i].size(); j++)
+  				txtFile << detections[i][j].toString(i);
 		}
 		
 		// experimental: do i need to clear these?
@@ -862,6 +874,11 @@ void Detector::acfDetect(std::vector<std::string> imageNames, std::string dataSe
 
 		std::cout << "Frame " << i+1 << " of " << imageNames.size() << " was processed in " << elapsed_secs << " seconds.\n"; 
 	}
+
+	if (config.saveDetectionsInText)
+	{
+		txtFile.close();
+  	}
 }
 
 // for each i suppress all j st j>i and area-overlap>overlap

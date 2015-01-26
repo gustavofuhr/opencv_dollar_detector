@@ -15,33 +15,35 @@ int main(int argc, char *argv[])
 	{
 		clock_t start = clock();
 		
-		OddConfig odd_config(argv[1]);
-		Detector d(odd_config);
+		OddConfig settings(argv[1]);
+		Detector d(settings);
 
 		// loads all detector settings from the provided xml file
-		d.importDetectorModel(odd_config.detectorFileName);
+		d.importDetectorModel(settings.detectorFileName);
 
 		/*
 		// debug: tests new functions
-		std::vector<cv::Point2f> points = findGroundPlaneAndImageIntersectionPoints(768*1.5, 576*1.5, 41, 100, 2500.0, *(odd_config.projectionMatrix), *(odd_config.homographyMatrix));
-		//std::vector<cv::Point2f> trimmedPoints = trimGroundPlanesBottomPoints(768*1.5, 576*1.5, 41, 100, 2000, points, *(odd_config.projectionMatrix), *(odd_config.homographyMatrix));
-		int octaves = findNecessaryNumberOfOctaves(768*1.5, 576*1.5, 41, 100, 1500.0, 2100.0, *(odd_config.projectionMatrix), *(odd_config.homographyMatrix));
+		std::vector<cv::Point2f> points = findGroundPlaneAndImageIntersectionPoints(768*1.5, 576*1.5, 41, 100, 2500.0, *(settings.projectionMatrix), *(settings.homographyMatrix));
+		//std::vector<cv::Point2f> trimmedPoints = trimGroundPlanesBottomPoints(768*1.5, 576*1.5, 41, 100, 2000, points, *(settings.projectionMatrix), *(settings.homographyMatrix));
+		int octaves = findNecessaryNumberOfOctaves(768*1.5, 576*1.5, 41, 100, 1500.0, 2100.0, *(settings.projectionMatrix), *(settings.homographyMatrix));
 		std::cout << "octaves=" << octaves << std::endl;
 		// bottom left corner
-		double scaleBL = findLastNecessaryScaleInAPoint(0, 576*1.5, 576*1.5, 100, 2100.0, *(odd_config.projectionMatrix), *(odd_config.homographyMatrix));
+		double scaleBL = findLastNecessaryScaleInAPoint(0, 576*1.5, 576*1.5, 100, 2100.0, *(settings.projectionMatrix), *(settings.homographyMatrix));
 		// bottom center
-		double scaleBC = findLastNecessaryScaleInAPoint(768*1.5/2, 576*1.5, 576*1.5, 100, 2100.0, *(odd_config.projectionMatrix), *(odd_config.homographyMatrix));
+		double scaleBC = findLastNecessaryScaleInAPoint(768*1.5/2, 576*1.5, 576*1.5, 100, 2100.0, *(settings.projectionMatrix), *(settings.homographyMatrix));
 		// bottom right corner
-		double scaleBR = findLastNecessaryScaleInAPoint(768*1.5, 576*1.5, 576*1.5, 100, 2100.0, *(odd_config.projectionMatrix), *(odd_config.homographyMatrix));
+		double scaleBR = findLastNecessaryScaleInAPoint(768*1.5, 576*1.5, 576*1.5, 100, 2100.0, *(settings.projectionMatrix), *(settings.homographyMatrix));
 		std::cin.get();
 		// debug */
 
-
 		// gets names for all the files inside the data set folder
-		std::vector<std::string> imageNames = getDataSetFileNames(odd_config.dataSetDirectory);
+		std::vector<std::string> imageNames = getDataSetFileNames(settings.dataSetDirectory);
 
+		if (settings.lastFrame <= settings.firstFrame)
+			settings.lastFrame = imageNames.size();
+		
 		// apply the detection on all images
-		d.acfDetect(imageNames, odd_config.dataSetDirectory, odd_config.firstFrame, odd_config.lastFrame);
+		d.acfDetect(imageNames, settings.dataSetDirectory, settings.firstFrame, settings.lastFrame);
 
 		clock_t end = clock();
 		double elapsed_secs = double(end - start) / CLOCKS_PER_SEC;

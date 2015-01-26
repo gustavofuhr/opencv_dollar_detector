@@ -7,25 +7,27 @@ This is an attempt to improve the Dóllar pedestrian detector's performance usin
 Current Status  
 ======================  
 
-Detection working, but has two memory leaks and is too slow. Working on calibrated detector.
+Detection working, but has two memory leaks and is too slow. Calibrated detection and feature pyramid online.
 
 
 To Do List:  
 ======================  
 
-Current Total: 15  
+Current Total: 14  
+
+Project:
+&nbsp;&nbsp;&nbsp;&nbsp;Change the project's name
 
 Calibrated Detection:
-&nbsp;&nbsp;&nbsp;&nbsp;Find the best way to decide how many scales between octaves and their values
-&nbsp;&nbsp;&nbsp;&nbsp;Add a calibrated getScales function
+&nbsp;&nbsp;&nbsp;&nbsp;Possibly add a way to use background information
 
 Opencv_Dollar_Detector.cpp:  
 &nbsp;&nbsp;&nbsp;&nbsp;find out why the program is so slow!  
 &nbsp;&nbsp;&nbsp;&nbsp;maybe change the way time is being calculated  
-&nbsp;&nbsp;&nbsp;&nbsp;save detections to .txt file  
 &nbsp;&nbsp;&nbsp;&nbsp;add more comments  
 
-Detector.cpp:  
+Detector.cpp: 
+&nbsp;&nbsp;&nbsp;&nbsp;maybe make it so the getScales function is only calculated once 
 &nbsp;&nbsp;&nbsp;&nbsp;nonMaximalSuppression:  
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;possibly relocate suppression to other class  
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;add the other two types of suppression    
@@ -38,8 +40,6 @@ Pyramid.cpp:
 &nbsp;&nbsp;&nbsp;&nbsp;computeMultiScaleChannelFeaturePyramid:  
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;add calculation of lambdas  
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;find sources of two memory leaks  
-&nbsp;&nbsp;&nbsp;&nbsp;computeSingleScaleChannelFeatures:  
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;possibly add computation of custom channels  
 
 Pyramid.cpp:  
 &nbsp;&nbsp;&nbsp;&nbsp;decide what to do with the channelTypes variable   

@@ -15,7 +15,7 @@ struct OddConfig {
 	std::string dataSetDirectory;
 	int firstFrame, lastFrame;
 
-	bool displayDetections, saveFrames, saveLog; 
+	bool displayDetections, saveFrames, saveLog, saveDetectionsInText; 
 	std::string outputFolder;
 	std::string logFilename;
 
