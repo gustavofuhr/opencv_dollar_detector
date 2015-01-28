@@ -732,7 +732,6 @@ BB_Array Detector::applyDetectorToFrame(std::vector<Info> pyramid, int shrink, i
 	return result;
 }
 
-
 //bb = acfDetect1(P.data{i},Ds{j}.clf,shrink,modelDsPad(1),modelDsPad(2),opts.stride,opts.cascThr);
 void Detector::acfDetect(std::vector<std::string> imageNames, std::string dataSetDirectoryName, int firstFrame, int lastFrame)
 {
@@ -766,6 +765,8 @@ void Detector::acfDetect(std::vector<std::string> imageNames, std::string dataSe
 	
 	int treeDepth = this->treeDepth;
 	int nChns = opts.pPyramid.pChns.pColor.nChannels + opts.pPyramid.pChns.pGradMag.nChannels + opts.pPyramid.pChns.pGradHist.nChannels; 
+
+	bool calibratedGetScalesDone = false;
 
 	std::ofstream txtFile;
 
@@ -801,8 +802,14 @@ void Detector::acfDetect(std::vector<std::string> imageNames, std::string dataSe
 		{
 			double maxHeight = 0;			
 			BB_Array *bbox_candidates = generateCandidatesFaster(image.rows, image.cols, 4, *(config.projectionMatrix), &maxHeight, I);
+
+			if (!calibratedGetScalesDone)
+			{
+				opts.pPyramid.calibratedGetScales(I.rows, I.cols, opts.pPyramid.pChns.shrink, modelWd, modelHt, 2100.0, *(config.projectionMatrix), *(config.homographyMatrix));
+				calibratedGetScalesDone = true;
+			}
 			
-			framePyramid = opts.pPyramid.computeFeaturePyramid(I, true, modelWd, modelHt, 2100.0, *(config.projectionMatrix), *(config.homographyMatrix));
+			framePyramid = opts.pPyramid.computeFeaturePyramid(I, config.useCalibration);
  			
  			detectionStart = clock();
  			frameDetections = applyCalibratedDetectorToFrame(framePyramid, bbox_candidates, shrink, modelHt, modelWd, stride, cascThr, thrs, hs, fids, child, nTreeNodes, nTrees, treeDepth, nChns, image.cols, image.rows, *(config.projectionMatrix), image);
@@ -810,7 +817,7 @@ void Detector::acfDetect(std::vector<std::string> imageNames, std::string dataSe
 		}
 		else
 		{
-			framePyramid = opts.pPyramid.computeFeaturePyramid(I, false, modelWd, modelHt, 2100.0, *(config.projectionMatrix), *(config.homographyMatrix));
+			framePyramid = opts.pPyramid.computeFeaturePyramid(I, config.useCalibration);
 			
 			detectionStart = clock();
 			frameDetections = applyDetectorToFrame(framePyramid, shrink, modelHt, modelWd, stride, cascThr, thrs, hs, fids, child, nTreeNodes, nTrees, treeDepth, nChns);		

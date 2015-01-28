@@ -30,8 +30,7 @@ void Pyramid::readPyramid(cv::FileNode pyramidNode)
 }
 
 // translation of the chnsPyramid.m file
-std::vector<Info> Pyramid::computeFeaturePyramid(cv::Mat I, bool useCalibration, int boundingBoxImageWidth, int boundingBoxImageHeight, 
-	double maxPedestrianWorldHeight, cv::Mat_<float> &projection, cv::Mat_<float> &homography)
+std::vector<Info> Pyramid::computeFeaturePyramid(cv::Mat I, bool useCalibration)
 {
 	int colorChannels = pChns.pColor.nChannels;
 	int histogramChannels = pChns.pGradHist.nChannels;
@@ -71,25 +70,11 @@ std::vector<Info> Pyramid::computeFeaturePyramid(cv::Mat I, bool useCalibration,
 	convertedImage = rgbConvert(floatImg, I.rows*I.cols, colorChannels, pChns.pColor.colorSpaceType, 1.0f);
 	// if(flag==4), flag=1; end;
 	pChns.pColor.colorSpaceType = RGB;
-
-
 	free(floatImg);
-
-	/*
-	// debug
-	std::cout << "nPerOct = " << scalesPerOctave << ", nOctUp = " << upsampledOctaves << ", minDs = (" << minImgSize[0] << "," << minImgSize[1] << 
-	"), shrink = " << pChns.shrink << ", sz = (" << convertedImage.rows << "," << convertedImage.cols << ")" <<std::endl;
-	// debug */
-	
-	/*
-	nPerOct = 8, nOctUp = 0, minDs = (100,41), shrink = 4, sz = (576,720)
-	*/
 
 	// get scales at which to compute features and list of real/approx scales
 	// [scales,scaleshw]=getScales(nPerOct,nOctUp,minDs,shrink,sz);
-	if (useCalibration)
-		calibratedGetScales(I.rows, I.cols, pChns.shrink, boundingBoxImageWidth, boundingBoxImageHeight, maxPedestrianWorldHeight, projection, homography);
-	else
+	if (!useCalibration)
 		getScales(I.rows, I.cols, pChns.shrink);
 
 	std::vector<Info> computedChannels(computedScales); 

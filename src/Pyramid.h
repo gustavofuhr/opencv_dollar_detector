@@ -33,8 +33,7 @@ public:
 	double totalTimeForApproxScales;
 
 	void readPyramid(cv::FileNode);
-	std::vector<Info> computeFeaturePyramid(cv::Mat I, bool useCalibration, int boundingBoxImageWidth, int boundingBoxImageHeight, 
-		double maxPedestrianWorldHeight, cv::Mat_<float> &projection, cv::Mat_<float> &homography);
+	std::vector<Info> computeFeaturePyramid(cv::Mat I, bool useCalibration);
 	Info computeSingleScaleChannelFeatures(float* I, int rows, int cols);
 	cv::Mat TriangleFilterConvolution(cv::Mat, int, int, int);
 	void getScales(int, int , int);
