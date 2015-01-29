@@ -12,7 +12,9 @@ OddConfig::OddConfig(std::string config_file) :
 	saveFrames(false),
 	saveLog(false),
 	useCalibration(false),
-	saveDetectionsInText(false)
+	saveDetectionsInText(false),
+	supressionThreshold(0.0),
+	maxPedestrianWorldHeight(2000.0)
 {
 	std::ifstream in_file;
 	in_file.open(config_file.c_str());
@@ -49,6 +51,7 @@ OddConfig::OddConfig(std::string config_file) :
 			}
 			else if (token == "logFilename") in_file >> logFilename;
 			else if (token == "supressionThreshold") in_file >> supressionThreshold;
+			else if (token == "maxPedestrianWorldHeight") in_file >> maxPedestrianWorldHeight;
 			else if (token == "useCalibration")  {
 				std::string sbool;
 				in_file >> sbool;
@@ -805,7 +808,7 @@ void Detector::acfDetect(std::vector<std::string> imageNames, std::string dataSe
 
 			if (!calibratedGetScalesDone)
 			{
-				opts.pPyramid.calibratedGetScales(I.rows, I.cols, opts.pPyramid.pChns.shrink, modelWd, modelHt, 2100.0, *(config.projectionMatrix), *(config.homographyMatrix));
+				opts.pPyramid.calibratedGetScales(I.rows, I.cols, opts.pPyramid.pChns.shrink, modelWd, modelHt, config.maxPedestrianWorldHeight, *(config.projectionMatrix), *(config.homographyMatrix));
 				calibratedGetScalesDone = true;
 			}
 			

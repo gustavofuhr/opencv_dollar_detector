@@ -26,6 +26,8 @@ struct OddConfig {
 
 	float supressionThreshold;
 
+	float maxPedestrianWorldHeight;
+
 	OddConfig(std::string config_file);
 };
 
