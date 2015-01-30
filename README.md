@@ -13,7 +13,7 @@ Detection working, but has two memory leaks and is too slow. Calibrated detectio
 To Do List:  
 ======================  
   
-Current Total: 13  
+Current Total: 15  
   
 Project:  
 &nbsp;&nbsp;&nbsp;&nbsp;Change the project's name  
@@ -44,4 +44,5 @@ Pyramid.cpp:
 &nbsp;&nbsp;&nbsp;&nbsp;decide what to do with the channelTypes variable   
   
 utils.cpp:
-&nbsp;&nbsp;&nbsp;&nbsp;find out why convTri function is so much slower than in the original mex file
+&nbsp;&nbsp;&nbsp;&nbsp;find out why convTri function is so much slower than in the original mex file  
+&nbsp;&nbsp;&nbsp;&nbsp;fix rgbConvert  

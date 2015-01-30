@@ -813,7 +813,19 @@ void Detector::acfDetect(std::vector<std::string> imageNames, std::string dataSe
 			}
 			
 			framePyramid = opts.pPyramid.computeFeaturePyramid(I, config.useCalibration);
+			
+			/*
+			for (int x=0; x < framePyramid.size(); x++)
+			{
+				std::cout << "Frame: " << i << ", scale: " << x << ", number of scales: " << framePyramid.size() << std::endl;
+				cv::imshow("image", framePyramid[x].image);
+				cv::imshow("gradientMagnitude", framePyramid[x].gradientMagnitude);
+				cv::imshow("gradientHistogram", framePyramid[x].gradientHistogram[0]);
+				cv::waitKey();
+			}
+			// */
  			
+
  			detectionStart = clock();
  			frameDetections = applyCalibratedDetectorToFrame(framePyramid, bbox_candidates, shrink, modelHt, modelWd, stride, cascThr, thrs, hs, fids, child, nTreeNodes, nTrees, treeDepth, nChns, image.cols, image.rows, *(config.projectionMatrix), image);
 			free(bbox_candidates);

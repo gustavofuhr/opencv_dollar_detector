@@ -21,23 +21,29 @@ int main(int argc, char *argv[])
 		// loads all detector settings from the provided xml file
 		d.importDetectorModel(settings.detectorFileName);
 
-		/*
-		// debug: tests new functions
-		std::vector<cv::Point2f> points = findGroundPlaneAndImageIntersectionPoints(768*1.5, 576*1.5, 41, 100, 2500.0, *(settings.projectionMatrix), *(settings.homographyMatrix));
-		//std::vector<cv::Point2f> trimmedPoints = trimGroundPlanesBottomPoints(768*1.5, 576*1.5, 41, 100, 2000, points, *(settings.projectionMatrix), *(settings.homographyMatrix));
-		int octaves = findNecessaryNumberOfOctaves(768*1.5, 576*1.5, 41, 100, 1500.0, 2100.0, *(settings.projectionMatrix), *(settings.homographyMatrix));
-		std::cout << "octaves=" << octaves << std::endl;
-		// bottom left corner
-		double scaleBL = findLastNecessaryScaleInAPoint(0, 576*1.5, 576*1.5, 100, 2100.0, *(settings.projectionMatrix), *(settings.homographyMatrix));
-		// bottom center
-		double scaleBC = findLastNecessaryScaleInAPoint(768*1.5/2, 576*1.5, 576*1.5, 100, 2100.0, *(settings.projectionMatrix), *(settings.homographyMatrix));
-		// bottom right corner
-		double scaleBR = findLastNecessaryScaleInAPoint(768*1.5, 576*1.5, 576*1.5, 100, 2100.0, *(settings.projectionMatrix), *(settings.homographyMatrix));
-		std::cin.get();
-		// debug */
-
 		// gets names for all the files inside the data set folder
 		std::vector<std::string> imageNames = getDataSetFileNames(settings.dataSetDirectory);
+
+		/*
+		// debug: tests new functions
+		cv::Mat I = cv::imread(settings.dataSetDirectory + '/' + imageNames[0]);
+		cv::Mat image;
+		cv::normalize(I, image, 0.0, 1.0, cv::NORM_MINMAX, CV_32FC3);
+		cv::imshow("original", image);
+		float* floatImage = (float*) malloc(image.rows*image.cols*3*sizeof(float));
+		cvMat2floatArray(image, floatImage, 3);
+		cv::Mat convertedImage = floatArray2cvMat(floatImage, image.rows, image.cols, 3);
+		cv::imshow("converted", convertedImage);
+
+		cv::Mat gray_image;
+ 		cv::cvtColor(image, gray_image, CV_BGR2GRAY );
+ 		float* floatGray = (float*) malloc(image.rows*image.cols*sizeof(float));
+		cvMat2floatArray(gray_image, floatGray, 1);
+		cv::Mat convertedGray = floatArray2cvMat(floatGray, image.rows, image.cols, 1);
+		cv::imshow("convertedGray", convertedGray);
+		
+		cv::waitKey();
+		// debug */
 
 		if (settings.lastFrame <= settings.firstFrame)
 			settings.lastFrame = imageNames.size();

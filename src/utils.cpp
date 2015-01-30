@@ -26,9 +26,8 @@ void alFree(void* aligned) {
 /************************************************************************************************************/
 
 // changes the way the rows, columns and channels are arranged to match the way piotr toolbox's procedures operate on
-float* cvImage2floatArray(cv::Mat source, int channels)
+void cvMat2floatArray(cv::Mat source, float* result, int channels)
 {
-	float* result = (float*)malloc(source.rows*source.cols*channels*sizeof(float));
 	float* tempFloat = (float*)source.data;
 	int resultIndex=0;
 	
@@ -36,21 +35,17 @@ float* cvImage2floatArray(cv::Mat source, int channels)
 		for (int column=0; column < source.cols; column++)
 			for (int row=0; row < source.rows; row++)
 				result[resultIndex++] = tempFloat[column*channels + row*source.cols*channels + channel];
-
-	return result;
 }
 // */
 
-cv::Mat floatArray2cvImage(float* source, int rows, int cols, int channels)
+cv::Mat floatArray2cvMat(float* source, int rows, int cols, int channels)
 {
   int type; 
   if (channels == 1)
     type = CV_32FC1;
   else
     type = CV_32FC3;
-
-  cv::Mat result(rows, cols, type);
-
+  
   float* tempFloat = (float*)malloc(rows*cols*channels*sizeof(float));
   int tempIndex=0;
 
@@ -58,13 +53,17 @@ cv::Mat floatArray2cvImage(float* source, int rows, int cols, int channels)
     for (int column=0; column < cols; column++)
       for (int row=0; row < rows; row++)
         tempFloat[column*channels + row*cols*channels + channel] = source[tempIndex++];
+  
+  cv::Mat result(rows, cols, type);
+  memcpy(result.data, tempFloat, rows*cols*channels*sizeof(float));
 
-  result.data = (uchar*)tempFloat;
+  free(tempFloat);
 
   return result;
 }
 // */
 
+/*
 void floatArray2cvData(float* source, float* result, int rows, int cols, int channels)
 {
   int tempIndex=0;
@@ -73,54 +72,7 @@ void floatArray2cvData(float* source, float* result, int rows, int cols, int cha
       for (int row=0; row < rows; row++)
         result[column*channels + row*cols*channels + channel] = source[tempIndex++];
 }
-
-/*
-
-
-
 */
-void floatArray2cvDataUCHAR(float* source, uchar* result, int rows, int cols, int channels)
-{
-  int tempIndex=0;
-
-  for (int r = 0; r < rows; r++) {
-    for (int c = 0; c < cols; c++) {
-      for (int ch = 0; ch < channels; ch++) {
-        result[tempIndex++] = (uchar)(source[r*cols + c + ch*cols*rows]*255);
-      }
-    }
-  }
-
-}
-
-/*
-cv::Mat floatArray2cvImage(float* source, int rows, int cols, int channels)
-{
-  int type; 
-  if (channels == 1)
-    type = CV_32FC1;
-  else
-    type = CV_32FC3;
-
-  cv::Mat result(rows, cols, type);
-  std::vector<float> tempFloat(rows*cols*channels);
-
-  //float* tempFloat = (float*)malloc(rows*cols*channels*sizeof(float));
-  int tempIndex=0;
-
-  for (int channel=0; channel < channels; channel++)
-    for (int column=0; column < cols; column++)
-      for (int row=0; row < rows; row++)
-        tempFloat[column*channels + row*cols*channels + channel] = source[tempIndex++];
-
-  result.data = (uchar*)&tempFloat[0];
-
-  cv::imshow("test", result);
-  cv::waitKey();
-
-  return result;
-}
-// */
 
 void features2floatArray (Info features, float* result, int rows, int cols, int colorChannels, int magChannels, int histChannels)
 {
@@ -673,9 +625,8 @@ cv::Mat padImage(cv::Mat source, int channels, int *pad, int padSize, int type)
 
 	imPad(I, O, source.rows, source.cols, channels, padTop, padBottom, padLeft, padRight, type, val);
 
-  // original
-	//result = floatArray2cvImage(O, newRows, newCols, channels);
-  // new
+  /*
+  // old conversion
   float* tempdata = (float*)malloc(newRows*newCols*channels*sizeof(float));
   floatArray2cvData(O, tempdata, newRows, newCols, channels);
   int matType = CV_32FC1;
@@ -686,7 +637,10 @@ cv::Mat padImage(cv::Mat source, int channels, int *pad, int padSize, int type)
   tempMat.copyTo(result);
   tempMat.release();
   free(tempdata);
-  // new */
+  // old conversion */
+
+  // improved conversion
+  result = floatArray2cvMat(O, newRows, newCols, channels);
 
   free(I);
   free(O);
