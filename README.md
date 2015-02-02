@@ -1,46 +1,27 @@
-opencv_dollar_detector
-======================
+opencv_dollar_detector  
+======================  
   
-This is an attempt to improve the Dóllar pedestrian detector's performance using camera calibration by Charles Arnoud, under the mentorship of Cláudio Rosito Jüng and with the help of Gustavo Führ.  
+This is an attempt to improve the Dóllar pedestrian detector's performance using camera calibration.   
+By Charles Arnoud, under the mentorship of Cláudio Rosito Jüng and with the help of Gustavo Führ.  
   
   
 Current Status  
 ======================  
-
-Detection working, but has two memory leaks and is too slow. Calibrated detection and feature pyramid online.  
+  
+Detection working, but is too slow. Calibrated detection and feature pyramid online.  
   
   
 To Do List:  
 ======================  
   
-Current Total: 13  
-  
-Project:  
-&nbsp;&nbsp;&nbsp;&nbsp;Change the project's name  
-  
-Calibrated Detection:  
-&nbsp;&nbsp;&nbsp;&nbsp;Possibly add a way to use background information
+Current Total: 5    
   
 Opencv_Dollar_Detector.cpp:  
 &nbsp;&nbsp;&nbsp;&nbsp;find out why the program is so slow!  
-&nbsp;&nbsp;&nbsp;&nbsp;maybe change the way time is being calculated  
-&nbsp;&nbsp;&nbsp;&nbsp;add more comments  
+&nbsp;&nbsp;&nbsp;&nbsp;Change the project's name  
+&nbsp;&nbsp;&nbsp;&nbsp;Apply profiler to the matlab version and compare results  
   
-Detector.cpp: 
-&nbsp;&nbsp;&nbsp;&nbsp;nonMaximalSuppression:  
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;possibly relocate suppression to other class  
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;add the other two types of suppression    
-  
-GradientMagnitudeChannel.cpp:  
-&nbsp;&nbsp;&nbsp;&nbsp;check if variable d is correct inside mGradMag  
-&nbsp;&nbsp;&nbsp;&nbsp;check if mGradMag is not modifying the input  
-  
-Pyramid.cpp:  
-&nbsp;&nbsp;&nbsp;&nbsp;computeMultiScaleChannelFeaturePyramid:  
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;add calculation of lambdas  
-  
-Pyramid.cpp:  
-&nbsp;&nbsp;&nbsp;&nbsp;decide what to do with the channelTypes variable   
-  
-utils.cpp:
-&nbsp;&nbsp;&nbsp;&nbsp;find out why convTri function is so much slower than in the original mex file  
+Calibrated Detection:  
+&nbsp;&nbsp;&nbsp;&nbsp;Possibly add a way to use background information  
+&nbsp;&nbsp;&nbsp;&nbsp;Add new detector  
+      

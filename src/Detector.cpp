@@ -793,7 +793,7 @@ void Detector::acfDetect(std::vector<std::string> imageNames, std::string dataSe
 		// if resizeImage is set different to 1.0, resize before computing the pyramid
 		if (config.resizeImage != 1.0) 
 			cv::resize(image, image, cv::Size(), config.resizeImage, config.resizeImage);
-
+			
 		cv::Mat I;
 		// which one of these conversions is best?
 		//image.convertTo(I, CV_32FC3, 1.0/255.0);

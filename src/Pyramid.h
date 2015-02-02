@@ -22,7 +22,6 @@ public:
 	int completeInput; //if true does not check/set default vals in pPyramid
 
 	// output attributes
-	int channelTypes; //number of channel types
 	int computedScales; //number of scales computed
 	std::vector<double> scales;
 	std::vector<double> scales_w;

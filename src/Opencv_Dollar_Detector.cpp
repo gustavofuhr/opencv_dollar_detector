@@ -1,9 +1,9 @@
 #include <sstream>
 #include "Opencv_Dollar_Detector.h"
 
-// valgrind --tool=memcheck --leak-check=yes --log-file=valgrind.log ./opencv_dollar_detector ../opencv_dollar_detector/odd.conf
-
-// call: ./opencv_dollar_detector ../opencv_dollar_detector/odd.conf
+// memory check: 	valgrind --tool=memcheck --leak-check=full --log-file=valgrind.log --error-limit=no ./opencv_dollar_detector ../opencv_dollar_detector/odd.conf
+// profiler:		valgrind --tool=callgrind ./opencv_dollar_detector ../opencv_dollar_detector/odd.conf
+// call: 			./opencv_dollar_detector ../opencv_dollar_detector/odd.conf
 int main(int argc, char *argv[]) 
 {
 	if (argc < 2)

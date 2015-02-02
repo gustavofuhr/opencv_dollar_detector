@@ -141,7 +141,7 @@ std::vector<float*> GradientMagnitudeChannel::mGradMag(float* source, int rows, 
   float *M, *O=0;
   float *I = source;
   std::vector<float*> result;
-
+  
   /*
   if(h<2 || w<2) mexErrMsgTxt("I must be at least 2x2.");
   c = (int) mxGetScalar(pr[1]); 
