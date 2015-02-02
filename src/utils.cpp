@@ -486,9 +486,9 @@ template<class iT, class oT> void normalize( iT *I, oT *J, int n, oT nrm ) {
 }
 
 // Convert rgb to various colorspaces
-float* rgbConvert(float *I, int n, int d, int flag, float nrm) 
+void rgbConvert(float *I, float* J, int n, int d, int flag, float nrm) 
 {
-  float *J = (float*) wrMalloc(n*(flag==0 ? (d==1?1:d/3) : d)*sizeof(float));
+  //float *J = (float*) wrMalloc(n*(flag==0 ? (d==1?1:d/3) : d)*sizeof(float));
   int i, n1=d*(n<1000?n/10:100); float thr = float(1.001);
   if(flag>1 && nrm==1) for(i=0; i<n1; i++) if(I[i]>thr)
     wrError("For floats all values in I must be smaller than 1.");
@@ -501,7 +501,7 @@ float* rgbConvert(float *I, int n, int d, int flag, float nrm)
   else if( flag==2 ) for(i=0; i<d/3; i++) rgb2luv(I+i*n*3,J+i*n*3,n,nrm);
   else if( flag==3 ) for(i=0; i<d/3; i++) rgb2hsv(I+i*n*3,J+i*n*3,n,nrm);
   else wrError("Unknown flag.");
-  return J;
+  //return J;
 }
 
 /************************************************************************************************************/
@@ -665,7 +665,6 @@ std::vector<std::string> getDataSetFileNames(std::string directory)
 
     std::sort(result.begin(), result.end());
   }
-
 
   return result;
 }

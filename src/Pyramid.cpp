@@ -48,36 +48,15 @@ std::vector<Info> Pyramid::computeFeaturePyramid(cv::Mat I, bool useCalibration)
 	if (approximatedScales < 0)
 		approximatedScales = scalesPerOctave-1;
 
-	// convert I to appropriate color space (or simply normalize)
-	// I=rgbConvert(I,cs); pChns.pColor.colorSpace='orig';
-	float* convertedImage;
-
-	/* //old conversion
-	int imgIndex=0;
-	float* floatImg = (float*)malloc(I.rows*I.cols*colorChannels*sizeof(float));
-	std::vector<cv::Mat> rgb;
-  	cv::split(I, rgb);
-  	for (int j=0; j < rgb.size(); j++)
-  	{
-    	cv::Mat tempMat;
-    	cv::transpose(rgb[j], tempMat);
-    	float* tempFloat = (float*)tempMat.data;
-    	for (int i=0; i < I.rows*I.cols; i++)
-      		floatImg[imgIndex++] = tempFloat[i];
-  	}
-
-  	//float* floatImg = cvImage2floatArray(I, colorChannels);
-	int previousColorSpaceType = pChns.pColor.colorSpaceType; // saves the value to be reloaded afterwards
-	// old conversion */
-
-	// improved conversion
+	// converting image from cv::Mat to float*
 	float* floatImg = (float*)malloc(I.rows*I.cols*colorChannels*sizeof(float));
 	cvMat2floatArray(I, floatImg, colorChannels);
+	
+	// convert I to appropriate color space (or simply normalize)
+	// I=rgbConvert(I,cs); pChns.pColor.colorSpace='orig';
+	float* convertedImage = (float*)malloc(I.rows*I.cols*colorChannels*sizeof(float));
 	int previousColorSpaceType = pChns.pColor.colorSpaceType; // saves the value to be reloaded afterwards
-	// improved conversion */
-
-	convertedImage = rgbConvert(floatImg, I.rows*I.cols, colorChannels, pChns.pColor.colorSpaceType, 1.0f);
-	// if(flag==4), flag=1; end;
+	rgbConvert(floatImg, convertedImage, I.rows*I.cols, colorChannels, pChns.pColor.colorSpaceType, 1.0f);
 	pChns.pColor.colorSpaceType = RGB;
 	free(floatImg);
 

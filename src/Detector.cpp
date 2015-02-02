@@ -92,6 +92,8 @@ OddConfig::OddConfig(std::string config_file) :
 				std::cout << "Token not recognized!" << std::endl;
 			}
 		}
+
+		in_file.close();
 	}
 	else
 		std::cout << "Configuration file named " << config_file << " was not found.\n"; 
@@ -789,9 +791,8 @@ void Detector::acfDetect(std::vector<std::string> imageNames, std::string dataSe
 		cv::Mat image = cv::imread(dataSetDirectoryName + '/' + imageNames[i]);
 
 		// if resizeImage is set different to 1.0, resize before computing the pyramid
-		if (config.resizeImage != 1.0) {
+		if (config.resizeImage != 1.0) 
 			cv::resize(image, image, cv::Size(), config.resizeImage, config.resizeImage);
-		}
 
 		cv::Mat I;
 		// which one of these conversions is best?
@@ -830,7 +831,7 @@ void Detector::acfDetect(std::vector<std::string> imageNames, std::string dataSe
 
  			detectionStart = clock();
  			frameDetections = applyCalibratedDetectorToFrame(framePyramid, bbox_candidates, shrink, modelHt, modelWd, stride, cascThr, thrs, hs, fids, child, nTreeNodes, nTrees, treeDepth, nChns, image.cols, image.rows, *(config.projectionMatrix), image);
-			free(bbox_candidates);
+			delete bbox_candidates;
 		}
 		else
 		{
@@ -896,7 +897,7 @@ void Detector::acfDetect(std::vector<std::string> imageNames, std::string dataSe
 		clock_t frameEnd = clock();
 		double elapsed_secs = double(frameEnd - frameStart) / CLOCKS_PER_SEC;
 
-		std::cout << "Frame " << i+1 << " of " << imageNames.size() << " was processed in " << elapsed_secs << " seconds.\n"; 
+		std::cout << "Frame " << i+1 << " of " << lastFrame << " was processed in " << elapsed_secs << " seconds.\n"; 
 	}
 
 	if (config.saveDetectionsInText)
