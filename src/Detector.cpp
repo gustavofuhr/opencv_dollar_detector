@@ -63,7 +63,9 @@ OddConfig::OddConfig(std::string config_file) :
 					in_file >> dP[i];
 				}
 
-				projectionMatrix = new cv::Mat_<float>(3, 4, dP);
+  				projectionMatrix = new cv::Mat_<float>(3, 4);
+  				memcpy(projectionMatrix->data, dP, 3*4*sizeof(float));
+				delete[] dP;
 
 				if (resizeImage != 1.0) 
 				{

@@ -289,7 +289,8 @@ std::vector<Info> Pyramid::computeFeaturePyramid(cv::Mat I, bool useCalibration)
 		int h = computedChannels[i].image.rows;
 		int w = computedChannels[i].image.cols;
 
-		//float* floatImg3 = cvImage2floatArray(computedChannels[i].image, 3);
+		/*
+		// old conversion 
 		//this is the only substitution that changes some of the results, maybe there's an error here
 		int imgIndex3=0;
 		float* floatImg3 = (float*)malloc(h*w*colorChannels*sizeof(float));
@@ -306,7 +307,12 @@ std::vector<Info> Pyramid::computeFeaturePyramid(cv::Mat I, bool useCalibration)
 	    	for (int k=0; k < h*w; k++)
 	      		floatImg3[imgIndex3++] = tempFloat3[k];
 	  	}
-	  	// */
+	  	// old conversion */
+
+	  	// improved conversion
+	  	float* floatImg3 = (float*)malloc(h*w*colorChannels*sizeof(float));
+	  	cvMat2floatArray(computedChannels[i].image, floatImg3, colorChannels);
+
 	  	float* tempOutput = (float*)malloc(h*w*colorChannels*sizeof(float));
 		convolution(floatImg3, tempOutput, h, w, colorChannels, smoothingRadius, 1);	
 
@@ -324,7 +330,7 @@ std::vector<Info> Pyramid::computeFeaturePyramid(cv::Mat I, bool useCalibration)
 		// improved conversion
 		computedChannels[i].image = floatArray2cvMat(tempOutput, h, w, 3);
 
-		free(tempOutput); // alters the results
+		free(tempOutput); 
 		free(floatImg3);
 
 
@@ -385,10 +391,6 @@ std::vector<Info> Pyramid::computeFeaturePyramid(cv::Mat I, bool useCalibration)
 
 			for (int j=0; j < pChns.pGradHist.nChannels; j++)
 				computedChannels[i].gradientHistogram[j] = padImage(computedChannels[i].gradientHistogram[j], 1, tempPad, padSize, 0);
-
-			/*
-			cv::imshow("testing image", computedChannels[0].image);
-			cv::waitKey();*/
 		}
 	}
 

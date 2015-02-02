@@ -1,7 +1,7 @@
 #include <sstream>
 #include "Opencv_Dollar_Detector.h"
 
-// valgrind --tool=memcheck --leak-check=yes --log-file=valgrind.log ./opencv_dollar_detector ../opencv_dollar_detector/detector.xml ../datasets/small
+// valgrind --tool=memcheck --leak-check=yes --log-file=valgrind.log ./opencv_dollar_detector ../opencv_dollar_detector/odd.conf
 
 // call: ./opencv_dollar_detector ../opencv_dollar_detector/odd.conf
 int main(int argc, char *argv[]) 
@@ -58,6 +58,9 @@ int main(int argc, char *argv[])
 		std::cout << "Time elapsed calculating features: " << d.opts.pPyramid.totalTimeForRealScales << std::endl;
 		std::cout << "Time elapsed approximating features: " << d.opts.pPyramid.totalTimeForApproxScales << std::endl;
 		std::cout << "Time elapsed during detections: " << d.timeSpentInDetection << std::endl;
+
+		delete settings.projectionMatrix;
+		delete settings.homographyMatrix;
 
 		return 0;
 	}

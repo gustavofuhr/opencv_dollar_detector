@@ -63,17 +63,6 @@ cv::Mat floatArray2cvMat(float* source, int rows, int cols, int channels)
 }
 // */
 
-/*
-void floatArray2cvData(float* source, float* result, int rows, int cols, int channels)
-{
-  int tempIndex=0;
-  for (int channel=0; channel < channels; channel++)
-    for (int column=0; column < cols; column++)
-      for (int row=0; row < rows; row++)
-        result[column*channels + row*cols*channels + channel] = source[tempIndex++];
-}
-*/
-
 void features2floatArray (Info features, float* result, int rows, int cols, int colorChannels, int magChannels, int histChannels)
 {
   int i, resultIndex=0;
