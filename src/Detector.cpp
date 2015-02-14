@@ -629,9 +629,7 @@ BB_Array Detector::applyDetectorToFrame(std::vector<Info> pyramid, int shrink, i
 			", width1=" << width1 << ", nFtrs=" << nFtrs << std::endl;
 		// debug */
 
-		n_candidates += width1*height1;
-
-		
+		n_candidates += width1*height1;		
 
 		// apply classifier to each patch
   		std::vector<int> rs, cs; std::vector<float> hs1;

@@ -42,7 +42,6 @@ std::vector<std::string> getDataSetFileNames(std::string directory);
 std::vector<cv::Mat> readProjectionAndHomographyFromCalibrationFile(std::string fileName);
 cv::Point2f imagePoint2groundPlanePoint(float imageU, float imageV, float imageZ, cv::Mat homography);
 cv::Point worldPoint2imagePoint(float worldX, float worldY, float worldZ, cv::Mat homography);
-int findBestScale(float boundingBoxWorldHeight, float minPedestrianHeight, float maxPedestrianHeight, std::vector<double> scales);
 std::vector<cv::Point2f> findGroundPlaneAndImageIntersectionPoints(int imageWidth, int imageHeight, int boundingBoxImageWidth, int boundingBoxImageHeight, 
   float maxPedestrianHeight, cv::Mat_<float> &projection, cv::Mat_<float> &homography);
 double findWorldHeight(int u, int bottom_v, int top_v, cv::Mat_<float> &projection, cv::Mat_<float> &homography);

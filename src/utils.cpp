@@ -1168,31 +1168,6 @@ void print_dmatrix(const std::string &title, const cv::Mat &m) {
 
 }
 
-int findBestScale1(int targetImageHeight, int modelHeight, std::vector<double> scales)
-{
-  int scaleIndex = 0;
-  int result;
-  float minDiff = 6666666666.0;
-  bool found = false;
-
-  while(!found && scaleIndex < scales.size())
-  {
-    float tempDiff = (targetImageHeight-(modelHeight/scales[scaleIndex])) * (targetImageHeight-(modelHeight/scales[scaleIndex]));
-
-    if (tempDiff < minDiff)
-    {
-      minDiff = tempDiff;
-      result = scaleIndex;
-    }
-    else
-      found = true;
-
-    scaleIndex++;
-  }
-
-  return result;
-}
-
 double log_base_n(double y, double base) 
 {
   return log(y)/log(base);

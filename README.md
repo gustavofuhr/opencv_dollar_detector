@@ -14,12 +14,11 @@ Detection working, but is too slow. Calibrated detection and feature pyramid onl
 To Do List:  
 ======================  
   
-Current Total: 5    
+Current Total: 4    
   
 Opencv_Dollar_Detector.cpp:  
 &nbsp;&nbsp;&nbsp;&nbsp;find out why the program is so slow!  
 &nbsp;&nbsp;&nbsp;&nbsp;Change the project's name  
-&nbsp;&nbsp;&nbsp;&nbsp;Apply profiler to the matlab version and compare results  
   
 Calibrated Detection:  
 &nbsp;&nbsp;&nbsp;&nbsp;Possibly add a way to use background information  
