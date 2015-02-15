@@ -22,5 +22,5 @@ Opencv_Dollar_Detector.cpp:
   
 Calibrated Detection:  
 &nbsp;&nbsp;&nbsp;&nbsp;Possibly add a way to use background information  
-&nbsp;&nbsp;&nbsp;&nbsp;Add new detector  
+&nbsp;&nbsp;&nbsp;&nbsp;Fix new detector  
       

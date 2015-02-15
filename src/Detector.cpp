@@ -14,7 +14,8 @@ OddConfig::OddConfig(std::string config_file) :
 	useCalibration(false),
 	saveDetectionsInText(false),
 	supressionThreshold(0.0),
-	maxPedestrianWorldHeight(2000.0)
+	maxPedestrianWorldHeight(2000.0),
+	minPedestrianWorldHeight(1400.0)
 {
 	std::ifstream in_file;
 	in_file.open(config_file.c_str());
@@ -52,6 +53,7 @@ OddConfig::OddConfig(std::string config_file) :
 			else if (token == "logFilename") in_file >> logFilename;
 			else if (token == "supressionThreshold") in_file >> supressionThreshold;
 			else if (token == "maxPedestrianWorldHeight") in_file >> maxPedestrianWorldHeight;
+			else if (token == "minPedestrianWorldHeight") in_file >> minPedestrianWorldHeight;
 			else if (token == "useCalibration")  {
 				std::string sbool;
 				in_file >> sbool;
@@ -394,6 +396,169 @@ BoundingBox Detector::pyramidRowColumn2BoundingBox(int r, int c,  int modelHt, i
 	return bb;
 }
 
+int findBBtop(int row, int col, int modelHt, int modelWd, double targetPedestrianHeight, cv::Mat_<float> &homography, cv::Mat_<float> &projection)
+{
+	int result=0;
+	double  curBBworldHeight=findWorldHeight(col+(modelWd/2), row, result, projection, homography);
+	while (curBBworldHeight > targetPedestrianHeight && result < row-modelHt)
+	{
+		result++;
+		curBBworldHeight = findWorldHeight(col+(modelWd/2), row, result, projection, homography);
+	}
+
+	return result;
+}
+
+BB_Array Detector::applyFastCalibratedDetectorToFrame(std::vector<Info> pyramid, int shrink, int modelHt, int modelWd, int stride, float cascThr, float *thrs, 
+	float *hs, uint32 *fids, uint32 *child, int nTreeNodes, int nTrees, int treeDepth, int nChns, int imageWidth, int imageHeight, double targetPedestrianHeight,
+	cv::Mat_<float> &homography, cv::Mat_<float> &projection)
+{
+	BB_Array result;
+	int s;
+
+	std::vector<float*> scales_chns(opts.pPyramid.computedScales, NULL);
+	std::vector<uint32*> scales_cids(opts.pPyramid.computedScales, NULL);
+
+	// pre-compute the way we access the features for each scale
+	for (int i=0; i < opts.pPyramid.computedScales; i++) {
+		int height = pyramid[i].image.rows;
+		int width = pyramid[i].image.cols;
+
+		int channels = opts.pPyramid.pChns.pColor.nChannels + opts.pPyramid.pChns.pGradMag.nChannels + opts.pPyramid.pChns.pGradHist.nChannels;
+		float* chns = (float*)malloc(height*width*channels*sizeof(float));
+		features2floatArray(pyramid[i], chns, height, width,  opts.pPyramid.pChns.pColor.nChannels, opts.pPyramid.pChns.pGradMag.nChannels, opts.pPyramid.pChns.pGradHist.nChannels);
+		scales_chns[i] = chns;
+
+
+		int nFtrs = modelHt/shrink*modelWd/shrink*nChns;
+	  	uint32 *cids = new uint32[nFtrs]; int m=0;
+	  	
+	  	for( int z=0; z<nChns; z++ ) {
+	    	for( int cc=0; cc<modelWd/shrink; cc++ ) {
+	      		for( int rr=0; rr<modelHt/shrink; rr++ ) {
+	        		cids[m++] = z*width*height + cc*height + rr;
+	        	}
+	        }
+	    }
+
+	    scales_cids[i] = cids;
+	}
+
+	std::vector<int> rs, cs; std::vector<float> hs1;
+	int pointIndex=0;
+	for(int col=0; col<pyramid[0].image.cols-modelWd; col++) 
+	{
+		for(int row=modelHt; row<pyramid[0].image.rows; row++) 
+		{
+			int c = col;
+			int r = 0;
+
+			if (boundingBoxTopPoints.size() <= pointIndex)
+			{
+				r = findBBtop(row, col, modelHt, modelWd, targetPedestrianHeight, homography, projection);
+				boundingBoxTopPoints.push_back(r);
+			}
+			else
+				r = boundingBoxTopPoints[pointIndex];
+
+			int curBBimageHeight = row-r;
+			float targetScale = (float)opts.modelDs[0]/curBBimageHeight;
+
+			s=0;
+			if (r != 0 && targetScale < 1.0)
+			{
+				double curDiff = opts.pPyramid.scales[s] - targetScale;
+				double newDiff;
+				bool done = false;
+				s=1;
+
+				//while (newDiff < curDiff && s < pyramid.size()-1)
+				while (!done && s < pyramid.size()-1)
+				{
+					newDiff = opts.pPyramid.scales[s] - targetScale;
+
+					if(newDiff < 0.0)
+						newDiff = newDiff * (-1);
+
+					if (newDiff < curDiff)
+					{
+						curDiff = newDiff;
+						s++;
+					}
+					else
+					{
+						s--;
+						done = true;
+					}
+				}
+			}
+ 
+			// at the end of this, i know the values of c, r and s(i)
+			int height = pyramid[s].image.rows;	
+
+			float h=0, *chns1=scales_chns[s]+(r*stride/shrink) + (c*stride/shrink)*height;	
+			if( treeDepth==1 ) {
+		      // specialized case for treeDepth==1
+		      for( int t = 0; t < nTrees; t++ ) {
+		        uint32 offset=t*nTreeNodes, k=offset, k0=0;
+		        getChild(chns1,scales_cids[s],fids,thrs,offset,k0,k);
+		        h += hs[k]; if( h<=cascThr ) break;
+		      }
+		    } else if( treeDepth==2 ) {
+		      // specialized case for treeDepth==2
+		      for( int t = 0; t < nTrees; t++ ) {
+		        uint32 offset=t*nTreeNodes, k=offset, k0=0;
+		        getChild(chns1,scales_cids[s],fids,thrs,offset,k0,k);
+		        getChild(chns1,scales_cids[s],fids,thrs,offset,k0,k);
+		        h += hs[k]; if( h<=cascThr ) break;
+		      }
+		    } else if( treeDepth>2) {
+		      // specialized case for treeDepth>2
+		      for( int t = 0; t < nTrees; t++ ) {
+		        uint32 offset=t*nTreeNodes, k=offset, k0=0;
+		        for( int i=0; i<treeDepth; i++ )
+		          getChild(chns1,scales_cids[s],fids,thrs,offset,k0,k);
+		        h += hs[k]; if( h<=cascThr ) break;
+		      }
+		    } else {
+		      // general case (variable tree depth)
+		      for( int t = 0; t < nTrees; t++ ) {
+		        uint32 offset=t*nTreeNodes, k=offset, k0=k;
+		        while( child[k] ) {
+		          float ftr = chns1[scales_cids[s][fids[k]]];
+		          k = (ftr<thrs[k]) ? 1 : 0;
+		          k0 = k = child[k0]-k+offset;
+		        }
+		        h += hs[k]; if( h<=cascThr ) break;
+		      }
+	    	}
+	    	if(h>cascThr) { cs.push_back(c); rs.push_back(r); hs1.push_back(h); } // detecção	
+	    	pointIndex++;
+		}
+	}
+
+	for(int j=0; j<cs.size(); j++ )
+	{
+		BoundingBox bb = pyramidRowColumn2BoundingBox(rs[j], cs[j],  modelHt, modelWd, s, stride) ;
+
+		// bb.topLeftPoint.x = cs[j]*stride;
+		// bb.topLeftPoint.x = (bb.topLeftPoint.x+shift[1])/opts.pPyramid.scales_w[i];
+		// bb.topLeftPoint.y = rs[j]*stride;
+		// bb.topLeftPoint.y = (bb.topLeftPoint.y+shift[0])/opts.pPyramid.scales_h[i];
+		// bb.height = opts.modelDs[0]/opts.pPyramid.scales[i];
+		// bb.width = opts.modelDs[1]/opts.pPyramid.scales[i];
+		bb.score = hs1[j];
+		bb.scale = s;
+		result.push_back(bb);
+	}
+
+	cs.clear();
+	rs.clear();
+	hs1.clear();
+
+	return result;
+}
+
 BB_Array Detector::applyCalibratedDetectorToFrame(std::vector<Info> pyramid, BB_Array* bbox_candidates, int shrink, int modelHt, int modelWd, int stride, float cascThr, float *thrs, float *hs, 
 										uint32 *fids, uint32 *child, int nTreeNodes, int nTrees, int treeDepth, int nChns, int imageWidth, int imageHeight, cv::Mat_<float> &P, cv::Mat &debug_image)
 {
@@ -566,10 +731,6 @@ BB_Array Detector::applyDetectorToFrame(std::vector<Info> pyramid, int shrink, i
 
 	// this became a simple loop because we will apply just one detector here, 
 	// to apply multiple detector models you need to create multiple Detector objects. 
-	float max_h = -10000;
-
-	int n_candidates = 0;
-
 	for (int i = 0; i < opts.pPyramid.computedScales; i++)
 	{
 		// in the original file: *chnsSize = mxGetDimensions(P.data{i});
@@ -585,27 +746,6 @@ BB_Array Detector::applyDetectorToFrame(std::vector<Info> pyramid, int shrink, i
 		int channels = opts.pPyramid.pChns.pColor.nChannels + opts.pPyramid.pChns.pGradMag.nChannels + opts.pPyramid.pChns.pGradHist.nChannels;
 		float* chns = (float*)malloc(height*width*channels*sizeof(float));
 		features2floatArray(pyramid[i], chns, height, width,  opts.pPyramid.pChns.pColor.nChannels, opts.pPyramid.pChns.pGradMag.nChannels, opts.pPyramid.pChns.pGradHist.nChannels);
-		
-		/*
-		// debug: read chns from file
-	  	cv::Mat scalei;
-	  	std::string scaleName;
-
-	  	scaleName += "scale";
-	  	if (i < 9)
-	  		scaleName += "0";
-	  	std::ostringstream scaleNumber;
-        scaleNumber << (i+1);
-	  	scaleName += scaleNumber.str();
-
-		xml["pyramid"][scaleName] >> scalei;
-		//float* floatScale = cvImage2floatArray(scalei, 1);
-		//printElements(floatScale, scalei.rows, scaleName + " read from xml file");
-		free(chns);
-		chns = (float*) malloc((ch1Size+ch2Size+ch3Size)*sizeof(float));
-		chns = cvImage2floatArray(scalei, 1);
-		// debug */
-
 		
 		// construct cids array
 	  	int nFtrs = modelHt/shrink*modelWd/shrink*nChns;
@@ -629,23 +769,13 @@ BB_Array Detector::applyDetectorToFrame(std::vector<Info> pyramid, int shrink, i
 			", width1=" << width1 << ", nFtrs=" << nFtrs << std::endl;
 		// debug */
 
-		n_candidates += width1*height1;		
-
 		// apply classifier to each patch
   		std::vector<int> rs, cs; std::vector<float> hs1;
   		for( int c=0; c<width1; c++ ) 
   		{
   			for( int r=0; r<height1; r++ ) 
   			{
-  				bool debug = false;
-  				if (r==37 && c==121) {
-  					//debug = true;
-  				}
-
 			    float h=0, *chns1=chns+(r*stride/shrink) + (c*stride/shrink)*height;
-			    if (debug) {
-			    	std::cout << "*chns1 not smart " << *chns1 << std::endl;
-			    }
 			    if( treeDepth==1 ) {
 			      // specialized case for treeDepth==1
 			      for( int t = 0; t < nTrees; t++ ) {
@@ -680,30 +810,9 @@ BB_Array Detector::applyDetectorToFrame(std::vector<Info> pyramid, int shrink, i
 			        }
 			        h += hs[k]; if( h<=cascThr ) break;
 			      }
-		    }
-
-		    if (h>max_h)
-		    	max_h = h;
-
-		    if(h>cascThr) { cs.push_back(c); rs.push_back(r); hs1.push_back(h); }
-
-		    if (debug) {
-  					double shift[2];
-					shift[0] = (modelHt-double(opts.modelDs[0]))/2-opts.pPyramid.pad[0];
-					shift[1] = (modelWd-double(opts.modelDs[1]))/2-opts.pPyramid.pad[1];
-
-					BoundingBox bb;
-					bb.topLeftPoint.x = c*stride;
-					bb.topLeftPoint.x = (bb.topLeftPoint.x+shift[1])/opts.pPyramid.scales_w[i];
-					bb.topLeftPoint.y = r*stride;
-					bb.topLeftPoint.y = (bb.topLeftPoint.y+shift[0])/opts.pPyramid.scales_h[i];
-					bb.height = opts.modelDs[0]/opts.pPyramid.scales[i];
-					bb.width = opts.modelDs[1]/opts.pPyramid.scales[i];
-					bb.scale = i;
-
-
-  				}
-		  }
+		    	}
+			    if(h>cascThr) { cs.push_back(c); rs.push_back(r); hs1.push_back(h); }
+		  	}
 		}
 		delete [] cids;
 		free(chns);
@@ -813,24 +922,29 @@ void Detector::acfDetect(std::vector<std::string> imageNames, std::string dataSe
 				calibratedGetScalesDone = true;
 			}
 			
-			framePyramid = opts.pPyramid.computeFeaturePyramid(I, config.useCalibration);
-			
-			/*
-			for (int x=0; x < framePyramid.size(); x++)
-			{
-				std::cout << "Frame: " << i << ", scale: " << x << ", number of scales: " << framePyramid.size() << std::endl;
-				cv::imshow("image", framePyramid[x].image);
-				cv::imshow("gradientMagnitude", framePyramid[x].gradientMagnitude);
-				cv::imshow("gradientHistogram", framePyramid[x].gradientHistogram[0]);
-				cv::waitKey();
-			}
-			// */
- 			
+			framePyramid = opts.pPyramid.computeFeaturePyramid(I, config.useCalibration); 			
 
  			detectionStart = clock();
  			frameDetections = applyCalibratedDetectorToFrame(framePyramid, bbox_candidates, shrink, modelHt, modelWd, stride, cascThr, thrs, hs, fids, child, nTreeNodes, nTrees, treeDepth, nChns, image.cols, image.rows, *(config.projectionMatrix), image);
 			delete bbox_candidates;
 		}
+		/*
+		if (config.useCalibration) // fast detector
+		{
+			if (!calibratedGetScalesDone)
+			{
+				opts.pPyramid.calibratedGetScales(I.rows, I.cols, opts.pPyramid.pChns.shrink, modelWd, modelHt, config.maxPedestrianWorldHeight, *(config.projectionMatrix), *(config.homographyMatrix));
+				calibratedGetScalesDone = true;
+			}
+
+			framePyramid = opts.pPyramid.computeFeaturePyramid(I, config.useCalibration);
+
+			detectionStart = clock();
+			double targetPedestrianHeight = (config.maxPedestrianWorldHeight + config.minPedestrianWorldHeight)/2;
+			frameDetections = applyFastCalibratedDetectorToFrame(framePyramid, shrink, modelHt, modelWd, stride, cascThr, thrs, hs, fids, child, nTreeNodes, 
+								nTrees, treeDepth, nChns, image.cols, image.rows, targetPedestrianHeight, *(config.homographyMatrix), *(config.projectionMatrix));
+		}
+		// */
 		else
 		{
 			framePyramid = opts.pPyramid.computeFeaturePyramid(I, config.useCalibration);
