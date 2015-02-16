@@ -19,9 +19,9 @@ Current Total: 5
 Opencv_Dollar_Detector.cpp:  
 &nbsp;&nbsp;&nbsp;&nbsp;find out why the program is so slow!  
 &nbsp;&nbsp;&nbsp;&nbsp;Change the project's name  
-&nbsp;&nbsp;&nbsp;&nbsp;Remove push_backs  
   
 Calibrated Detection:  
 &nbsp;&nbsp;&nbsp;&nbsp;Possibly add a way to use background information  
-&nbsp;&nbsp;&nbsp;&nbsp;Fix new detector or remove it  
+&nbsp;&nbsp;&nbsp;&nbsp;Remove magic numbers on calibrated detector  
+&nbsp;&nbsp;&nbsp;&nbsp;Fix new detector or remove it and just create a new getCandidates function  
       

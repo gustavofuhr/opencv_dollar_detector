@@ -183,7 +183,7 @@ inline void getChild(float *chns1, uint32 *cids, uint32 *fids, float *thrs, uint
   k0=k+=k0*2; k+=offset;
 }
 
-BB_Array* Detector::generateCandidatesFaster(int imageHeight, int imageWidth, int shrink, cv::Mat_<float> &P, double *maxHeight,
+BB_Array* Detector::generateCandidatesFaster(int imageHeight, int imageWidth, int shrink, cv::Mat_<float> &P, double *maxHeight, float BBwidth2heightRatio, 
 							cv::Mat &im_debug, float meanHeight/* = 1.7m*/, float stdHeight/* = 0.1m*/, float factorStdHeight/* = 2.0*/) 
 {
 
@@ -192,7 +192,7 @@ BB_Array* Detector::generateCandidatesFaster(int imageHeight, int imageWidth, in
 	cv::Mat_<float> P3 = P.col(2);
 
 	//std::cout << "P3: " << P3 << std::endl;
-	float aspectRatio = 0.41;
+	float aspectRatio = BBwidth2heightRatio;
 	float minImageHeight = 80;
 
 	float stepHeight = 100;
@@ -593,16 +593,14 @@ BB_Array Detector::applyFastCalibratedDetectorToFrame(std::vector<Info> pyramid,
 	return result;
 }
 
-BB_Array Detector::applyCalibratedDetectorToFrame(std::vector<Info> pyramid, BB_Array* bbox_candidates, int shrink, int modelHt, int modelWd, int stride, float cascThr, float *thrs, float *hs, 
-										uint32 *fids, uint32 *child, int nTreeNodes, int nTrees, int treeDepth, int nChns, int imageWidth, int imageHeight, cv::Mat_<float> &P, cv::Mat &debug_image)
+BB_Array Detector::applyCalibratedDetectorToFrame(std::vector<Info> pyramid, BB_Array* bbox_candidates, int shrink, int modelHt, int modelWd, int stride, 
+											float cascThr, float *thrs, float *hs, std::vector<uint32*> scales_cids, uint32 *fids, uint32 *child, int nTreeNodes, 
+											int nTrees, int treeDepth, int nChns, int imageWidth, int imageHeight, cv::Mat_<float> &P, cv::Mat &debug_image)
 {
 	BB_Array result;
 
-
 	// std::cout << "stride: " << stride << std::endl;
 	// std::cout << "shrink: " << shrink << std::endl;
-
-
 	
 	//std::cout << "Number of candidates: " << bbox_candidates->size() << std::endl;
 
@@ -614,7 +612,6 @@ BB_Array Detector::applyCalibratedDetectorToFrame(std::vector<Info> pyramid, BB_
 	// bb.width = 57;
 	// bb.height = 104;
 	// bbox_candidates.push_back(bb);
-
 
 	// plot the candidates, only for DEBUG
 	// cv::waitKey(1000);
@@ -628,7 +625,6 @@ BB_Array Detector::applyCalibratedDetectorToFrame(std::vector<Info> pyramid, BB_
 	//cv::waitKey(40);
 
 	std::vector<float*> scales_chns(opts.pPyramid.computedScales, NULL);
-	std::vector<uint32*> scales_cids(opts.pPyramid.computedScales, NULL);
 
 	// pre-compute the way we access the features for each scale
 	for (int i=0; i < opts.pPyramid.computedScales; i++) {
@@ -639,20 +635,6 @@ BB_Array Detector::applyCalibratedDetectorToFrame(std::vector<Info> pyramid, BB_
 		float* chns = (float*)malloc(height*width*channels*sizeof(float));
 		features2floatArray(pyramid[i], chns, height, width,  opts.pPyramid.pChns.pColor.nChannels, opts.pPyramid.pChns.pGradMag.nChannels, opts.pPyramid.pChns.pGradHist.nChannels);
 		scales_chns[i] = chns;
-
-
-		int nFtrs = modelHt/shrink*modelWd/shrink*nChns;
-	  	uint32 *cids = new uint32[nFtrs]; int m=0;
-	  	
-	  	for( int z=0; z<nChns; z++ ) {
-	    	for( int cc=0; cc<modelWd/shrink; cc++ ) {
-	      		for( int rr=0; rr<modelHt/shrink; rr++ ) {
-	        		cids[m++] = z*width*height + cc*height + rr;
-	        	}
-	        }
-	    }
-
-	    scales_cids[i] = cids;
 	}
 
 	float max_h = -1000;
@@ -752,7 +734,6 @@ BB_Array Detector::applyCalibratedDetectorToFrame(std::vector<Info> pyramid, BB_
 	//free the memory used to pre-allocate indexes
 	for (int i=0; i < opts.pPyramid.computedScales; i++) {
 		free(scales_chns[i]);
-		free(scales_cids[i]);
 	}
 
 	return result;
@@ -915,6 +896,8 @@ void Detector::acfDetect(std::vector<std::string> imageNames, std::string dataSe
 	int nChns = opts.pPyramid.pChns.pColor.nChannels + opts.pPyramid.pChns.pGradMag.nChannels + opts.pPyramid.pChns.pGradHist.nChannels; 
 
 	bool calibratedGetScalesDone = false;
+	bool generateCandidatesDone = false;
+	bool cidsDone = false;
 
 	std::ofstream txtFile;
 
@@ -930,6 +913,9 @@ void Detector::acfDetect(std::vector<std::string> imageNames, std::string dataSe
 	else
 		numberOfFrames = lastFrame-firstFrame;
 	BB_Array_Array detections(numberOfFrames);
+
+	BB_Array *bbox_candidates;
+	std::vector<uint32*> scales_cids;
 
 	for (int i = firstFrame; i < numberOfFrames; i++)
 	{
@@ -954,9 +940,6 @@ void Detector::acfDetect(std::vector<std::string> imageNames, std::string dataSe
 		BB_Array frameDetections;
 		if (config.useCalibration)
 		{
-			double maxHeight = 0;			
-			BB_Array *bbox_candidates = generateCandidatesFaster(image.rows, image.cols, 4, *(config.projectionMatrix), &maxHeight, I);
-
 			if (!calibratedGetScalesDone)
 			{
 				opts.pPyramid.calibratedGetScales(I.rows, I.cols, opts.pPyramid.pChns.shrink, modelWd, modelHt, config.maxPedestrianWorldHeight, *(config.projectionMatrix), *(config.homographyMatrix));
@@ -966,8 +949,42 @@ void Detector::acfDetect(std::vector<std::string> imageNames, std::string dataSe
 			framePyramid = opts.pPyramid.computeFeaturePyramid(I, config.useCalibration); 	
 
  			detectionStart = clock();
- 			frameDetections = applyCalibratedDetectorToFrame(framePyramid, bbox_candidates, shrink, modelHt, modelWd, stride, cascThr, thrs, hs, fids, child, nTreeNodes, nTrees, treeDepth, nChns, image.cols, image.rows, *(config.projectionMatrix), image);
-			delete bbox_candidates;
+
+ 			if (!cidsDone)
+ 			{
+ 				scales_cids.reserve(opts.pPyramid.computedScales);
+				for (int i=0; i < opts.pPyramid.computedScales; i++) 
+				{
+					int height = framePyramid[i].image.rows;
+					int width = framePyramid[i].image.cols;
+					int nFtrs = modelHt/shrink*modelWd/shrink*nChns;
+				  	uint32 *cids = new uint32[nFtrs]; int m=0;
+				  	
+				  	for( int z=0; z<nChns; z++ ) {
+				    	for( int cc=0; cc<modelWd/shrink; cc++ ) {
+				      		for( int rr=0; rr<modelHt/shrink; rr++ ) {
+				        		cids[m++] = z*width*height + cc*height + rr;
+				        	}
+				        }
+				    }
+
+				    scales_cids.push_back(cids);	
+				}
+
+				cidsDone = true;
+			}
+
+ 			if (!generateCandidatesDone)
+ 			{
+	 			double maxHeight = 0; 
+				// which of the next two lines is correct?
+				//BB_Array *bbox_candidates = generateCandidatesFaster(image.rows, image.cols, 4, *(config.projectionMatrix), &maxHeight, (float)modelWd/modelHt, I);
+				bbox_candidates = generateCandidatesFaster(image.rows, image.cols, 4, *(config.projectionMatrix), &maxHeight, (float)opts.modelDs[1]/opts.modelDs[0], I);
+				generateCandidatesDone = true;
+			}
+
+ 			frameDetections = applyCalibratedDetectorToFrame(framePyramid, bbox_candidates, shrink, modelHt, modelWd, stride, cascThr, thrs, hs, scales_cids, 
+ 												fids, child, nTreeNodes, nTrees, treeDepth, nChns, image.cols, image.rows, *(config.projectionMatrix), image);
 		}
 		/*
 		if (config.useCalibration) // fast detector
@@ -1053,6 +1070,9 @@ void Detector::acfDetect(std::vector<std::string> imageNames, std::string dataSe
 
 		std::cout << "Frame " << i+1 << " of " << lastFrame << " was processed in " << elapsed_secs << " seconds.\n"; 
 	}
+
+	if (config.useCalibration)
+		delete bbox_candidates;
 
 	if (config.saveDetectionsInText)
 	{

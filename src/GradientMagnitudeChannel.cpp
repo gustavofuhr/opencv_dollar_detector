@@ -140,7 +140,7 @@ std::vector<float*> GradientMagnitudeChannel::mGradMag(float* source, int rows, 
   int h = rows, w = cols, c = channel, d = 3; 
   float *M, *O=0;
   float *I = source;
-  std::vector<float*> result;
+  std::vector<float*> result(2);
   
   /*
   if(h<2 || w<2) mexErrMsgTxt("I must be at least 2x2.");
@@ -169,8 +169,8 @@ std::vector<float*> GradientMagnitudeChannel::mGradMag(float* source, int rows, 
     gradMag(I, M, O, h, w, d, full>0);
 
 		// next, we assign the values of M and O to the matrix thats going to be returned
-    result.push_back(M);
-    result.push_back(O);
+    result[0] = M;
+    result[1] = O;
 	}
 	else
 	{

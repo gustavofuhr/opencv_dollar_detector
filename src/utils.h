@@ -39,7 +39,6 @@ cv::Mat padImage(cv::Mat source, int channels, int *pad, int padSize, int type);
 
 std::vector<std::string> getDataSetFileNames(std::string directory);
 
-std::vector<cv::Mat> readProjectionAndHomographyFromCalibrationFile(std::string fileName);
 cv::Point2f imagePoint2groundPlanePoint(float imageU, float imageV, float imageZ, cv::Mat homography);
 cv::Point worldPoint2imagePoint(float worldX, float worldY, float worldZ, cv::Mat homography);
 std::vector<cv::Point2f> findGroundPlaneAndImageIntersectionPoints(int imageWidth, int imageHeight, int boundingBoxImageWidth, int boundingBoxImageHeight, 
@@ -57,8 +56,6 @@ BoundingBox wcoord2bbox(cv::Point2f w_point, cv::Mat_<float> &P, float w_height,
 
 void print_fmatrix(const std::string &title, const cv::Mat &m);
 void print_dmatrix(const std::string &title, const cv::Mat &m);
-
-void floatArray2cvDataUCHAR(float* source, uchar* result, int rows, int cols, int channels);
 
 double log_base_n(double y, double base);
 

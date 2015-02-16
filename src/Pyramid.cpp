@@ -211,6 +211,7 @@ std::vector<Info> Pyramid::computeFeaturePyramid(cv::Mat I, bool useCalibration)
 			
 			// resample histogram channels
 			ratio[2] = pow(scales[i]/scales[iR],-lambdas[2]);
+			computedChannels[i].gradientHistogram.reserve(histogramChannels);
 			for (int k=0; k < histogramChannels; k++)
 			{
 				cv::Mat tempHist;
@@ -460,6 +461,8 @@ Info Pyramid::computeSingleScaleChannelFeatures(float* source, int rows, int col
 		// this is needed because images returned from mGradHist have dimensions height/binSize and width/binSize
 		int binSize = pChns.pGradHist.binSize;
 
+		result.gradientHistogram.reserve(pChns.pGradHist.nChannels);
+
 		for (int i=0; i < pChns.pGradHist.nChannels; i++)
 		{
 			float* tempH = (float*)malloc(shrinkedHeight*shrinkedWidth*1*sizeof(float));
@@ -568,10 +571,12 @@ void Pyramid::calibratedGetScales(int h, int w, int shrink, int boundingBoxImage
 			computedScales++;
 		}
 
+		scales_w.reserve(computedScales);
+		scales_h.reserve(computedScales);
 		for (int i=0; i<computedScales; i++)
 		{
-			scales_w.insert(scales_w.begin()+i, round(w*scales[i]/shrink)*shrink/w);
-			scales_h.insert(scales_h.begin()+i, round(h*scales[i]/shrink)*shrink/h);
+			scales_w.push_back(round(w*scales[i]/shrink)*shrink/w);
+			scales_h.push_back(round(h*scales[i]/shrink)*shrink/h);
 		}
 	}
 	else

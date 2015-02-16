@@ -671,127 +671,6 @@ std::vector<std::string> getDataSetFileNames(std::string directory)
 
 /************************************************************************************************************/
 
-cv::Mat angles2rotationMatrix(float rx, float ry, float rz)
-{
-  cv::Mat R(3, 3, CV_32FC1);
-  cv::Mat Rx(3, 3, CV_32FC1);
-  cv::Mat Ry(3, 3, CV_32FC1);
-  cv::Mat Rz(3, 3, CV_32FC1);
-
-  Rx.at<float>(0,0) = 1.0;
-  Rx.at<float>(0,1) = 0.0;
-  Rx.at<float>(0,2) = 0.0;
-  Rx.at<float>(1,0) = 0.0;
-  Rx.at<float>(1,1) = cos(rx);
-  Rx.at<float>(1,2) = -sin(rx);
-  Rx.at<float>(2,0) = 0.0;
-  Rx.at<float>(2,1) = sin(rx);
-  Rx.at<float>(2,2) = cos(rx);
-
-  Ry.at<float>(0,0) = cos(ry);
-  Ry.at<float>(0,1) = 0.0;
-  Ry.at<float>(0,2) = sin(ry);
-  Ry.at<float>(1,0) = 0.0;
-  Ry.at<float>(1,1) = 1.0;
-  Ry.at<float>(1,2) = 0.0;
-  Ry.at<float>(2,0) = -sin(ry);
-  Ry.at<float>(2,1) = 0.0;
-  Ry.at<float>(2,2) = cos(ry);
-
-  Rz.at<float>(0,0) = cos(rz);
-  Rz.at<float>(0,1) = -sin(rz);
-  Rz.at<float>(0,2) = 0.0;
-  Rz.at<float>(1,0) = sin(rz);
-  Rz.at<float>(1,1) = cos(rz);
-  Rz.at<float>(1,2) = 0.0;
-  Rz.at<float>(2,0) = 0.0;
-  Rz.at<float>(2,1) = 0.0;
-  Rz.at<float>(2,2) = 1.0;
-
-  R = Rz*Ry*Rx;
-
-  return R;
-}
-
-std::vector<cv::Mat> readProjectionAndHomographyFromCalibrationFile(std::string fileName)
-{
-  cv::FileStorage xml;
-  std::vector<cv::Mat> result;
-  xml.open(fileName, cv::FileStorage::READ);
-
-  if (!xml.isOpened())
-  {
-    std::cerr << " # Failed to open '" << fileName << "' calibration file." << std::endl;
-  }
-  else
-  {
-    float dpx, dpy, focal, cx, cy, sx, tx, ty, tz, rx, ry,rz;
-    cv::Mat P(3, 4, CV_32FC1);
-    cv::Mat R(3, 3, CV_32FC1);
-    cv::Mat Rt(3, 4, CV_32FC1);
-    cv::Mat K(3, 3, CV_32FC1);
-    cv::Mat H(3, 3, CV_32FC1);
-
-    xml["Camera"]["Geometry"]["dpx"] >> dpx;
-    xml["Camera"]["Geometry"]["dpy"] >> dpy;
-
-    xml["Camera"]["Intrinsic"]["focal"] >> focal;
-    xml["Camera"]["Intrinsic"]["cx"] >> cx;
-    xml["Camera"]["Intrinsic"]["cy"] >> cy;
-    xml["Camera"]["Intrinsic"]["sx"] >> sx;
-
-    xml["Camera"]["Extrinsic"]["tx"] >> tx;
-    xml["Camera"]["Extrinsic"]["ty"] >> ty;
-    xml["Camera"]["Extrinsic"]["tz"] >> tz;
-    xml["Camera"]["Extrinsic"]["rx"] >> rx;
-    xml["Camera"]["Extrinsic"]["ry"] >> ry;
-    xml["Camera"]["Extrinsic"]["rz"] >> rz;
-
-    K.at<float>(0,0) = focal*sx/dpx;
-    K.at<float>(0,1) = 0.0;
-    K.at<float>(0,2) = cx;
-    K.at<float>(1,0) = 0.0;
-    K.at<float>(1,1) = focal/dpy;
-    K.at<float>(1,2) = cy;
-    K.at<float>(2,0) = 0.0;
-    K.at<float>(2,1) = 0.0;
-    K.at<float>(2,2) = 1.0;
-
-    R = angles2rotationMatrix(rx, ry, rz);
-
-    Rt.at<float>(0,0) = R.at<float>(0,0);
-    Rt.at<float>(0,1) = R.at<float>(0,1);
-    Rt.at<float>(0,2) = R.at<float>(0,2);
-    Rt.at<float>(0,3) = tx;
-    Rt.at<float>(1,0) = R.at<float>(1,0);
-    Rt.at<float>(1,1) = R.at<float>(1,1);
-    Rt.at<float>(1,2) = R.at<float>(1,2);
-    Rt.at<float>(1,3) = ty;
-    Rt.at<float>(2,0) = R.at<float>(2,0);
-    Rt.at<float>(2,1) = R.at<float>(2,1);
-    Rt.at<float>(2,2) = R.at<float>(2,2);
-    Rt.at<float>(2,3) = tz;
-
-    P = K*Rt;
-
-    result.push_back(P);
-
-    H.at<float>(0,0) = P.at<float>(0,0);
-    H.at<float>(0,1) = P.at<float>(0,1);
-    H.at<float>(0,2) = P.at<float>(0,2);
-    H.at<float>(1,0) = P.at<float>(1,0);
-    H.at<float>(1,1) = P.at<float>(1,1);
-    H.at<float>(1,2) = P.at<float>(1,2);
-    H.at<float>(2,0) = P.at<float>(3,0);
-    H.at<float>(2,1) = P.at<float>(3,1);
-    H.at<float>(2,2) = P.at<float>(3,2);
-
-    result.push_back(H);
-  }
-
-  return result;
-}
-
 cv::Point2f imagePoint2groundPlanePoint(float imageU, float imageV, float imageZ, cv::Mat homography)
 {
   cv::Mat inverseH;
@@ -865,7 +744,7 @@ double findWorldHeight(int u, int bottom_v, int top_v, cv::Mat_<float> &projecti
 std::vector<cv::Point2f> findGroundPlaneAndImageIntersectionPoints(int imageWidth, int imageHeight, int boundingBoxImageWidth, int boundingBoxImageHeight, 
   float maxPedestrianHeight, cv::Mat_<float> &projection, cv::Mat_<float> &homography)
 {
-  std::vector<cv::Point2f> points;
+  std::vector<cv::Point2f> points(4);
   bool foundP1=false, foundP2=false;
 
   // finding top left point
@@ -880,7 +759,7 @@ std::vector<cv::Point2f> findGroundPlaneAndImageIntersectionPoints(int imageWidt
     {
       foundP1 = true;
       cv::Point2f p1 = imagePoint2groundPlanePoint(0, curV, 1.0, homography);
-      points.push_back(p1);
+      points[0] = p1;
 
       // debug
       //std::cout << "p1_i=(" << 0 << "," << curV << "), p1_w=(" << p1.x << "," << p1.y << ")\n";
@@ -901,7 +780,7 @@ std::vector<cv::Point2f> findGroundPlaneAndImageIntersectionPoints(int imageWidt
     {
       foundP2 = true;
       cv::Point2f p2 = imagePoint2groundPlanePoint(imageWidth - boundingBoxImageWidth, curV, 1.0, homography);
-      points.push_back(p2);
+      points[1] = p2;
 
       //std::cout << "p2_i=(" << imageWidth - boundingBoxImageWidth << "," << curV << "), p2_w=(" << p2.x << "," << p2.y << ")\n";
     }
@@ -911,12 +790,12 @@ std::vector<cv::Point2f> findGroundPlaneAndImageIntersectionPoints(int imageWidt
 
   // finding bottom left point
   cv::Point2f p3 = imagePoint2groundPlanePoint(0, imageHeight, 1.0, homography);
-  points.push_back(p3);
+  points[2] = p3;
   //std::cout << "p3_i=(" << 0 << "," << imageHeight << "), p3_w=(" << p3.x << "," << p3.y << ")\n";
 
   // finding bottom right point
   cv::Point2f p4 = imagePoint2groundPlanePoint(imageWidth-boundingBoxImageWidth, imageHeight, 1.0, homography);
-  points.push_back(p4);
+  points[3] = p4;
   //std::cout << "p4_i=(" << imageWidth-boundingBoxImageWidth << "," << imageHeight << "), p4_w=(" << p4.x << "," << p4.y << ")\n";
 
   return points;
@@ -925,9 +804,9 @@ std::vector<cv::Point2f> findGroundPlaneAndImageIntersectionPoints(int imageWidt
 std::vector<cv::Point2f> trimGroundPlanesBottomPoints(int imageWidth, int imageHeight, int boundingBoxImageWidth, int boundingBoxImageHeight, 
   double targetPedestrianWorldHeight, std::vector<cv::Point2f> groundPlaneLimits, cv::Mat_<float> &projection, cv::Mat_<float> &homography)
 {
-  std::vector<cv::Point2f> newGroundPlaneLimits;
-  newGroundPlaneLimits.push_back(groundPlaneLimits[0]);
-  newGroundPlaneLimits.push_back(groundPlaneLimits[1]);
+  std::vector<cv::Point2f> newGroundPlaneLimits(4);
+  newGroundPlaneLimits[0] = groundPlaneLimits[0];
+  newGroundPlaneLimits[1] = groundPlaneLimits[1];
   cv::Point topLeftLimitImagePoint = worldPoint2imagePoint(groundPlaneLimits[0].x, groundPlaneLimits[0].y, 0.0, homography);
   cv::Point topRightLimitImagePoint = worldPoint2imagePoint(groundPlaneLimits[1].x, groundPlaneLimits[1].y, 0.0, homography);
   double curBBworldHeight = targetPedestrianWorldHeight - 1.0;
@@ -944,7 +823,7 @@ std::vector<cv::Point2f> trimGroundPlanesBottomPoints(int imageWidth, int imageH
     {
       done = true;
       cv::Point2f newBottomLeft = imagePoint2groundPlanePoint(0, curV, 1.0, homography);
-      newGroundPlaneLimits.push_back(newBottomLeft);
+      newGroundPlaneLimits[2] = newBottomLeft;
 
       // debug
       std::cout << "after " << octaves << " octaves, bottomLeft=(" << newBottomLeft.x << "," << newBottomLeft.y << ")\n";  
@@ -963,7 +842,7 @@ std::vector<cv::Point2f> trimGroundPlanesBottomPoints(int imageWidth, int imageH
     }
   }
   if (!done)
-    newGroundPlaneLimits.push_back(groundPlaneLimits[2]);
+    newGroundPlaneLimits[2] = groundPlaneLimits[2];
   else
     done = false;
 
@@ -979,7 +858,7 @@ std::vector<cv::Point2f> trimGroundPlanesBottomPoints(int imageWidth, int imageH
     {
       done = true;
       cv::Point2f newBottomRight = imagePoint2groundPlanePoint(imageWidth-boundingBoxImageWidth, curV, 1.0, homography);
-      newGroundPlaneLimits.push_back(newBottomRight);
+      newGroundPlaneLimits[3] = newBottomRight;
       // debug
       std::cout << "after " << octaves << " octaves, bottomRight=(" << newBottomRight.x << "," << newBottomRight.y << ")\n";  
       // debug */
@@ -997,7 +876,7 @@ std::vector<cv::Point2f> trimGroundPlanesBottomPoints(int imageWidth, int imageH
     }
   }
   if (!done)
-    newGroundPlaneLimits.push_back(groundPlaneLimits[3]);
+    newGroundPlaneLimits[3] = groundPlaneLimits[3];
 
 
   return newGroundPlaneLimits;

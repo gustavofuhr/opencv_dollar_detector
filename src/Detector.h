@@ -72,7 +72,7 @@ private:
 	BB_Array *generateCandidates(int imageHeight, int imageWidth, float groundPlaneMinX, float groundPlaneMaxX, float groundPlaneMinY, float groundPlaneMaxY, 
 		cv::Mat_<float> &P, double *maxHeight, float meanHeight = 1800, float stdHeight = 100, float factorStdHeight = 2.0);
 
-	BB_Array* generateCandidatesFaster(int imageHeight, int imageWidth, int shrink, cv::Mat_<float> &P, double *maxHeight,
+	BB_Array* generateCandidatesFaster(int imageHeight, int imageWidth, int shrink, cv::Mat_<float> &P, double *maxHeight, float BBwidth2heightRatio,
 							cv::Mat &im_debug, float meanHeight = 1800, float stdHeight = 100, float factorStdHeight = 2.0);
 
 	int findClosestScaleFromBbox(std::vector<Info> &pyramid, BoundingBox &bb,
@@ -85,9 +85,9 @@ private:
 	BB_Array applyFastCalibratedDetectorToFrame(std::vector<Info> pyramid, int shrink, int modelHt, int modelWd, int stride, float cascThr, float *thrs, 
 	float *hs, uint32 *fids, uint32 *child, int nTreeNodes, int nTrees, int treeDepth, int nChns, int imageWidth, int imageHeight, double targetPedestrianHeight,
 	cv::Mat_<float> &homography, cv::Mat_<float> &projection);
-	BB_Array applyCalibratedDetectorToFrame(std::vector<Info> pyramid, BB_Array* bbox_candidates, int shrink, int modelHt, int modelWd, int stride, float cascThr, 
-											float *thrs, float *hs, uint32 *fids, uint32 *child, int nTreeNodes, int nTrees, int treeDepth, int nChns, int imageWidth, 
-											int imageHeight, cv::Mat_<float> &P, cv::Mat &debug_image);
+	BB_Array applyCalibratedDetectorToFrame(std::vector<Info> pyramid, BB_Array* bbox_candidates, int shrink, int modelHt, int modelWd, int stride, 
+											float cascThr, float *thrs, float *hs, std::vector<uint32*> scales_cids, uint32 *fids, uint32 *child, int nTreeNodes, 
+											int nTrees, int treeDepth, int nChns, int imageWidth, int imageHeight, cv::Mat_<float> &P, cv::Mat &debug_image);
 
 	void bbTopLeft2PyramidRowColumn(int *r, int *c, BoundingBox &bb, int modelHt, int modelWd, int ith_scale, int stride);
 	BB_Array nonMaximalSuppressionSmart(BB_Array bbs, double meanHeight, double stdHeight);

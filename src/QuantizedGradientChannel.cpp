@@ -273,7 +273,7 @@ std::vector<float*> QuantizedGradientChannel::mGradHist(float* gradMag, float* g
   cv::waitKey();
   // */
 
-  std::vector<float*> result;
+  std::vector<float*> result(nChannels);
 
   // if( nOrients==0 ) return;
 	if (orientationChannels == 0)
@@ -303,7 +303,7 @@ std::vector<float*> QuantizedGradientChannel::mGradHist(float* gradMag, float* g
       for (int j=0; j < hb*wb; j++)
           tempH[j] = H[indexForH++];
 
-      result.push_back(tempH);
+      result[i] = tempH;
       // free(tempH); // causes an error
     }
 	}
