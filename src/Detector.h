@@ -50,7 +50,7 @@ public:
 	int treeDepth;
 	OddConfig config;
 
-	BB_Array_Array detections;
+	//BB_Array_Array detections;
 
 	double timeSpentInDetection;
 
@@ -81,6 +81,7 @@ private:
 	int findClosestScaleFromBbox2(std::vector<Info> &pyramid, BoundingBox &bb,
 												int modelHeight, double shrink);
 
+	int findBestScaleIndex(double targetScale, int numberOfScales);
 	BB_Array applyFastCalibratedDetectorToFrame(std::vector<Info> pyramid, int shrink, int modelHt, int modelWd, int stride, float cascThr, float *thrs, 
 	float *hs, uint32 *fids, uint32 *child, int nTreeNodes, int nTrees, int treeDepth, int nChns, int imageWidth, int imageHeight, double targetPedestrianHeight,
 	cv::Mat_<float> &homography, cv::Mat_<float> &projection);

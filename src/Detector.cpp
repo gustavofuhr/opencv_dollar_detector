@@ -402,11 +402,46 @@ int findBBtop(int row, int col, int modelHt, int modelWd, double targetPedestria
 	double  curBBworldHeight=findWorldHeight(col+(modelWd/2), row, result, projection, homography);
 	while (curBBworldHeight > targetPedestrianHeight && result < row-modelHt)
 	{
+		//std::cout << "curBBworldHeight=" << curBBworldHeight << ", targetPedestrianHeight=" << targetPedestrianHeight << std::endl;
 		result++;
 		curBBworldHeight = findWorldHeight(col+(modelWd/2), row, result, projection, homography);
 	}
 
 	return result;
+}
+
+int Detector::findBestScaleIndex(double targetScale, int numberOfScales)
+{
+	//std::cout << "numberOfScales=" << numberOfScales << ", targetScale=" << targetScale << std::endl;
+	int scale=0;
+
+	double curDiff = opts.pPyramid.scales[scale] - targetScale;
+	double newDiff;
+	bool done = false;
+	scale=1;
+
+	while (!done && scale < numberOfScales-1)
+	{
+		newDiff = opts.pPyramid.scales[scale] - targetScale;
+
+		if(newDiff < 0.0)
+			newDiff = newDiff * (-1);
+
+		//std::cout << "scale=" << opts.pPyramid.scales[scale] << ", curDiff=" << curDiff << ", newDiff=" << newDiff << std::endl;
+
+		if (newDiff < curDiff)
+		{
+			curDiff = newDiff;
+			scale++;
+		}
+		else
+		{
+			scale--;
+			done = true;
+		}
+	}
+
+	return scale;
 }
 
 BB_Array Detector::applyFastCalibratedDetectorToFrame(std::vector<Info> pyramid, int shrink, int modelHt, int modelWd, int stride, float cascThr, float *thrs, 
@@ -446,9 +481,9 @@ BB_Array Detector::applyFastCalibratedDetectorToFrame(std::vector<Info> pyramid,
 
 	std::vector<int> rs, cs; std::vector<float> hs1;
 	int pointIndex=0;
-	for(int col=0; col<pyramid[0].image.cols-modelWd; col++) 
+	for(int col=0; col<imageWidth; col++) 
 	{
-		for(int row=modelHt; row<pyramid[0].image.rows; row++) 
+		for(int row=modelHt; row<imageHeight; row++) 
 		{
 			int c = col;
 			int r = 0;
@@ -457,40 +492,36 @@ BB_Array Detector::applyFastCalibratedDetectorToFrame(std::vector<Info> pyramid,
 			{
 				r = findBBtop(row, col, modelHt, modelWd, targetPedestrianHeight, homography, projection);
 				boundingBoxTopPoints.push_back(r);
+
+				//std::cout << "calculated r=" << r << std::endl;
 			}
 			else
-				r = boundingBoxTopPoints[pointIndex];
+			{
+				if (boundingBoxTopPoints.size() <= pointIndex && r == 0)
+					boundingBoxTopPoints.push_back(r);
+				else
+					r = boundingBoxTopPoints[pointIndex];		
+
+				//std::cout << "read r=" << r << std::endl;
+			}
 
 			int curBBimageHeight = row-r;
 			float targetScale = (float)opts.modelDs[0]/curBBimageHeight;
 
+			//std::cout << "curBBimageHeight=" << curBBimageHeight << std::endl;
+
 			s=0;
-			if (r != 0 && targetScale < 1.0)
+			if (bestScaleIndex.size() <= pointIndex && r != 0 && targetScale < 1.0)
 			{
-				double curDiff = opts.pPyramid.scales[s] - targetScale;
-				double newDiff;
-				bool done = false;
-				s=1;
-
-				//while (newDiff < curDiff && s < pyramid.size()-1)
-				while (!done && s < pyramid.size()-1)
-				{
-					newDiff = opts.pPyramid.scales[s] - targetScale;
-
-					if(newDiff < 0.0)
-						newDiff = newDiff * (-1);
-
-					if (newDiff < curDiff)
-					{
-						curDiff = newDiff;
-						s++;
-					}
-					else
-					{
-						s--;
-						done = true;
-					}
-				}
+				s = findBestScaleIndex(targetScale, pyramid.size());
+				bestScaleIndex.push_back(s);
+			}
+			else 
+			{
+				if (bestScaleIndex.size() <= pointIndex && r == 0)
+					bestScaleIndex.push_back(s); // pushes index zero for the only possible scale in the first row
+				else
+					s = bestScaleIndex[pointIndex];
 			}
  
 			// at the end of this, i know the values of c, r and s(i)
@@ -532,7 +563,10 @@ BB_Array Detector::applyFastCalibratedDetectorToFrame(std::vector<Info> pyramid,
 		        h += hs[k]; if( h<=cascThr ) break;
 		      }
 	    	}
+	    	//std::cout << "point: " << pointIndex << ", scale: " << s << ", score: " << h << std::endl;
+	    	//std::cin.get();
 	    	if(h>cascThr) { cs.push_back(c); rs.push_back(r); hs1.push_back(h); } // detecção	
+
 	    	pointIndex++;
 		}
 	}
@@ -890,7 +924,14 @@ void Detector::acfDetect(std::vector<std::string> imageNames, std::string dataSe
 		txtFile.open (outputfilename.c_str());
 	}
 
-	for (int i = firstFrame; i < imageNames.size() && i < lastFrame; i++)
+	int numberOfFrames=0;
+	if (imageNames.size() <= lastFrame)
+		numberOfFrames = imageNames.size()-firstFrame;
+	else
+		numberOfFrames = lastFrame-firstFrame;
+	BB_Array_Array detections(numberOfFrames);
+
+	for (int i = firstFrame; i < numberOfFrames; i++)
 	{
 		clock_t frameStart = clock();
 
@@ -922,7 +963,7 @@ void Detector::acfDetect(std::vector<std::string> imageNames, std::string dataSe
 				calibratedGetScalesDone = true;
 			}
 			
-			framePyramid = opts.pPyramid.computeFeaturePyramid(I, config.useCalibration); 			
+			framePyramid = opts.pPyramid.computeFeaturePyramid(I, config.useCalibration); 	
 
  			detectionStart = clock();
  			frameDetections = applyCalibratedDetectorToFrame(framePyramid, bbox_candidates, shrink, modelHt, modelWd, stride, cascThr, thrs, hs, fids, child, nTreeNodes, nTrees, treeDepth, nChns, image.cols, image.rows, *(config.projectionMatrix), image);
@@ -940,7 +981,8 @@ void Detector::acfDetect(std::vector<std::string> imageNames, std::string dataSe
 			framePyramid = opts.pPyramid.computeFeaturePyramid(I, config.useCalibration);
 
 			detectionStart = clock();
-			double targetPedestrianHeight = (config.maxPedestrianWorldHeight + config.minPedestrianWorldHeight)/2;
+			//double targetPedestrianHeight = (config.maxPedestrianWorldHeight + config.minPedestrianWorldHeight)/2;
+			double targetPedestrianHeight = config.maxPedestrianWorldHeight;
 			frameDetections = applyFastCalibratedDetectorToFrame(framePyramid, shrink, modelHt, modelWd, stride, cascThr, thrs, hs, fids, child, nTreeNodes, 
 								nTrees, treeDepth, nChns, image.cols, image.rows, targetPedestrianHeight, *(config.homographyMatrix), *(config.projectionMatrix));
 		}
@@ -953,8 +995,8 @@ void Detector::acfDetect(std::vector<std::string> imageNames, std::string dataSe
 			frameDetections = applyDetectorToFrame(framePyramid, shrink, modelHt, modelWd, stride, cascThr, thrs, hs, fids, child, nTreeNodes, nTrees, treeDepth, nChns);		
 		}
 		
-		// BB_Array frameDetections = applyDetectorToFrame(framePyramid, shrink, modelHt, modelWd, stride, cascThr, thrs, hs, fids, child, nTreeNodes, nTrees, treeDepth, nChns);
-		detections.push_back(frameDetections);
+		//detections.push_back(frameDetections);
+		detections[i] = frameDetections;
 		frameDetections.clear(); //doesn't seem to make a difference
 
 		clock_t detectionEnd = clock();
@@ -1021,14 +1063,14 @@ void Detector::acfDetect(std::vector<std::string> imageNames, std::string dataSe
 // for each i suppress all j st j>i and area-overlap>overlap
 BB_Array nmsMax(BB_Array source, bool greedy, double overlapArea, cv::String overlapDenominator)
 {
-	BB_Array result;
-	BB_Array sortedArray;
+	BB_Array sortedArray(source.size());
 	// bool discarded[source.size()];
 	bool *discarded = (bool*)malloc(source.size()*sizeof(bool));
+	int discardedBBs = 0;
 
 	for (int i=0; i < source.size(); i++)
 	{
-		sortedArray.push_back(source[i]);
+		sortedArray[i] = source[i];
 		discarded[i] = false;
 	}
  
@@ -1076,17 +1118,22 @@ BB_Array nmsMax(BB_Array source, bool greedy, double overlapArea, cv::String ove
 						}
 						o = o/u;
 						if (o > overlapArea) // sortedArray[j] is no longer needed (is discarded)
+						{
 							discarded[j] = true;
+							discardedBBs++;
+						}
 					}
 				}
 			}	
 		}
 	}
 	
+	BB_Array result(source.size()-discardedBBs);
+	int resultIndex=0;
 	// result keeps only the bounding boxes that were not discarded
 	for (int i=0; i < sortedArray.size(); i++)
 		if (!discarded[i])
-			result.push_back(sortedArray[i]);
+			result[resultIndex++] = sortedArray[i];
 
 	free(discarded);
 

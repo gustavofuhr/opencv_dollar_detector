@@ -8,19 +8,20 @@ By Charles Arnoud, under the mentorship of Cláudio Rosito Jüng and with the he
 Current Status  
 ======================  
   
-Detection working, but is too slow. Calibrated detection and feature pyramid online.  
+Detection working, but is too slow. Calibrated detection and feature pyramid online, but calibrated detection needs optimization.  
   
   
 To Do List:  
 ======================  
   
-Current Total: 4    
+Current Total: 5    
   
 Opencv_Dollar_Detector.cpp:  
 &nbsp;&nbsp;&nbsp;&nbsp;find out why the program is so slow!  
 &nbsp;&nbsp;&nbsp;&nbsp;Change the project's name  
+&nbsp;&nbsp;&nbsp;&nbsp;Remove push_backs  
   
 Calibrated Detection:  
 &nbsp;&nbsp;&nbsp;&nbsp;Possibly add a way to use background information  
-&nbsp;&nbsp;&nbsp;&nbsp;Fix new detector  
+&nbsp;&nbsp;&nbsp;&nbsp;Fix new detector or remove it  
       
