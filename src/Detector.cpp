@@ -207,13 +207,7 @@ BB_Array* Detector::generateCandidatesFaster(int imageHeight, int imageWidth, in
 	H(0,1) = P(0,1); H(1,1) = P(1,1); H(2,1) = P(2,1);
 	H(0,2) = P(0,3); H(1,2) = P(1,3); H(2,2) = P(2,3);
 	
-	//std::cout << "H: " << H << std::endl;
 	cv::Mat_<float> H_inv = H.inv();
-
-	// std::cout << "H_inv " << H_inv << std::endl;
-	// cv::Mat_<float> inv_H_3rd_line = H_inv.row(2);
-
-	// std::cout << " inv_H_3rd_line  " <<  inv_H_3rd_line  << std::endl;
 
 	// create foot points using the pixels of the image
 	for (int u = 0; u < imageWidth; u+=shrink) {
@@ -258,7 +252,7 @@ BB_Array* Detector::generateCandidatesFaster(int imageHeight, int imageWidth, in
 	}
 	
 	
-	//std::cout << "Total candidates: " << totalCandidates << std::endl;
+	//std::cout << "Total candidates: " << totalCandidates << ", imageHeight: " << imageHeight << ", imageWidth: " << imageWidth << std::endl;
  
 	*maxHeight = max_h;
 
@@ -354,7 +348,6 @@ int Detector::findClosestScaleFromBbox(std::vector<Info> &pyramid, BoundingBox &
 	}
 
 	return i_min;
-
 }
 
 void Detector::bbTopLeft2PyramidRowColumn(int *r, int *c, BoundingBox &bb, int modelHt, int modelWd, int ith_scale, int stride) {
@@ -396,233 +389,11 @@ BoundingBox Detector::pyramidRowColumn2BoundingBox(int r, int c,  int modelHt, i
 	return bb;
 }
 
-int findBBtop(int row, int col, int modelHt, int modelWd, double targetPedestrianHeight, cv::Mat_<float> &homography, cv::Mat_<float> &projection)
-{
-	int result=0;
-	double  curBBworldHeight=findWorldHeight(col+(modelWd/2), row, result, projection, homography);
-	while (curBBworldHeight > targetPedestrianHeight && result < row-modelHt)
-	{
-		//std::cout << "curBBworldHeight=" << curBBworldHeight << ", targetPedestrianHeight=" << targetPedestrianHeight << std::endl;
-		result++;
-		curBBworldHeight = findWorldHeight(col+(modelWd/2), row, result, projection, homography);
-	}
-
-	return result;
-}
-
-int Detector::findBestScaleIndex(double targetScale, int numberOfScales)
-{
-	//std::cout << "numberOfScales=" << numberOfScales << ", targetScale=" << targetScale << std::endl;
-	int scale=0;
-
-	double curDiff = opts.pPyramid.scales[scale] - targetScale;
-	double newDiff;
-	bool done = false;
-	scale=1;
-
-	while (!done && scale < numberOfScales-1)
-	{
-		newDiff = opts.pPyramid.scales[scale] - targetScale;
-
-		if(newDiff < 0.0)
-			newDiff = newDiff * (-1);
-
-		//std::cout << "scale=" << opts.pPyramid.scales[scale] << ", curDiff=" << curDiff << ", newDiff=" << newDiff << std::endl;
-
-		if (newDiff < curDiff)
-		{
-			curDiff = newDiff;
-			scale++;
-		}
-		else
-		{
-			scale--;
-			done = true;
-		}
-	}
-
-	return scale;
-}
-
-BB_Array Detector::applyFastCalibratedDetectorToFrame(std::vector<Info> pyramid, int shrink, int modelHt, int modelWd, int stride, float cascThr, float *thrs, 
-	float *hs, uint32 *fids, uint32 *child, int nTreeNodes, int nTrees, int treeDepth, int nChns, int imageWidth, int imageHeight, double targetPedestrianHeight,
-	cv::Mat_<float> &homography, cv::Mat_<float> &projection)
-{
-	BB_Array result;
-	int s;
-
-	std::vector<float*> scales_chns(opts.pPyramid.computedScales, NULL);
-	std::vector<uint32*> scales_cids(opts.pPyramid.computedScales, NULL);
-
-	// pre-compute the way we access the features for each scale
-	for (int i=0; i < opts.pPyramid.computedScales; i++) {
-		int height = pyramid[i].image.rows;
-		int width = pyramid[i].image.cols;
-
-		int channels = opts.pPyramid.pChns.pColor.nChannels + opts.pPyramid.pChns.pGradMag.nChannels + opts.pPyramid.pChns.pGradHist.nChannels;
-		float* chns = (float*)malloc(height*width*channels*sizeof(float));
-		features2floatArray(pyramid[i], chns, height, width,  opts.pPyramid.pChns.pColor.nChannels, opts.pPyramid.pChns.pGradMag.nChannels, opts.pPyramid.pChns.pGradHist.nChannels);
-		scales_chns[i] = chns;
-
-
-		int nFtrs = modelHt/shrink*modelWd/shrink*nChns;
-	  	uint32 *cids = new uint32[nFtrs]; int m=0;
-	  	
-	  	for( int z=0; z<nChns; z++ ) {
-	    	for( int cc=0; cc<modelWd/shrink; cc++ ) {
-	      		for( int rr=0; rr<modelHt/shrink; rr++ ) {
-	        		cids[m++] = z*width*height + cc*height + rr;
-	        	}
-	        }
-	    }
-
-	    scales_cids[i] = cids;
-	}
-
-	std::vector<int> rs, cs; std::vector<float> hs1;
-	int pointIndex=0;
-	for(int col=0; col<imageWidth; col++) 
-	{
-		for(int row=modelHt; row<imageHeight; row++) 
-		{
-			int c = col;
-			int r = 0;
-
-			if (boundingBoxTopPoints.size() <= pointIndex)
-			{
-				r = findBBtop(row, col, modelHt, modelWd, targetPedestrianHeight, homography, projection);
-				boundingBoxTopPoints.push_back(r);
-
-				//std::cout << "calculated r=" << r << std::endl;
-			}
-			else
-			{
-				if (boundingBoxTopPoints.size() <= pointIndex && r == 0)
-					boundingBoxTopPoints.push_back(r);
-				else
-					r = boundingBoxTopPoints[pointIndex];		
-
-				//std::cout << "read r=" << r << std::endl;
-			}
-
-			int curBBimageHeight = row-r;
-			float targetScale = (float)opts.modelDs[0]/curBBimageHeight;
-
-			//std::cout << "curBBimageHeight=" << curBBimageHeight << std::endl;
-
-			s=0;
-			if (bestScaleIndex.size() <= pointIndex && r != 0 && targetScale < 1.0)
-			{
-				s = findBestScaleIndex(targetScale, pyramid.size());
-				bestScaleIndex.push_back(s);
-			}
-			else 
-			{
-				if (bestScaleIndex.size() <= pointIndex && r == 0)
-					bestScaleIndex.push_back(s); // pushes index zero for the only possible scale in the first row
-				else
-					s = bestScaleIndex[pointIndex];
-			}
- 
-			// at the end of this, i know the values of c, r and s(i)
-			int height = pyramid[s].image.rows;	
-
-			float h=0, *chns1=scales_chns[s]+(r*stride/shrink) + (c*stride/shrink)*height;	
-			if( treeDepth==1 ) {
-		      // specialized case for treeDepth==1
-		      for( int t = 0; t < nTrees; t++ ) {
-		        uint32 offset=t*nTreeNodes, k=offset, k0=0;
-		        getChild(chns1,scales_cids[s],fids,thrs,offset,k0,k);
-		        h += hs[k]; if( h<=cascThr ) break;
-		      }
-		    } else if( treeDepth==2 ) {
-		      // specialized case for treeDepth==2
-		      for( int t = 0; t < nTrees; t++ ) {
-		        uint32 offset=t*nTreeNodes, k=offset, k0=0;
-		        getChild(chns1,scales_cids[s],fids,thrs,offset,k0,k);
-		        getChild(chns1,scales_cids[s],fids,thrs,offset,k0,k);
-		        h += hs[k]; if( h<=cascThr ) break;
-		      }
-		    } else if( treeDepth>2) {
-		      // specialized case for treeDepth>2
-		      for( int t = 0; t < nTrees; t++ ) {
-		        uint32 offset=t*nTreeNodes, k=offset, k0=0;
-		        for( int i=0; i<treeDepth; i++ )
-		          getChild(chns1,scales_cids[s],fids,thrs,offset,k0,k);
-		        h += hs[k]; if( h<=cascThr ) break;
-		      }
-		    } else {
-		      // general case (variable tree depth)
-		      for( int t = 0; t < nTrees; t++ ) {
-		        uint32 offset=t*nTreeNodes, k=offset, k0=k;
-		        while( child[k] ) {
-		          float ftr = chns1[scales_cids[s][fids[k]]];
-		          k = (ftr<thrs[k]) ? 1 : 0;
-		          k0 = k = child[k0]-k+offset;
-		        }
-		        h += hs[k]; if( h<=cascThr ) break;
-		      }
-	    	}
-	    	//std::cout << "point: " << pointIndex << ", scale: " << s << ", score: " << h << std::endl;
-	    	//std::cin.get();
-	    	if(h>cascThr) { cs.push_back(c); rs.push_back(r); hs1.push_back(h); } // detecção	
-
-	    	pointIndex++;
-		}
-	}
-
-	for(int j=0; j<cs.size(); j++ )
-	{
-		BoundingBox bb = pyramidRowColumn2BoundingBox(rs[j], cs[j],  modelHt, modelWd, s, stride) ;
-
-		// bb.topLeftPoint.x = cs[j]*stride;
-		// bb.topLeftPoint.x = (bb.topLeftPoint.x+shift[1])/opts.pPyramid.scales_w[i];
-		// bb.topLeftPoint.y = rs[j]*stride;
-		// bb.topLeftPoint.y = (bb.topLeftPoint.y+shift[0])/opts.pPyramid.scales_h[i];
-		// bb.height = opts.modelDs[0]/opts.pPyramid.scales[i];
-		// bb.width = opts.modelDs[1]/opts.pPyramid.scales[i];
-		bb.score = hs1[j];
-		bb.scale = s;
-		result.push_back(bb);
-	}
-
-	cs.clear();
-	rs.clear();
-	hs1.clear();
-
-	return result;
-}
-
 BB_Array Detector::applyCalibratedDetectorToFrame(std::vector<Info> pyramid, BB_Array* bbox_candidates, int shrink, int modelHt, int modelWd, int stride, 
 											float cascThr, float *thrs, float *hs, std::vector<uint32*> scales_cids, uint32 *fids, uint32 *child, int nTreeNodes, 
 											int nTrees, int treeDepth, int nChns, int imageWidth, int imageHeight, cv::Mat_<float> &P, cv::Mat &debug_image)
 {
 	BB_Array result;
-
-	// std::cout << "stride: " << stride << std::endl;
-	// std::cout << "shrink: " << shrink << std::endl;
-	
-	//std::cout << "Number of candidates: " << bbox_candidates->size() << std::endl;
-
-	// create one candidate only for debug
-	// BB_Array bbox_candidates;
-	// BoundingBox bb;
-	// bb.topLeftPoint.x = 486;
-	// bb.topLeftPoint.y = 148;
-	// bb.width = 57;
-	// bb.height = 104;
-	// bbox_candidates.push_back(bb);
-
-	// plot the candidates, only for DEBUG
-	// cv::waitKey(1000);
-	// for (int i = 0; i < bbox_candidates.size(); ++i) {
-		
-	// 	std::cout << bbox_candidates[i].topLeftPoint << std::endl;
-	//  	bbox_candidates[i].plot(debug_image, cv::Scalar(0, 255, 0));
-	//  	cv::imshow("candidates", debug_image);
-	//  	cv::waitKey(0);
-	// }
-	//cv::waitKey(40);
 
 	std::vector<float*> scales_chns(opts.pPyramid.computedScales, NULL);
 
@@ -645,21 +416,6 @@ BB_Array Detector::applyCalibratedDetectorToFrame(std::vector<Info> pyramid, BB_
 		
 		int height = pyramid[ith_scale].image.rows;                                                              
 		int width = pyramid[ith_scale].image.cols;
-		
-		// std::cout << "Original bbox " << bbox_candidates[i].topLeftPoint.x << " " << bbox_candidates[i].topLeftPoint.y << " size: " 
-		// 	<< bbox_candidates[i].width << " x " << bbox_candidates[i].height << std::endl;
-		// int row, col;
-		// bbTopLeft2PyramidRowColumn(&row, &col, bbox_candidates[i], modelHt, modelWd, ith_scale, stride);
-		// std::cout << "r " << row << " c " << col << std::endl;
-		// BoundingBox testbb = pyramidRowColumn2BoundingBox(row, col, modelHt, modelWd, ith_scale, stride);
-		// std::cout << "New bbox " << testbb.topLeftPoint.x << " " << testbb.topLeftPoint.y << " size: " 
-		// 	<< testbb.width << " x " << testbb.height << std::endl;
-		// testbb.plot(debug_image, cv::Scalar(0, 0, 255));
-		// bbox_candidates[i].plot(debug_image, cv::Scalar(0, 255, 0));
-		// testbb.plot(debug_image, cv::Scalar(0, 0, 255));
-		// cv::imshow("candidates", debug_image);
-		// cv::waitKey(0);
-		// exit(42);	
 
 		// r and c are defined by the candidate itself
 		int r, c;
@@ -754,11 +510,10 @@ BB_Array Detector::applyDetectorToFrame(std::vector<Info> pyramid, int shrink, i
   		// const int nChns = mxGetNumberOfDimensions(prhs[0])<=2 ? 1 : (int) chnsSize[2];
 		int height = pyramid[i].image.rows;
 		int width = pyramid[i].image.cols;
+		int channels = opts.pPyramid.pChns.pColor.nChannels + opts.pPyramid.pChns.pGradMag.nChannels + opts.pPyramid.pChns.pGradHist.nChannels;
 
 		int height1 = (int)ceil(float(height*shrink-modelHt+1)/stride);
 		int width1 = (int)ceil(float(width*shrink-modelWd+1)/stride);
-
-		int channels = opts.pPyramid.pChns.pColor.nChannels + opts.pPyramid.pChns.pGradMag.nChannels + opts.pPyramid.pChns.pGradHist.nChannels;
 		float* chns = (float*)malloc(height*width*channels*sizeof(float));
 		features2floatArray(pyramid[i], chns, height, width,  opts.pPyramid.pChns.pColor.nChannels, opts.pPyramid.pChns.pGradMag.nChannels, opts.pPyramid.pChns.pGradHist.nChannels);
 		
@@ -773,16 +528,6 @@ BB_Array Detector::applyDetectorToFrame(std::vector<Info> pyramid, int shrink, i
 	        	}
 	        }
 	    }
-
-		/*
-		// debug: prints values of several variables, all of these return correct results
-		// shrink=4, modelHt=128, modelWd=64, stride=4, cascThr=-1.000000, treeDepth=2
-		// height=152, width=186, nChns=10, nTreeNodes=7, nTrees=2048, height1=121, width1=171, nFtrs=5120
-		std::cout << "shrink=" << shrink << ", modelHt=" << modelHt << ", modelWd=" << modelWd << ", stride=" << stride << ", cascThr=" << cascThr << ", treeDepth=" << treeDepth <<  ", modelDs=(" <<
-			opts.modelDs[0] << "," << opts.modelDs[1] << ")" << std::endl;
-		std::cout << "height=" << height << ", width=" << width << ", nChns=" << nChns <<  ", nTreeNodes=" << nTreeNodes << ", nTrees=" << nTrees << ", height1=" << height1 << 
-			", width1=" << width1 << ", nFtrs=" << nFtrs << std::endl;
-		// debug */
 
 		// apply classifier to each patch
   		std::vector<int> rs, cs; std::vector<float> hs1;
@@ -938,6 +683,7 @@ void Detector::acfDetect(std::vector<std::string> imageNames, std::string dataSe
 		clock_t detectionStart;
 
 		BB_Array frameDetections;
+		
 		if (config.useCalibration)
 		{
 			if (!calibratedGetScalesDone)
@@ -968,7 +714,7 @@ void Detector::acfDetect(std::vector<std::string> imageNames, std::string dataSe
 				        }
 				    }
 
-				    scales_cids.push_back(cids);	
+				    scales_cids.push_back(cids);
 				}
 
 				cidsDone = true;
@@ -986,24 +732,6 @@ void Detector::acfDetect(std::vector<std::string> imageNames, std::string dataSe
  			frameDetections = applyCalibratedDetectorToFrame(framePyramid, bbox_candidates, shrink, modelHt, modelWd, stride, cascThr, thrs, hs, scales_cids, 
  												fids, child, nTreeNodes, nTrees, treeDepth, nChns, image.cols, image.rows, *(config.projectionMatrix), image);
 		}
-		/*
-		if (config.useCalibration) // fast detector
-		{
-			if (!calibratedGetScalesDone)
-			{
-				opts.pPyramid.calibratedGetScales(I.rows, I.cols, opts.pPyramid.pChns.shrink, modelWd, modelHt, config.maxPedestrianWorldHeight, *(config.projectionMatrix), *(config.homographyMatrix));
-				calibratedGetScalesDone = true;
-			}
-
-			framePyramid = opts.pPyramid.computeFeaturePyramid(I, config.useCalibration);
-
-			detectionStart = clock();
-			//double targetPedestrianHeight = (config.maxPedestrianWorldHeight + config.minPedestrianWorldHeight)/2;
-			double targetPedestrianHeight = config.maxPedestrianWorldHeight;
-			frameDetections = applyFastCalibratedDetectorToFrame(framePyramid, shrink, modelHt, modelWd, stride, cascThr, thrs, hs, fids, child, nTreeNodes, 
-								nTrees, treeDepth, nChns, image.cols, image.rows, targetPedestrianHeight, *(config.homographyMatrix), *(config.projectionMatrix));
-		}
-		// */
 		else
 		{
 			framePyramid = opts.pPyramid.computeFeaturePyramid(I, config.useCalibration);

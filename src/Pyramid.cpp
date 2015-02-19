@@ -107,10 +107,10 @@ std::vector<Info> Pyramid::computeFeaturePyramid(cv::Mat I, bool useCalibration)
 			free(I1);
 		numberOfRealScales++;
 	}
+	free(convertedImage);
+
 	end = clock();
 	totalTimeForRealScales = totalTimeForRealScales + (double(end - start) / CLOCKS_PER_SEC);
-
-	free(convertedImage);
 
 	/* compute the approximated scales */
 	start = clock();

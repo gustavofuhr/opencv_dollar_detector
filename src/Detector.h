@@ -80,11 +80,7 @@ private:
 
 	int findClosestScaleFromBbox2(std::vector<Info> &pyramid, BoundingBox &bb,
 												int modelHeight, double shrink);
-
-	int findBestScaleIndex(double targetScale, int numberOfScales);
-	BB_Array applyFastCalibratedDetectorToFrame(std::vector<Info> pyramid, int shrink, int modelHt, int modelWd, int stride, float cascThr, float *thrs, 
-	float *hs, uint32 *fids, uint32 *child, int nTreeNodes, int nTrees, int treeDepth, int nChns, int imageWidth, int imageHeight, double targetPedestrianHeight,
-	cv::Mat_<float> &homography, cv::Mat_<float> &projection);
+	
 	BB_Array applyCalibratedDetectorToFrame(std::vector<Info> pyramid, BB_Array* bbox_candidates, int shrink, int modelHt, int modelWd, int stride, 
 											float cascThr, float *thrs, float *hs, std::vector<uint32*> scales_cids, uint32 *fids, uint32 *child, int nTreeNodes, 
 											int nTrees, int treeDepth, int nChns, int imageWidth, int imageHeight, cv::Mat_<float> &P, cv::Mat &debug_image);
