@@ -47,7 +47,7 @@ OddConfig::OddConfig(std::string config_file) :
 			float *dP = new float[12];
 			for (int i=0; i<12; ++i) {
 				in_file >> dP[i];
-				std::cout << dP[i] << std::endl;
+				//std::cout << dP[i] << std::endl;
 			}
 
 			calibrationP = new cv::Mat_<float>(3, 4, dP);
@@ -160,7 +160,7 @@ BB_Array* Detector::generateCandidatesFaster(int imageHeight, int imageWidth, in
 	// be read from a file or something...
 	cv::Mat_<float> P3 = P.col(2);
 
-	std::cout << "P3: " << P3 << std::endl;
+	//std::cout << "P3: " << P3 << std::endl;
 	float aspectRatio = 0.41;
 	float minImageHeight = 80;
 
@@ -176,7 +176,7 @@ BB_Array* Detector::generateCandidatesFaster(int imageHeight, int imageWidth, in
 	H(0,1) = P(0,1); H(1,1) = P(1,1); H(2,1) = P(2,1);
 	H(0,2) = P(0,3); H(1,2) = P(1,3); H(2,2) = P(2,3);
 	
-	std::cout << "H: " << H << std::endl;
+	//std::cout << "H: " << H << std::endl;
 	cv::Mat_<float> H_inv = H.inv();
 
 	// std::cout << "H_inv " << H_inv << std::endl;
@@ -413,7 +413,7 @@ BB_Array Detector::applyDetectorToFrameSmart(std::vector<Info> pyramid, BB_Array
 	// }
 	//cv::waitKey(40);
 
-	std::cout << "opts.pPyramid.computedScales: " << opts.pPyramid.computedScales << std::endl;
+	//std::cout << "opts.pPyramid.computedScales: " << opts.pPyramid.computedScales << std::endl;
 
 	std::vector<float*> scales_chns(opts.pPyramid.computedScales, NULL);
 	std::vector<uint32*> scales_cids(opts.pPyramid.computedScales, NULL);
@@ -574,8 +574,8 @@ BB_Array Detector::applyDetectorToFrame(std::vector<Info> pyramid, int shrink, i
   		// const int nChns = mxGetNumberOfDimensions(prhs[0])<=2 ? 1 : (int) chnsSize[2];
 		int height = pyramid[i].image.rows;
 		int width = pyramid[i].image.cols;
-		printf("Size of the downsampled image: %d x %d\n", width, height);
-		printf("Aspect ratio of the image: %f\n", height/(float)width);
+		// printf("Size of the downsampled image: %d x %d\n", width, height);
+		// printf("Aspect ratio of the image: %f\n", height/(float)width);
 
 		int height1 = (int)ceil(float(height*shrink-modelHt+1)/stride);
 		int width1 = (int)ceil(float(width*shrink-modelWd+1)/stride);
@@ -732,7 +732,7 @@ BB_Array Detector::applyDetectorToFrame(std::vector<Info> pyramid, int shrink, i
 		hs1.clear();
 	}
 
-	std::cout << "max_h " << max_h << std::endl;
+	// std::cout << "max_h " << max_h << std::endl;
 	std::cout << "Number of candidates (not smart) : " << n_candidates << std::endl; 
 
 	return result;
@@ -787,7 +787,7 @@ void Detector::acfDetect(std::vector<std::string> imageNames, std::string dataSe
 
 	std::ofstream out_file;
 	if (config.saveLog) {
-		std::cout << "It's going to save a log file in " << config.logFilename << std::endl;
+		//std::cout << "It's going to save a log file in " << config.logFilename << std::endl;
 		out_file.open(config.logFilename);
 		if (out_file.fail()) {
         	std::cerr << "open failure: " << strerror(errno) << '\n';
@@ -798,14 +798,14 @@ void Detector::acfDetect(std::vector<std::string> imageNames, std::string dataSe
 	std::cout << "Number of images: " << imageNames.size() << std::endl;
 	for (int i = firstFrame; i < imageNames.size() && i < lastFrame; i++)
 	{
-		std::cout << "file " << imageNames[i] << std::endl;
+		// std::cout << "file " << imageNames[i] << std::endl;
 		clock_t frameStart = clock();
 
 		// this conversion is necessary, so we don't apply this transformation multiple times, which would break the image inside chnsPyramid
 		cv::Mat image = cv::imread(dataSetDirectoryName + '/' + imageNames[i]);
 
 		// if resize image is set different to 1.0, resize before computing the pyramid
-		std::cout << "Resizing the image, if required..." << std::endl;
+		// std::cout << "Resizing the image, if required..." << std::endl;
 		if (config.resizeImage != 1.0) {
 			cv::resize(image, image, cv::Size(), config.resizeImage, config.resizeImage);
 		}
@@ -867,11 +867,11 @@ void Detector::acfDetect(std::vector<std::string> imageNames, std::string dataSe
 
 		if (config.saveLog) {
 			for (int x = 0; x < detections[i].size(); ++x) {
-				std::cout << i+1 << " " << detections[i][x].topLeftPoint.x << " " 
+				/*std::cout << i+1 << " " << detections[i][x].topLeftPoint.x << " " 
 						 << detections[i][x].topLeftPoint.y << " "  
 						 << detections[i][x].height << " "
 						 << detections[i][x].width << " "
-						 << detections[i][x].score << std::endl;
+						 << detections[i][x].score << std::endl;*/
 				out_file << i+1 << " " << detections[i][x].topLeftPoint.x << " " 
 						 << detections[i][x].topLeftPoint.y << " "  
 						 << detections[i][x].height << " "
@@ -999,7 +999,7 @@ BB_Array Detector::nonMaximalSuppression(BB_Array bbs)
 {
 	BB_Array result;
 
-	std::cout << "opts.suppressionThreshold: " << opts.suppressionThreshold << std::endl;
+	// std::cout << "opts.suppressionThreshold: " << opts.suppressionThreshold << std::endl;
 
 	//keep just the bounding boxes with scores higher than the threshold
 	for (int i=0; i < bbs.size(); i++)

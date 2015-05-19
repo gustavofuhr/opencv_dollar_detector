@@ -96,10 +96,10 @@ std::vector<Info> Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 	int i;
 
 
-	std::cout << "All scales (" << computedScales << ")" << std::endl;
-	for (i=0; i < computedScales; i++)
-		std::cout << scales[i] << std::endl;
-	std::cout << std::endl;
+	// std::cout << "All scales (" << computedScales << ")" << std::endl;
+	// for (i=0; i < computedScales; i++)
+	// 	std::cout << scales[i] << std::endl;
+	// std::cout << std::endl;
 
 
 	// compute image pyramid [real scales]
@@ -389,9 +389,9 @@ std::vector<Info> Pyramid::computeMultiScaleChannelFeaturePyramid(cv::Mat I)
 		}
 	}
 
-	for (int i=0; i< computedChannels.size(); ++i) {
-		std::cout << "computedChannels size: " << computedChannels[i].image.size() << std::endl;
-	}
+	// for (int i=0; i< computedChannels.size(); ++i) {
+	// 	std::cout << "computedChannels size: " << computedChannels[i].image.size() << std::endl;
+	// }
 
 	pChns.pColor.colorSpaceType = previousColorSpaceType;
 	return computedChannels;
@@ -1004,8 +1004,8 @@ void Pyramid::getScalesSmart(int h, int w, int shrink, int *modelDimensions, int
 			// scales(i)=ss(x);
 			// scales[i] = ss[minScaleIndex];
 			tempScales[i] = ss[minScaleIndex];	
-			std::cout << "tempScales[i] " << tempScales[i] << std::endl;
-			std::cout << modelDimensions[0]/tempScales[i] << std::endl;
+			// std::cout << "tempScales[i] " << tempScales[i] << std::endl;
+			// std::cout << modelDimensions[0]/tempScales[i] << std::endl;
 
 			int modelSize = (int)(modelDimensions[0]/tempScales[i]);
 			validScales++;
