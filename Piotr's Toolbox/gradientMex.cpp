@@ -87,7 +87,16 @@ void gradMag( float *I, float *M, float *O, int h, int w, int d, bool full ) {
     };
     memcpy( M+x*h, M2, h*sizeof(float) );
     // compute and store gradient orientation (O) via table lookup
-    if( O!=0 ) for( y=0; y<h; y++ ) O[x*h+y] = acost[(int)Gx[y]];
+    if( O!=0 ) for( y=0; y<h; y++ ) {
+      // guard against out-of-range or NaN values (e.g. zero/NaN gradient),
+      // which would otherwise cast to an undefined index and segfault
+      float gx = Gx[y]; int idx = 0;
+      if( gx != gx ) idx = 0;
+      else if( gx < -10010.f ) idx = -10010;
+      else if( gx > 10009.f ) idx = 10009;
+      else idx = (int)gx;
+      O[x*h+y] = acost[idx];
+    }
     if( O!=0 && full ) {
       y1=((~size_t(O+x*h)+1)&15)/4; y=0;
       for( ; y<y1; y++ ) O[y+x*h]+=(Gy[y]<0)*PI;
